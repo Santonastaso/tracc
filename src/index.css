@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom styles for the mill tracing system */
+.navy-800 {
+  background-color: #1e3a8a;
+}
+
+.navy-700 {
+  background-color: #1d4ed8;
+}
+
+.navy-600 {
+  background-color: #2563eb;
+}
+
+.navy-200 {
+  color: #cbd5e1;
+}
+
+/* Error Boundary Styles */
+.error-boundary {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc;
+  padding: 2rem;
+}
+
+.error-boundary__container {
+  max-width: 600px;
+  text-align: center;
+  background: white;
+  padding: 3rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.error-boundary__icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.error-boundary__title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.error-boundary__message {
+  color: #6b7280;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.error-boundary__details {
+  text-align: left;
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #f3f4f6;
+  border-radius: 0.25rem;
+}
+
+.error-boundary__error-info {
+  margin-top: 1rem;
+}
+
+.error-boundary__stack-trace {
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.error-boundary__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.error-boundary__button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.error-boundary__button:hover {
+  background: #f3f4f6;
+}
+
+.error-boundary__button--secondary {
+  background: #6b7280;
+  color: white;
+  border-color: #6b7280;
+}
+
+.error-boundary__button--secondary:hover {
+  background: #4b5563;
+}
+
+.error-boundary__recommendations {
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #fef3c7;
+  border-radius: 0.25rem;
+  border-left: 4px solid #f59e0b;
+}
+
+.error-boundary__recommendation {
+  text-align: left;
+}
+
+.error-boundary__footer {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.error-boundary__error-id {
+  margin-bottom: 0.5rem;
+}
+
+.error-boundary__error-id code {
+  background: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    font-size: 12px;
+  }
+  
+  .page-break {
+    page-break-before: always;
+  }
+}
