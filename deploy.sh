@@ -14,6 +14,14 @@ if [ ! -d ".git" ]; then
     exit 1
 fi
 
+# Get the remote name (usually 'origin' or check what's available)
+remote_name=$(git remote | head -n1)
+if [ -z "$remote_name" ]; then
+    echo "❌ Error: No git remote found"
+    exit 1
+fi
+echo "📡 Using remote: $remote_name"
+
 # Ensure we're on master branch
 current_branch=$(git branch --show-current)
 if [ "$current_branch" != "master" ]; then
@@ -29,7 +37,7 @@ fi
 if git show-ref --verify --quiet refs/heads/gh-pages; then
     echo "📋 gh-pages branch exists, switching to it..."
     git checkout gh-pages
-    git pull origin gh-pages
+    git pull "$remote_name" gh-pages
 else
     echo "🆕 Creating gh-pages branch..."
     git checkout --orphan gh-pages
@@ -50,7 +58,7 @@ git commit -m "Deploy to GitHub Pages - $(date '+%Y-%m-%d %H:%M:%S')" || echo "N
 
 # Push to gh-pages branch
 echo "⬆️  Pushing to GitHub Pages..."
-git push origin gh-pages
+git push "$remote_name" gh-pages
 
 # Switch back to original branch
 echo "🔄 Switching back to $current_branch branch..."
