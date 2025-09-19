@@ -57,7 +57,7 @@ function GenericForm({
   customFieldRenderers = {},
   className = "p-1 bg-white rounded-lg shadow-sm border"
 }) {
-  const { handleAsync } = useErrorHandler('GenericForm');
+  const { handleAsyncError } = useErrorHandler('GenericForm');
   const { validate } = useValidation();
   
   // Create initial form data from config and provided data
@@ -114,14 +114,14 @@ function GenericForm({
     }
     
     // Submit the form
-    await handleAsync(
+    await handleAsyncError(
       async () => {
         await onSubmit(data);
         if (onSuccess) onSuccess();
         reset(initialFormData);
       },
+      isEditMode ? config.editContext : config.addContext,
       { 
-        context: isEditMode ? config.editContext : config.addContext, 
         fallbackMessage: isEditMode ? config.editErrorMessage : config.addErrorMessage
       }
     );
@@ -161,7 +161,7 @@ function GenericForm({
         return (
           <Select 
             onValueChange={(value) => setValue(field.name, value)} 
-            value={getValues(field.name) || ''}
+            value={String(getValues(field.name) || '')}
             disabled={field.disabled || isSubmitting}
           >
             <SelectTrigger>

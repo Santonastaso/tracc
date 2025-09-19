@@ -1,79 +1,49 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
-import { fetchSilos, fetchSilosWithLevels, createSilo, updateSilo, deleteSilo } from '../services/silos';
+import { 
+  useSilosWithLevels, 
+  useCreateSilo, 
+  useUpdateSilo, 
+  useDeleteSilo,
+  useMaterials 
+} from '../hooks';
 import GenericForm from '../components/GenericForm';
 import SiloCard from '../components/SiloCard';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { showSuccess, showError } from '../utils/toast';
 
 function SilosPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const queryClient = useQueryClient();
 
-  // Fetch silos data with current levels and available lots
-  const { data: silosData, isLoading } = useQuery({
-    queryKey: ['silos-with-levels'],
-    queryFn: () => fetchSilosWithLevels(true) // Include materials object for SilosPage
-  });
+  // Fetch data using centralized query hooks
+  const { data: silosData, isLoading } = useSilosWithLevels(true); // Include materials object for SilosPage
+  const { data: materialsData } = useMaterials();
 
-  // Fetch materials for allowed_material_ids
-  const { data: materialsData } = useQuery({
-    queryKey: ['materials'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('materials')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+  // Use centralized mutation hooks
+  const createMutation = useCreateSilo();
+  const updateMutation = useUpdateSilo();
+  const deleteMutation = useDeleteSilo();
+
+  // Handle form submission
+  const handleSubmit = async (formData) => {
+    const dataToSave = {
+      ...formData,
+      capacity_kg: parseInt(formData.capacity_kg),
+      allowed_material_ids: formData.allowed_material_ids || [],
+      updated_at: new Date().toISOString()
+    };
+
+    if (editingItem) {
+      await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
+    } else {
+      await createMutation.mutateAsync(dataToSave);
     }
-  });
-
-  // Create/Update mutation
-  const mutation = useMutation({
-    mutationFn: async (formData) => {
-      const dataToSave = {
-        ...formData,
-        capacity_kg: parseInt(formData.capacity_kg),
-        allowed_material_ids: formData.allowed_material_ids || [],
-        updated_at: new Date().toISOString()
-      };
-
-      if (editingItem) {
-        return await updateSilo(editingItem.id, dataToSave);
-      } else {
-        return await createSilo(dataToSave);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['silos-with-levels']);
-      setShowForm(false);
-      setEditingItem(null);
-      showSuccess(editingItem ? 'Silos aggiornato con successo' : 'Silos creato con successo');
-    },
-    onError: (error) => {
-      showError('Errore durante il salvataggio: ' + error.message);
-    }
-  });
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      return await deleteSilo(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['silos-with-levels']);
-      showSuccess('Silos eliminato con successo');
-    },
-    onError: (error) => {
-      showError('Errore durante l\'eliminazione: ' + error.message);
-    }
-  });
+    
+    setShowForm(false);
+    setEditingItem(null);
+  };
 
   const handleEdit = (item) => {
     setEditingItem(item);
@@ -87,7 +57,7 @@ function SilosPage() {
   };
 
   const handleFormSubmit = (data) => {
-    mutation.mutate(data);
+    handleSubmit(data);
   };
 
   const handleCancel = () => {
@@ -189,7 +159,7 @@ function SilosPage() {
             initialData={editingItem}
             onSubmit={handleFormSubmit}
             isEditMode={!!editingItem}
-            isLoading={mutation.isPending}
+            isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
           />
         </Card>
       )}

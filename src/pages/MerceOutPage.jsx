@@ -1,174 +1,128 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
-import { fetchOperators } from '../services/operators';
-import { fetchSilos, fetchSilosWithLevels } from '../services/silos';
-import DataTable from '../components/DataTable';
+import { 
+  useSilos, 
+  useSilosWithLevels, 
+  useOperators,
+  useCreateOutbound,
+  useUpdateOutbound
+} from '../hooks';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { showSuccess, showError } from '../utils/toast';
+import { useParams, useNavigate } from 'react-router-dom';
 
 function MerceOutPage() {
-  const [showForm, setShowForm] = useState(false);
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch outbound data
-  const { data: outboundData, isLoading } = useQuery({
-    queryKey: ['outbound'],
-    queryFn: async () => {
-      const { data, error } = await supabase
+  // Fetch data for editing if ID is provided
+  useEffect(() => {
+    if (id && id !== 'new') {
+      setIsLoading(true);
+      supabase
         .from('outbound')
         .select(`
           *,
           silos!inner(name)
         `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Fetch silos for form dropdown
-  const { data: silosData } = useQuery({
-    queryKey: ['silos'],
-    queryFn: fetchSilos
-  });
-
-  // Fetch silos with current levels for form validation
-  const { data: silosWithLevels } = useQuery({
-    queryKey: ['silos-with-levels'],
-    queryFn: fetchSilosWithLevels
-  });
-
-  // Fetch operators for dropdown
-  const { data: operatorsData } = useQuery({
-    queryKey: ['operators'],
-    queryFn: fetchOperators
-  });
-
-  // Create/Update mutation
-  const mutation = useMutation({
-    mutationFn: async (formData) => {
-      const { silo_id, quantity_kg, operator_name } = formData;
-      
-      // Check if silosWithLevels data is available
-      if (!silosWithLevels || silosWithLevels.length === 0) {
-        throw new Error('Dati silos non disponibili. Riprova tra qualche secondo.');
-      }
-      
-      // Get available items for the selected silo
-      const silo = silosWithLevels.find(s => s.id === parseInt(silo_id));
-      if (!silo) throw new Error('Silos non trovato');
-      
-      if (silo.currentLevel < quantity_kg) {
-        throw new Error(`Quantità insufficiente nel silos. Disponibile: ${silo.currentLevel} kg`);
-      }
-      
-      // Calculate FIFO items to withdraw
-      let remainingQuantity = quantity_kg;
-      const itemsToWithdraw = [];
-      
-      for (const item of silo.availableItems) {
-        if (remainingQuantity <= 0) break;
-        
-        const withdrawFromThisItem = Math.min(remainingQuantity, item.available_quantity);
-        itemsToWithdraw.push({
-          inbound_id: item.id,
-          quantity_kg: withdrawFromThisItem,
-          material_name: item.product,
-          supplier_lot: item.lot_supplier,
-          tf_lot: item.lot_tf,
-          protein_content: item.proteins,
-          moisture_content: item.humidity,
-          cleaning_status: item.cleaned,
-          entry_date: item.created_at.split('T')[0]
+        .eq('id', id)
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching outbound data:', error);
+            navigate('/merce-out/list');
+          } else {
+            setEditingItem(data);
+          }
+          setIsLoading(false);
         });
-        
-        remainingQuantity -= withdrawFromThisItem;
-      }
-      
-      if (remainingQuantity > 0) {
-        throw new Error('Errore nel calcolo FIFO: quantità rimanente non gestita');
-      }
-      
-      const now = new Date();
-      const dataToSave = {
-        silo_id: parseInt(silo_id),
-        quantity_kg: parseFloat(quantity_kg),
-        operator_name: operator_name,
-        items: itemsToWithdraw,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString()
-      };
-
-      if (editingItem) {
-        const { error } = await supabase
-          .from('outbound')
-          .update(dataToSave)
-          .eq('id', editingItem.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('outbound')
-          .insert([dataToSave]);
-        
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['outbound']);
-      queryClient.invalidateQueries(['silos-with-levels']);
-      setShowForm(false);
-      setEditingItem(null);
-      showSuccess(editingItem ? 'Movimento aggiornato con successo' : 'Movimento creato con successo');
-    },
-    onError: (error) => {
-      showError('Errore durante il salvataggio: ' + error.message);
     }
-  });
+  }, [id, navigate]);
 
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase
-        .from('outbound')
-        .delete()
-        .eq('id', id);
+  const { data: silosData } = useSilos();
+  const { data: silosWithLevels } = useSilosWithLevels();
+  const { data: operatorsData } = useOperators();
+
+  // Use centralized mutation hooks
+  const createMutation = useCreateOutbound();
+  const updateMutation = useUpdateOutbound();
+
+  // Handle form submission with FIFO logic
+  const handleSubmit = async (formData) => {
+    const { silo_id, quantity_kg, operator_name } = formData;
+    
+    // Convert string values back to correct types for database
+    const siloId = parseInt(silo_id);
+    
+    // Check if silosWithLevels data is available
+    if (!silosWithLevels || silosWithLevels.length === 0) {
+      throw new Error('Dati silos non disponibili. Riprova tra qualche secondo.');
+    }
+    
+    // Get available items for the selected silo
+    const silo = silosWithLevels.find(s => s.id === siloId);
+    if (!silo) throw new Error('Silos non trovato');
+    
+    if (silo.currentLevel < quantity_kg) {
+      throw new Error(`Quantità insufficiente nel silos. Disponibile: ${silo.currentLevel} kg`);
+    }
+    
+    // Calculate FIFO items to withdraw
+    let remainingQuantity = quantity_kg;
+    const itemsToWithdraw = [];
+    
+    for (const item of silo.availableItems) {
+      if (remainingQuantity <= 0) break;
       
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['outbound']);
-      queryClient.invalidateQueries(['silos-with-levels']);
-      showSuccess('Movimento eliminato con successo');
-    },
-    onError: (error) => {
-      showError('Errore durante l\'eliminazione: ' + error.message);
+      const withdrawFromThisItem = Math.min(remainingQuantity, item.available_quantity);
+      itemsToWithdraw.push({
+        inbound_id: item.id,
+        quantity_kg: withdrawFromThisItem,
+        material_name: item.product,
+        supplier_lot: item.lot_supplier,
+        tf_lot: item.lot_tf,
+        protein_content: item.proteins,
+        moisture_content: item.humidity,
+        cleaning_status: item.cleaned,
+        entry_date: item.created_at.split('T')[0]
+      });
+      
+      remainingQuantity -= withdrawFromThisItem;
     }
-  });
-
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setShowForm(true);
-  };
-
-  const handleDelete = (item) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo movimento?')) {
-      deleteMutation.mutate(item.id);
+    
+    if (remainingQuantity > 0) {
+      throw new Error('Errore nel calcolo FIFO: quantità rimanente non gestita');
     }
+    
+    const dataToSave = {
+      silo_id: siloId,
+      quantity_kg: parseFloat(quantity_kg),
+      operator_name: operator_name,
+      items: itemsToWithdraw,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (editingItem) {
+      await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
+    } else {
+      await createMutation.mutateAsync(dataToSave);
+    }
+    
+    // Navigate back to list after successful submission
+    navigate('/merce-out/list');
   };
 
   const handleFormSubmit = (data) => {
-    mutation.mutate(data);
+    handleSubmit(data);
   };
 
   const handleCancel = () => {
-    setShowForm(false);
-    setEditingItem(null);
+    navigate('/merce-out/list');
   };
 
   // Form configuration
@@ -183,7 +137,7 @@ function MerceOutPage() {
             type: 'select',
             required: true,
             options: silosData?.map(s => ({ 
-              value: s.id, 
+              value: String(s.id), 
               label: s.name
             })) || []
           },
@@ -217,56 +171,6 @@ function MerceOutPage() {
     editErrorMessage: 'Errore durante l\'aggiornamento del prelievo'
   };
 
-  // Table columns
-  const columns = [
-    {
-      accessorKey: 'created_at',
-      header: 'Data/Ora',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleString('it-IT', { 
-          timeZone: 'UTC',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
-    },
-    {
-      accessorKey: 'silos.name',
-      header: 'Silos'
-    },
-    {
-      accessorKey: 'quantity_kg',
-      header: 'Quantità (Kg)',
-      cell: ({ getValue }) => `${getValue()} kg`
-    },
-    {
-      accessorKey: 'operator_name',
-      header: 'Operatore'
-    },
-    {
-      accessorKey: 'items',
-      header: 'Dettagli Prelievo',
-      cell: ({ getValue }) => {
-        const items = getValue();
-        if (!items || items.length === 0) return 'N/A';
-        
-        return (
-          <div className="text-xs">
-            {items.map((item, index) => (
-              <div key={index} className="mb-1">
-                <strong>{item.material_name}</strong>: {item.quantity_kg}kg
-                {item.supplier_lot && ` (Lotto: ${item.supplier_lot})`}
-              </div>
-            ))}
-          </div>
-        );
-      }
-    }
-  ];
 
   if (isLoading) {
     return (
@@ -282,53 +186,32 @@ function MerceOutPage() {
   return (
     <div className="h-full flex flex-col p-4">
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Gestione Merce OUT</h1>
-        <Button 
-          onClick={() => setShowForm(true)}
-          className="bg-navy-800 hover:bg-navy-700"
-        >
-          Registra Prelievo
+        <h1 className="text-2xl font-bold text-gray-900">
+          {editingItem ? 'Modifica Prelievo Merce OUT' : 'Nuovo Prelievo Merce OUT'}
+        </h1>
+        <Button variant="outline" onClick={handleCancel}>
+          Annulla
         </Button>
       </div>
 
-      {showForm && (
-        <Card className="p-4 mb-4 flex-shrink-0">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">
-              {editingItem ? 'Modifica Prelievo' : 'Nuovo Prelievo'}
-            </h2>
-            <Button variant="outline" onClick={handleCancel}>
-              Annulla
-            </Button>
-          </div>
-          {!silosWithLevels || silosWithLevels.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">
-              Caricamento dati silos...
-            </div>
-          ) : (
-            <GenericForm
-              config={formConfig}
-              initialData={editingItem}
-              onSubmit={handleFormSubmit}
-              isEditMode={!!editingItem}
-              isLoading={mutation.isPending}
-            />
-          )}
-        </Card>
-      )}
-
       <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <h2 className="text-lg font-semibold mb-4 flex-shrink-0">Prelievi Merce OUT</h2>
-        <div className="flex-1 min-h-0">
-          <DataTable
-            data={outboundData || []}
-            columns={columns}
-            onEditRow={handleEdit}
-            onDeleteRow={handleDelete}
-            enableFiltering={true}
-            filterableColumns={['silos.name', 'operator_name']}
+        {!silosWithLevels || silosWithLevels.length === 0 ? (
+          <div className="text-center py-4 text-gray-500">
+            Caricamento dati silos...
+          </div>
+        ) : (
+          <GenericForm
+            config={formConfig}
+            initialData={editingItem ? {
+              ...editingItem,
+              // Convert database values to strings for Select components
+              silo_id: String(editingItem.silo_id)
+            } : null}
+            onSubmit={handleFormSubmit}
+            isEditMode={!!editingItem}
+            isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
           />
-        </div>
+        )}
       </Card>
     </div>
   );

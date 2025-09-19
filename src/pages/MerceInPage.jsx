@@ -1,131 +1,79 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
-import { fetchMaterials } from '../services/materials';
-import { fetchOperators } from '../services/operators';
-import { fetchSilos } from '../services/silos';
-import DataTable from '../components/DataTable';
+import { 
+  useSilos, 
+  useMaterials, 
+  useOperators,
+  useCreateInbound,
+  useUpdateInbound
+} from '../hooks';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { showSuccess, showError } from '../utils/toast';
+import { useParams, useNavigate } from 'react-router-dom';
 
 function MerceInPage() {
-  const [showForm, setShowForm] = useState(false);
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch inbound data
-  const { data: inboundData, isLoading } = useQuery({
-    queryKey: ['inbound'],
-    queryFn: async () => {
-      const { data, error } = await supabase
+  // Fetch data for editing if ID is provided
+  useEffect(() => {
+    if (id && id !== 'new') {
+      setIsLoading(true);
+      supabase
         .from('inbound')
         .select('*, silos(name)')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+        .eq('id', id)
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching inbound data:', error);
+            navigate('/merce-in/list');
+          } else {
+            setEditingItem(data);
+          }
+          setIsLoading(false);
+        });
     }
-  });
+  }, [id, navigate]);
 
-  // Fetch silos for dropdown
-  const { data: silosData } = useQuery({
-    queryKey: ['silos'],
-    queryFn: fetchSilos
-  });
+  const { data: silosData } = useSilos();
+  const { data: materialsData, isLoading: materialsLoading, error: materialsError } = useMaterials();
+  const { data: operatorsData, isLoading: operatorsLoading, error: operatorsError } = useOperators();
 
-  // Fetch materials for dropdown
-  const { data: materialsData, isLoading: materialsLoading, error: materialsError } = useQuery({
-    queryKey: ['materials'],
-    queryFn: fetchMaterials,
-    onError: (error) => {
-      showError('Errore nel caricamento dei materiali: ' + error.message);
+  // Use centralized mutation hooks
+  const createMutation = useCreateInbound();
+  const updateMutation = useUpdateInbound();
+
+  // Handle form submission
+  const handleSubmit = async (formData) => {
+    const dataToSave = {
+      ...formData,
+      // Convert string values back to correct types for database
+      silo_id: parseInt(formData.silo_id),
+      cleaned: formData.cleaned === 'true',
+      updated_at: new Date().toISOString()
+    };
+
+    if (editingItem) {
+      await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
+    } else {
+      await createMutation.mutateAsync(dataToSave);
     }
-  });
-
-  // Fetch operators for dropdown
-  const { data: operatorsData, isLoading: operatorsLoading, error: operatorsError } = useQuery({
-    queryKey: ['operators'],
-    queryFn: fetchOperators,
-    onError: (error) => {
-      showError('Errore nel caricamento degli operatori: ' + error.message);
-    }
-  });
-
-
-  // Create/Update mutation
-  const mutation = useMutation({
-    mutationFn: async (formData) => {
-      const now = new Date();
-      const dataToSave = {
-        ...formData,
-        updated_at: now.toISOString()
-      };
-
-      if (editingItem) {
-        const { error } = await supabase
-          .from('inbound')
-          .update(dataToSave)
-          .eq('id', editingItem.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('inbound')
-          .insert([dataToSave]);
-        
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['inbound']);
-      setShowForm(false);
-      setEditingItem(null);
-      showSuccess(editingItem ? 'Movimento aggiornato con successo' : 'Movimento creato con successo');
-    },
-    onError: (error) => {
-      showError('Errore durante il salvataggio: ' + error.message);
-    }
-  });
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase
-        .from('inbound')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['inbound']);
-      showSuccess('Movimento eliminato con successo');
-    },
-    onError: (error) => {
-      showError('Errore durante l\'eliminazione: ' + error.message);
-    }
-  });
-
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setShowForm(true);
-  };
-
-  const handleDelete = (item) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo movimento?')) {
-      deleteMutation.mutate(item.id);
-    }
+    
+    // Navigate back to list after successful submission
+    navigate('/merce-in/list');
   };
 
   const handleFormSubmit = (data) => {
-    mutation.mutate(data);
+    handleSubmit(data);
   };
 
   const handleCancel = () => {
-    setShowForm(false);
-    setEditingItem(null);
+    navigate('/merce-in/list');
   };
 
   // Form configuration
@@ -165,7 +113,7 @@ function MerceInPage() {
             label: 'Silos Destinazione',
             type: 'select',
             required: true,
-            options: silosData?.map(s => ({ value: s.id, label: s.name })) || []
+            options: silosData?.map(s => ({ value: String(s.id), label: s.name })) || []
           }
         ]
       },
@@ -195,8 +143,8 @@ function MerceInPage() {
             type: 'select',
             required: true,
             options: [
-              { value: true, label: 'Accettata' },
-              { value: false, label: 'Non Accettata' }
+              { value: 'true', label: 'Accettata' },
+              { value: 'false', label: 'Non Accettata' }
             ]
           },
           {
@@ -241,73 +189,6 @@ function MerceInPage() {
     editErrorMessage: 'Errore durante l\'aggiornamento del movimento'
   };
 
-  // Table columns
-  const columns = [
-    {
-      accessorKey: 'created_at',
-      header: 'Data/Ora',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleString('it-IT', { 
-          timeZone: 'UTC',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
-    },
-    {
-      accessorKey: 'ddt_number',
-      header: 'DDT'
-    },
-    {
-      accessorKey: 'product',
-      header: 'Prodotto',
-      cell: ({ getValue, row }) => {
-        const product = getValue();
-        // Try to find the material to show unit
-        const material = materialsData?.find(m => m.name === product);
-        return material ? `${product} (${material.unit || 'Kg'})` : product;
-      }
-    },
-    {
-      accessorKey: 'quantity_kg',
-      header: 'Quantità (Kg)',
-      cell: ({ getValue }) => `${getValue()} kg`
-    },
-    {
-      accessorKey: 'silos.name',
-      header: 'Silos',
-      cell: ({ row }) => row.original.silos?.name || 'N/A'
-    },
-    {
-      accessorKey: 'lot_supplier',
-      header: 'Lotto Fornitore'
-    },
-    {
-      accessorKey: 'lot_tf',
-      header: 'Lotto TF'
-    },
-    {
-      accessorKey: 'cleaned',
-      header: 'Pulizia',
-      cell: ({ getValue }) => getValue() ? 'Accettata' : 'Non Accettata'
-    },
-    {
-      accessorKey: 'proteins',
-      header: 'Proteine (%)'
-    },
-    {
-      accessorKey: 'humidity',
-      header: 'Umidità (%)'
-    },
-    {
-      accessorKey: 'operator_name',
-      header: 'Operatore'
-    }
-  ];
 
   if (isLoading || materialsLoading || operatorsLoading) {
     return (
@@ -323,47 +204,27 @@ function MerceInPage() {
   return (
     <div className="h-full flex flex-col p-4">
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Gestione Merce IN</h1>
-        <Button 
-          onClick={() => setShowForm(true)}
-          className="bg-navy-800 hover:bg-navy-700"
-        >
-          Aggiungi Movimento
+        <h1 className="text-2xl font-bold text-gray-900">
+          {editingItem ? 'Modifica Movimento Merce IN' : 'Nuovo Movimento Merce IN'}
+        </h1>
+        <Button variant="outline" onClick={handleCancel}>
+          Annulla
         </Button>
       </div>
 
-      {showForm && (
-        <Card className="p-4 mb-4 flex-shrink-0">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">
-              {editingItem ? 'Modifica Movimento' : 'Nuovo Movimento'}
-            </h2>
-            <Button variant="outline" onClick={handleCancel}>
-              Annulla
-            </Button>
-          </div>
-          <GenericForm
-            config={formConfig}
-            initialData={editingItem}
-            onSubmit={handleFormSubmit}
-            isEditMode={!!editingItem}
-            isLoading={mutation.isPending}
-          />
-        </Card>
-      )}
-
       <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <h2 className="text-lg font-semibold mb-4 flex-shrink-0">Movimenti Merce IN</h2>
-        <div className="flex-1 min-h-0">
-          <DataTable
-            data={inboundData || []}
-            columns={columns}
-            onEditRow={handleEdit}
-            onDeleteRow={handleDelete}
-            enableFiltering={true}
-            filterableColumns={['product', 'operator_name']}
-          />
-        </div>
+        <GenericForm
+          config={formConfig}
+          initialData={editingItem ? {
+            ...editingItem,
+            // Convert database values to strings for Select components
+            silo_id: String(editingItem.silo_id),
+            cleaned: String(editingItem.cleaned)
+          } : null}
+          onSubmit={handleFormSubmit}
+          isEditMode={!!editingItem}
+          isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
+        />
       </Card>
     </div>
   );

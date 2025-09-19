@@ -1,18 +1,84 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 
 function SideNav() {
   const { user } = useAuth();
   const location = useLocation();
+  const [expandedSections, setExpandedSections] = useState({
+    merceIn: location.pathname.startsWith('/merce-in'),
+    merceOut: location.pathname.startsWith('/merce-out'),
+    operators: location.pathname.startsWith('/operators'),
+    silos: location.pathname.startsWith('/silos'),
+    materials: location.pathname.startsWith('/materials'),
+    suppliers: location.pathname.startsWith('/suppliers')
+  });
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/silos', label: 'Silos' },
-    { href: '/merce-in', label: 'Merce IN' },
-    { href: '/merce-out', label: 'Merce OUT' },
-    { href: '/reports', label: 'Report' },
-    { href: '/archive', label: 'Archivio Analisi' }
+    { href: '/', label: 'Home', icon: '🏠' },
+    { 
+      section: 'silos', 
+      label: 'Silos', 
+      icon: '🏭',
+      subLinks: [
+        { href: '/silos/list', label: 'Lista Silos' },
+        { href: '/silos/new', label: 'Nuovo Silos' }
+      ]
+    },
+    { 
+      section: 'operators', 
+      label: 'Operatori', 
+      icon: '👥',
+      subLinks: [
+        { href: '/operators/list', label: 'Lista Operatori' },
+        { href: '/operators/new', label: 'Nuovo Operatore' }
+      ]
+    },
+    { 
+      section: 'materials', 
+      label: 'Materiali', 
+      icon: '📦',
+      subLinks: [
+        { href: '/materials/list', label: 'Lista Materiali' },
+        { href: '/materials/new', label: 'Nuovo Materiale' }
+      ]
+    },
+    { 
+      section: 'suppliers', 
+      label: 'Fornitori', 
+      icon: '🚚',
+      subLinks: [
+        { href: '/suppliers/list', label: 'Lista Fornitori' },
+        { href: '/suppliers/new', label: 'Nuovo Fornitore' }
+      ]
+    },
+    { 
+      section: 'merceIn', 
+      label: 'Merce IN', 
+      icon: '📥',
+      subLinks: [
+        { href: '/merce-in/list', label: 'Lista Movimenti' },
+        { href: '/merce-in/new', label: 'Nuovo Movimento' }
+      ]
+    },
+    { 
+      section: 'merceOut', 
+      label: 'Merce OUT', 
+      icon: '📤',
+      subLinks: [
+        { href: '/merce-out/list', label: 'Lista Prelievi' },
+        { href: '/merce-out/new', label: 'Nuovo Prelievo' }
+      ]
+    },
+    { href: '/reports', label: 'Report', icon: '📊' },
+    { href: '/archive', label: 'Archivio Analisi', icon: '📁' }
   ];
 
   if (!user) {
@@ -55,21 +121,73 @@ function SideNav() {
         <h3 className="text-[10px] font-semibold text-navy-200 uppercase tracking-wider mb-3">NAVIGATION</h3>
         <div className="space-y-1">
           {navLinks.map((link) => {
-            const isActive = location.pathname === link.href;
-            
-            return (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={`block px-1 py-1.5 rounded text-[10px] font-medium ${
-                  isActive 
-                    ? 'bg-navy-600 text-white' 
-                    : 'text-navy-200 hover:bg-navy-700'
-                }`}
-              >
-                <span>{link.label}</span>
-              </Link>
-            );
+            if (link.section) {
+              // Expandable section with sub-links
+              const isExpanded = expandedSections[link.section];
+              const hasActiveSubLink = link.subLinks.some(subLink => location.pathname === subLink.href);
+              
+              return (
+                <div key={link.section}>
+                  <button
+                    onClick={() => toggleSection(link.section)}
+                    className={`w-full flex items-center justify-between px-1 py-1.5 rounded text-[10px] font-medium ${
+                      hasActiveSubLink 
+                        ? 'bg-navy-600 text-white' 
+                        : 'text-navy-200 hover:bg-navy-700'
+                    }`}
+                  >
+                    <span className="flex items-center">
+                      <span className="mr-1">{link.icon}</span>
+                      {link.label}
+                    </span>
+                    <span className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
+                      ▶
+                    </span>
+                  </button>
+                  
+                  {isExpanded && (
+                    <div className="ml-3 mt-1 space-y-1">
+                      {link.subLinks.map((subLink) => {
+                        const isActive = location.pathname === subLink.href;
+                        return (
+                          <Link
+                            key={subLink.href}
+                            to={subLink.href}
+                            className={`block px-1 py-1 rounded text-[9px] font-medium ${
+                              isActive 
+                                ? 'bg-navy-500 text-white' 
+                                : 'text-navy-300 hover:bg-navy-600 hover:text-white'
+                            }`}
+                          >
+                            {subLink.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            } else {
+              // Regular link
+              const isActive = location.pathname === link.href;
+              
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className={`block px-1 py-1.5 rounded text-[10px] font-medium ${
+                    isActive 
+                      ? 'bg-navy-600 text-white' 
+                      : 'text-navy-200 hover:bg-navy-700'
+                  }`}
+                >
+                  <span className="flex items-center">
+                    <span className="mr-1">{link.icon}</span>
+                    {link.label}
+                  </span>
+                </Link>
+              );
+            }
           })}
         </div>
       </div>

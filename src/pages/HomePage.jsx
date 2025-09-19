@@ -1,47 +1,16 @@
 import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
-import { supabase } from '../services/supabase/client';
-import { fetchSilos } from '../services/silos';
+import { useSilos, useInbound, useOutbound } from '../hooks';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 
 function HomePage() {
   const { user } = useAuth();
 
-  // Fetch silos data
-  const { data: silosData, isLoading: silosLoading } = useQuery({
-    queryKey: ['silos'],
-    queryFn: fetchSilos
-  });
-
-  // Fetch inbound data
-  const { data: inboundData, isLoading: inboundLoading } = useQuery({
-    queryKey: ['inbound'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inbound')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Fetch outbound data
-  const { data: outboundData, isLoading: outboundLoading } = useQuery({
-    queryKey: ['outbound'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('outbound')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  // Fetch data using centralized query hooks
+  const { data: silosData, isLoading: silosLoading } = useSilos();
+  const { data: inboundData, isLoading: inboundLoading } = useInbound();
+  const { data: outboundData, isLoading: outboundLoading } = useOutbound();
 
   // Calculate metrics
   const metrics = useMemo(() => {

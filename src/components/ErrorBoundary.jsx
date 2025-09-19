@@ -1,192 +1,235 @@
 import React from 'react';
-import { Button } from './ui/button';
+import { ServiceError, ERROR_TYPES, handleReactError, logError } from '../services/errorHandling';
 
 /**
- * React Error Boundary Component
- * Catches JavaScript errors anywhere in the component tree and displays a fallback UI
- * This prevents the entire app from crashing and provides a better user experience
+ * Enhanced Error Boundary Component
+ * Provides comprehensive error handling for React components
  */
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
-      hasError: false, 
-      error: null, 
+    this.state = {
+      hasError: false,
+      error: null,
       errorInfo: null,
-      errorId: null 
+      errorId: null,
+      retryCount: 0
     };
-  }
-
-  static generateErrorId() {
-    // Generate a unique error ID for tracking
-    return `ERR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   static getDerivedStateFromError(error) {
     // Update state so the next render will show the fallback UI
     return {
       hasError: true,
-      error,
-      errorId: ErrorBoundary.generateErrorId()
+      error: error
     };
   }
 
-  componentDidCatch(_error, _errorInfo) {
-    // Update state with error information
-    this.setState({
-      errorInfo: _errorInfo,
-      errorId: this.state.errorId || ErrorBoundary.generateErrorId()
+  componentDidCatch(error, errorInfo) {
+    // Create service error from React error
+    const serviceError = new ServiceError(
+      error.message || 'A React component error occurred',
+      ERROR_TYPES.UI_ERROR,
+      500,
+      error,
+      'ErrorBoundary',
+      {
+        details: {
+          componentStack: errorInfo.componentStack,
+          errorBoundary: errorInfo.errorBoundary
+        },
+        metadata: {
+          reactError: true,
+          errorBoundary: true,
+          retryCount: this.state.retryCount
+        }
+      }
+    );
+
+    // Log the error
+    logError(serviceError, {
+      componentStack: errorInfo.componentStack,
+      errorBoundary: errorInfo.errorBoundary,
+      retryCount: this.state.retryCount
     });
 
-    // Log error to console for now
-    console.error('ErrorBoundary caught an error:', _error, _errorInfo);
-  }
+    // Update state with error information
+    this.setState({
+      error: serviceError,
+      errorInfo: errorInfo,
+      errorId: serviceError.id
+    });
 
-  logErrorToService(_error, _errorInfo) {
-    // In production, you would send this to an error tracking service
-    // For now, we'll just log it to console
-    if (import.meta.env.MODE === 'production') {
-      // Example: Sentry.captureException(error, { extra: errorInfo });
-      // Production error logging would go here
+    // Call custom error handler if provided
+    if (this.props.onError) {
+      this.props.onError(serviceError, errorInfo);
     }
   }
 
   handleRetry = () => {
-    // Reset error state and attempt to recover
-    this.setState({ 
-      hasError: false, 
-      error: null, 
+    const maxRetries = this.props.maxRetries || 3;
+    
+    if (this.state.retryCount < maxRetries) {
+      this.setState({
+        hasError: false,
+        error: null,
+        errorInfo: null,
+        errorId: null,
+        retryCount: this.state.retryCount + 1
+      });
+    }
+  };
+
+  handleReset = () => {
+    this.setState({
+      hasError: false,
+      error: null,
       errorInfo: null,
-      errorId: null 
+      errorId: null,
+      retryCount: 0
     });
-    
-    // Force a re-render of the app
-    window.location.reload();
-  };
-
-  handleGoHome = () => {
-    // Navigate to home page
-    window.location.href = '/';
-  };
-
-  handleReportIssue = () => {
-    // Open issue reporting (could be email, form, or external service)
-    const subject = encodeURIComponent(`App Error Report - ${this.state.errorId}`);
-    const body = encodeURIComponent(`
-Error Report Details:
-- Error ID: ${this.state.errorId}
-- Error: ${this.state.error?.message || 'Unknown error'}
-- URL: ${window.location.href}
-- User Agent: ${navigator.userAgent}
-- Timestamp: ${new Date().toISOString()}
-
-Please describe what you were doing when this error occurred:
-    `);
-    
-    window.open(`mailto:support@company.com?subject=${subject}&body=${body}`);
-  };
-
-  getErrorRecommendations = (error) => {
-    // Simplified error recommendations without severity system
-    if (error?.message?.includes('Network') || error?.message?.includes('fetch')) {
-      return (
-        <div className="error-boundary__recommendation high">
-          <strong>Network Error:</strong> Please check your internet connection and try again.
-        </div>
-      );
-    }
-    
-    if (error?.message?.includes('Authentication') || error?.message?.includes('login')) {
-      return (
-        <div className="error-boundary__recommendation high">
-          <strong>Authentication Error:</strong> Please try logging in again.
-        </div>
-      );
-    }
-    
-    return (
-      <div className="error-boundary__recommendation medium">
-        <strong>General Error:</strong> Please try refreshing the page or contact support if the problem persists.
-      </div>
-    );
   };
 
   render() {
     if (this.state.hasError) {
-      // Fallback UI when an error occurs
-      return (
-        <div className="error-boundary">
-          <div className="error-boundary__container">
-            <div className="error-boundary__icon">🚨</div>
-            
-            <h1 className="error-boundary__title">
-              Oops! Something went wrong
-            </h1>
-            
-            <p className="error-boundary__message">
-              We're sorry, but something unexpected happened. Our team has been notified and is working to fix this issue.
-            </p>
+      // Custom error UI
+      if (this.props.fallback) {
+        return this.props.fallback(this.state.error, this.state.errorInfo, {
+          retry: this.handleRetry,
+          reset: this.handleReset,
+          retryCount: this.state.retryCount,
+          maxRetries: this.props.maxRetries || 3
+        });
+      }
 
-            {import.meta.env.MODE === 'development' && this.state.error && (
-              <details className="error-boundary__details">
-                <summary>Error Details (Development)</summary>
-                <div className="error-boundary__error-info">
-                  <p><strong>Error:</strong> {this.state.error.toString()}</p>
-                  {this.state.errorInfo && (
-                    <pre className="error-boundary__stack-trace">
-                      {this.state.errorInfo.componentStack}
-                    </pre>
+      // Default error UI
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Something went wrong
+                </h3>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                {this.state.error?.userMessage || 'An unexpected error occurred. Please try again.'}
+              </p>
+              
+              {this.state.errorId && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Error ID: {this.state.errorId}
+                </p>
+              )}
+            </div>
+
+            <div className="flex space-x-3">
+              {this.state.retryCount < (this.props.maxRetries || 3) && (
+                <button
+                  onClick={this.handleRetry}
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Try Again ({this.state.retryCount + 1}/{(this.props.maxRetries || 3) + 1})
+                </button>
+              )}
+              
+              <button
+                onClick={this.handleReset}
+                className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Reset
+              </button>
+            </div>
+
+            {process.env.NODE_ENV === 'development' && (
+              <details className="mt-4">
+                <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
+                  Technical Details
+                </summary>
+                <div className="mt-2 p-3 bg-gray-100 rounded text-xs font-mono text-gray-800 overflow-auto max-h-40">
+                  <div className="mb-2">
+                    <strong>Error Type:</strong> {this.state.error?.type}
+                  </div>
+                  <div className="mb-2">
+                    <strong>Severity:</strong> {this.state.error?.severity}
+                  </div>
+                  <div className="mb-2">
+                    <strong>Message:</strong> {this.state.error?.message}
+                  </div>
+                  {this.state.errorInfo?.componentStack && (
+                    <div className="mb-2">
+                      <strong>Component Stack:</strong>
+                      <pre className="whitespace-pre-wrap text-xs">
+                        {this.state.errorInfo.componentStack}
+                      </pre>
+                    </div>
+                  )}
+                  {this.state.error?.stack && (
+                    <div>
+                      <strong>Stack Trace:</strong>
+                      <pre className="whitespace-pre-wrap text-xs">
+                        {this.state.error.stack}
+                      </pre>
+                    </div>
                   )}
                 </div>
               </details>
             )}
-
-            <div className="error-boundary__actions">
-              <Button 
-                onClick={this.handleRetry} 
-                variant="default"
-              >
-                Try Again
-              </Button>
-              
-              <Button 
-                onClick={this.handleGoHome} 
-                variant="secondary"
-              >
-                Go to Home
-              </Button>
-              
-              <button 
-                onClick={this.handleReportIssue}
-                className="error-boundary__button error-boundary__button--secondary"
-              >
-                📧 Report Issue
-              </button>
-            </div>
-
-            {/* Show severity-based recommendations */}
-            {this.state.error && (
-              <div className="error-boundary__recommendations">
-                {this.getErrorRecommendations(this.state.error)}
-              </div>
-            )}
-
-            <div className="error-boundary__footer">
-              <p className="error-boundary__error-id">
-                Error ID: <code>{this.state.errorId}</code>
-              </p>
-              <p className="error-boundary__help">
-                If this problem persists, please contact support with the Error ID above.
-              </p>
-            </div>
           </div>
         </div>
       );
     }
 
-    // Render children normally when there's no error
     return this.props.children;
   }
 }
+
+/**
+ * Higher-order component for error boundary
+ * @param {React.Component} WrappedComponent - Component to wrap
+ * @param {Object} options - Error boundary options
+ * @returns {React.Component} Wrapped component with error boundary
+ */
+export const withErrorBoundary = (WrappedComponent, options = {}) => {
+  return function WithErrorBoundaryComponent(props) {
+    return (
+      <ErrorBoundary {...options}>
+        <WrappedComponent {...props} />
+      </ErrorBoundary>
+    );
+  };
+};
+
+/**
+ * Hook for error boundary functionality
+ * @returns {Object} Error boundary utilities
+ */
+export const useErrorBoundary = () => {
+  const [error, setError] = React.useState(null);
+
+  const resetError = React.useCallback(() => {
+    setError(null);
+  }, []);
+
+  const captureError = React.useCallback((error) => {
+    setError(error);
+  }, []);
+
+  React.useEffect(() => {
+    if (error) {
+      throw error;
+    }
+  }, [error]);
+
+  return { captureError, resetError };
+};
 
 export default ErrorBoundary;

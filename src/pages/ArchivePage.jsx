@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
-import { fetchSilos } from '../services/silos';
+import { useSilos, useMaterials } from '../hooks';
 import DataTable from '../components/DataTable';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { showSuccess, showError } from '../utils/toast';
 
 function ArchivePage() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const queryClient = useQueryClient();
 
   // Fetch archive data (we'll use a custom table for analysis archive)
   const { data: archiveData, isLoading } = useQuery({
@@ -32,26 +30,9 @@ function ArchivePage() {
     }
   });
 
-  // Fetch materials for dropdown
-  const { data: materialsData } = useQuery({
-    queryKey: ['materials'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('materials')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Fetch silos for dropdown
-  const { data: silosData } = useQuery({
-    queryKey: ['silos'],
-    queryFn: fetchSilos
-  });
+  // Fetch data using centralized query hooks
+  const { data: materialsData } = useMaterials();
+  const { data: silosData } = useSilos();
 
   // Fetch suppliers for dropdown
   const { data: suppliersData } = useQuery({

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
-import { fetchSilos } from '../services/silos';
+import { useSilos } from '../hooks';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -18,10 +18,7 @@ function ReportsPage() {
   });
 
   // Fetch silos for filter
-  const { data: silosData } = useQuery({
-    queryKey: ['silos'],
-    queryFn: fetchSilos
-  });
+  const { data: silosData } = useSilos();
 
   // Fetch movements report
   const { data: movementsData, isLoading: movementsLoading } = useQuery({
