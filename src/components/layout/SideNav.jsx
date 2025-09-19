@@ -7,12 +7,12 @@ function SideNav() {
   const location = useLocation();
 
   const navLinks = [
-    { href: '/', label: 'Home', icon: '🏠' },
-    { href: '/silos', label: 'Silos', icon: '🏭' },
-    { href: '/merce-in', label: 'Merce IN', icon: '📥' },
-    { href: '/merce-out', label: 'Merce OUT', icon: '📤' },
-    { href: '/reports', label: 'Report', icon: '📊' },
-    { href: '/archive', label: 'Archivio Analisi', icon: '📁' }
+    { href: '/', label: 'Home' },
+    { href: '/silos', label: 'Silos' },
+    { href: '/merce-in', label: 'Merce IN' },
+    { href: '/merce-out', label: 'Merce OUT' },
+    { href: '/reports', label: 'Report' },
+    { href: '/archive', label: 'Archivio Analisi' }
   ];
 
   if (!user) {
@@ -67,10 +67,7 @@ function SideNav() {
                     : 'text-navy-200 hover:bg-navy-700'
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  <span>{link.icon}</span>
-                  <span>{link.label}</span>
-                </span>
+                <span>{link.label}</span>
               </Link>
             );
           })}

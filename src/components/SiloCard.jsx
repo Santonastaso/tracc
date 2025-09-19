@@ -26,14 +26,14 @@ const SiloCard = ({ silo }) => {
   const createVerticalStackedBar = () => {
     if (availableItems.length === 0) {
       return (
-        <div className="w-16 h-32 bg-gray-100 rounded flex items-center justify-center">
+        <div className="w-20 h-40 bg-gray-100 rounded flex items-center justify-center">
           <span className="text-gray-400 text-xs transform -rotate-90">Vuoto</span>
         </div>
       );
     }
 
     return (
-      <div className="relative w-16 h-32 bg-gray-100 rounded overflow-hidden flex flex-col justify-end">
+      <div className="relative w-20 h-40 bg-gray-100 rounded overflow-hidden flex flex-col justify-end">
         {/* Capacity indicator line */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gray-400 opacity-50"></div>
         
@@ -51,11 +51,6 @@ const SiloCard = ({ silo }) => {
               }}
               title={`${item.materials?.name || 'Materiale'}: ${item.available_quantity}kg`}
             >
-              {heightPercentage > 8 && (
-                <span className="text-white text-xs font-medium transform -rotate-90 whitespace-nowrap">
-                  {item.available_quantity}kg
-                </span>
-              )}
             </div>
           );
         })}
@@ -76,48 +71,15 @@ const SiloCard = ({ silo }) => {
               {currentLevel.toLocaleString()} / {capacity_kg.toLocaleString()} kg
             </p>
             <p className="text-xs text-gray-500">
-              {usagePercentage.toFixed(1)}% utilizzato
+              {Math.round(usagePercentage)}% utilizzato
             </p>
           </div>
         </div>
 
         {/* Vertical Stacked Bar Chart */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-700">Contenuto Attuale</h4>
-          <div className="flex items-end space-x-2">
-            {createVerticalStackedBar()}
-          </div>
+        <div className="flex items-end space-x-2">
+          {createVerticalStackedBar()}
         </div>
-
-        {/* Lot Details */}
-        {availableItems.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-700">Lotti Disponibili</h4>
-            <div className="space-y-1 max-h-24 overflow-y-auto">
-              {availableItems.slice(0, 5).map((item, index) => (
-                <div key={index} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className="w-3 h-3 rounded"
-                      style={{ backgroundColor: getLotColor(index) }}
-                    />
-                    <span className="text-gray-700">
-                      {item.materials?.name || 'Materiale'}
-                    </span>
-                  </div>
-                  <span className="text-gray-600 font-medium">
-                    {item.available_quantity}kg
-                  </span>
-                </div>
-              ))}
-              {availableItems.length > 5 && (
-                <p className="text-xs text-gray-500 text-center">
-                  +{availableItems.length - 5} altri lotti
-                </p>
-              )}
-            </div>
-          </div>
-        )}
 
       </div>
     </Card>

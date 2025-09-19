@@ -140,35 +140,32 @@ function HomePage() {
     <div className="p-4 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard Tracciabilità Molino</h1>
-        <div className="text-sm text-gray-600">
-          Benvenuto, {user?.email}
-        </div>
       </div>
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 bg-navy-50 border-navy-200">
-          <h3 className="text-sm font-medium text-navy-800 mb-1">Silos Totali</h3>
-          <div className="text-2xl font-bold text-navy-900">{metrics.totalSilos}</div>
-          <div className="text-xs text-navy-600">Capacità: {metrics.totalCapacity.toLocaleString()} kg</div>
+        <Card className="p-4 bg-white border-gray-200">
+          <h3 className="text-sm font-medium text-gray-800 mb-1">Silos Totali</h3>
+          <div className="text-2xl font-bold text-gray-900">{metrics.totalSilos}</div>
+          <div className="text-xs text-gray-600">Capacità: {metrics.totalCapacity.toLocaleString()} kg</div>
         </Card>
         
-        <Card className="p-4 bg-green-50 border-green-200">
-          <h3 className="text-sm font-medium text-green-800 mb-1">Giacenza Attuale</h3>
-          <div className="text-2xl font-bold text-green-900">{metrics.totalCurrentStock.toLocaleString()} kg</div>
-          <div className="text-xs text-green-600">Utilizzo: {metrics.totalUtilization.toFixed(1)}%</div>
+        <Card className="p-4 bg-white border-gray-200">
+          <h3 className="text-sm font-medium text-gray-800 mb-1">Giacenza Attuale</h3>
+          <div className="text-2xl font-bold text-gray-900">{metrics.totalCurrentStock.toLocaleString()} kg</div>
+          <div className="text-xs text-gray-600">Utilizzo: {Math.round(metrics.totalUtilization)}%</div>
         </Card>
         
-        <Card className="p-4 bg-blue-50 border-blue-200">
-          <h3 className="text-sm font-medium text-blue-800 mb-1">Movimenti Oggi</h3>
-          <div className="text-2xl font-bold text-blue-900">{metrics.todayInbound + metrics.todayOutbound}</div>
-          <div className="text-xs text-blue-600">IN: {metrics.todayInbound} | OUT: {metrics.todayOutbound}</div>
+        <Card className="p-4 bg-white border-gray-200">
+          <h3 className="text-sm font-medium text-gray-800 mb-1">Movimenti Oggi</h3>
+          <div className="text-2xl font-bold text-gray-900">{metrics.todayInbound + metrics.todayOutbound}</div>
+          <div className="text-xs text-gray-600">IN: {metrics.todayInbound} | OUT: {metrics.todayOutbound}</div>
         </Card>
         
-        <Card className="p-4 bg-purple-50 border-purple-200">
-          <h3 className="text-sm font-medium text-purple-800 mb-1">Movimenti Settimana</h3>
-          <div className="text-2xl font-bold text-purple-900">{metrics.weekInbound + metrics.weekOutbound}</div>
-          <div className="text-xs text-purple-600">IN: {metrics.weekInbound} | OUT: {metrics.weekOutbound}</div>
+        <Card className="p-4 bg-white border-gray-200">
+          <h3 className="text-sm font-medium text-gray-800 mb-1">Movimenti Settimana</h3>
+          <div className="text-2xl font-bold text-gray-900">{metrics.weekInbound + metrics.weekOutbound}</div>
+          <div className="text-xs text-gray-600">IN: {metrics.weekInbound} | OUT: {metrics.weekOutbound}</div>
         </Card>
       </div>
 
@@ -190,22 +187,14 @@ function HomePage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Utilizzo:</span>
-                  <span className={`font-medium ${
-                    silo.utilizationPercentage >= 90 ? 'text-red-600' :
-                    silo.utilizationPercentage >= 70 ? 'text-yellow-600' :
-                    'text-green-600'
-                  }`}>
-                    {silo.utilizationPercentage.toFixed(1)}%
+                  <span className="font-medium text-gray-900">
+                    {Math.round(silo.utilizationPercentage)}%
                   </span>
                 </div>
                 <div className="mt-2">
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className={`h-2 rounded-full ${
-                        silo.utilizationPercentage >= 90 ? 'bg-red-500' :
-                        silo.utilizationPercentage >= 70 ? 'bg-yellow-500' :
-                        'bg-green-500'
-                      }`}
+                      className="h-2 rounded-full bg-gray-600"
                       style={{ width: `${Math.min(silo.utilizationPercentage, 100)}%` }}
                     />
                   </div>
@@ -227,13 +216,13 @@ function HomePage() {
             Gestisci Silos
           </Button>
           <Button 
-            className="bg-green-600 hover:bg-green-700"
+            variant="outline"
             onClick={() => window.location.href = '/merce-in'}
           >
             Registra Merce IN
           </Button>
           <Button 
-            className="bg-blue-600 hover:bg-blue-700"
+            variant="outline"
             onClick={() => window.location.href = '/merce-out'}
           >
             Registra Merce OUT

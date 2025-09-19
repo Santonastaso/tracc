@@ -470,7 +470,7 @@ function ReportsPage() {
                         style={{ width: `${Math.min(silo.utilizationPercentage, 100)}%` }}
                       />
                     </div>
-                    <span>{silo.utilizationPercentage.toFixed(1)}%</span>
+                    <span>{Math.round(silo.utilizationPercentage)}%</span>
                   </div>
                 </td>
               </tr>
@@ -506,7 +506,7 @@ function ReportsPage() {
               <div className="text-sm text-gray-600">
                 <span className="font-medium">{silo.currentLevel.toLocaleString()} kg</span> / {silo.capacity_kg.toLocaleString()} kg
                 <span className="ml-2">
-                  ({((silo.currentLevel / silo.capacity_kg) * 100).toFixed(1)}%)
+                  ({Math.round((silo.currentLevel / silo.capacity_kg) * 100)}%)
                 </span>
               </div>
             </div>

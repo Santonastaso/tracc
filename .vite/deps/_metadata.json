@@ -1,0 +1,44 @@
+{
+  "hash": "c9f00738",
+  "browserHash": "9f7d273c",
+  "optimized": {
+    "@tanstack/react-query": {
+      "src": "../../node_modules/@tanstack/react-query/build/modern/index.js",
+      "file": "@tanstack_react-query.js",
+      "fileHash": "4673995a",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "6dbb547c",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "9c4c02fe",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.js",
+      "file": "react-router-dom.js",
+      "fileHash": "c21976a1",
+      "needsInterop": false
+    },
+    "sonner": {
+      "src": "../../node_modules/sonner/dist/index.mjs",
+      "file": "sonner.js",
+      "fileHash": "de5c1cc1",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-KNNSWTRM": {
+      "file": "chunk-KNNSWTRM.js"
+    },
+    "chunk-QG6EUVMV": {
+      "file": "chunk-QG6EUVMV.js"
+    }
+  }
+}
