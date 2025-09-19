@@ -46,7 +46,11 @@ fi
 
 # Copy dist contents to root
 echo "📁 Copying dist contents..."
+# Go back to master to get the dist folder
+git checkout master
 cp -r dist/* .
+# Switch back to gh-pages
+git checkout gh-pages
 
 # Add .nojekyll file to prevent Jekyll processing
 echo "" > .nojekyll
