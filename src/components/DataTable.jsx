@@ -136,8 +136,9 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
   });
 
   return (
-    <div className="rounded-md border overflow-x-auto" style={{ maxHeight: '95vh' }}>
-      <table className="w-full caption-bottom text-[10px] !text-[10px] relative">
+    <div className="rounded-md border overflow-hidden h-full flex flex-col">
+      <div className="flex-1 overflow-auto">
+        <table className="w-full caption-bottom text-[10px] !text-[10px] relative">
         <thead className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
@@ -202,7 +203,8 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
             );
           })}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }

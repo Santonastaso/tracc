@@ -292,8 +292,8 @@ function MerceInPage() {
   }
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="h-full flex flex-col p-4">
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-2xl font-bold text-gray-900">Gestione Merce IN</h1>
         <Button 
           onClick={() => setShowForm(true)}
@@ -304,7 +304,7 @@ function MerceInPage() {
       </div>
 
       {showForm && (
-        <Card className="p-4">
+        <Card className="p-4 mb-4 flex-shrink-0">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">
               {editingItem ? 'Modifica Movimento' : 'Nuovo Movimento'}
@@ -323,16 +323,18 @@ function MerceInPage() {
         </Card>
       )}
 
-      <Card className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Movimenti Merce IN</h2>
-        <DataTable
-          data={inboundData || []}
-          columns={columns}
-          onEditRow={handleEdit}
-          onDeleteRow={handleDelete}
-          enableFiltering={true}
-          filterableColumns={['product', 'operator_name']}
-        />
+      <Card className="p-4 flex-1 flex flex-col min-h-0">
+        <h2 className="text-lg font-semibold mb-4 flex-shrink-0">Movimenti Merce IN</h2>
+        <div className="flex-1 min-h-0">
+          <DataTable
+            data={inboundData || []}
+            columns={columns}
+            onEditRow={handleEdit}
+            onDeleteRow={handleDelete}
+            enableFiltering={true}
+            filterableColumns={['product', 'operator_name']}
+          />
+        </div>
       </Card>
     </div>
   );

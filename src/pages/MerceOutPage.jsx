@@ -147,7 +147,12 @@ function MerceOutPage() {
   // Create/Update mutation
   const mutation = useMutation({
     mutationFn: async (formData) => {
-      const { silo_id, quantity_kg, operator_id } = formData;
+      const { silo_id, quantity_kg, operator_name } = formData;
+      
+      // Check if silosWithLevels data is available
+      if (!silosWithLevels || silosWithLevels.length === 0) {
+        throw new Error('Dati silos non disponibili. Riprova tra qualche secondo.');
+      }
       
       // Get available items for the selected silo
       const silo = silosWithLevels.find(s => s.id === parseInt(silo_id));
@@ -188,7 +193,7 @@ function MerceOutPage() {
       const dataToSave = {
         silo_id: parseInt(silo_id),
         quantity_kg: parseFloat(quantity_kg),
-        operator_id: parseInt(operator_id),
+        operator_name: operator_name,
         items: itemsToWithdraw,
         created_at: now.toISOString(),
         updated_at: now.toISOString()
@@ -285,11 +290,11 @@ function MerceOutPage() {
             placeholder: 'Inserisci quantità da prelevare'
           },
           {
-            name: 'operator_id',
+            name: 'operator_name',
             label: 'Operatore',
             type: 'select',
             required: true,
-            options: operatorsData?.map(o => ({ value: o.id, label: o.name })) || []
+            options: operatorsData?.map(o => ({ value: o.name, label: o.name })) || []
           }
         ]
       }
@@ -331,7 +336,7 @@ function MerceOutPage() {
       cell: ({ getValue }) => `${getValue()} kg`
     },
     {
-      accessorKey: 'operators.name',
+      accessorKey: 'operator_name',
       header: 'Operatore'
     },
     {
@@ -367,8 +372,8 @@ function MerceOutPage() {
   }
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="h-full flex flex-col p-4">
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-2xl font-bold text-gray-900">Gestione Merce OUT</h1>
         <Button 
           onClick={() => setShowForm(true)}
@@ -378,9 +383,8 @@ function MerceOutPage() {
         </Button>
       </div>
 
-
       {showForm && (
-        <Card className="p-4">
+        <Card className="p-4 mb-4 flex-shrink-0">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">
               {editingItem ? 'Modifica Prelievo' : 'Nuovo Prelievo'}
@@ -389,26 +393,34 @@ function MerceOutPage() {
               Annulla
             </Button>
           </div>
-          <GenericForm
-            config={formConfig}
-            initialData={editingItem}
-            onSubmit={handleFormSubmit}
-            isEditMode={!!editingItem}
-            isLoading={mutation.isPending}
-          />
+          {!silosWithLevels || silosWithLevels.length === 0 ? (
+            <div className="text-center py-4 text-gray-500">
+              Caricamento dati silos...
+            </div>
+          ) : (
+            <GenericForm
+              config={formConfig}
+              initialData={editingItem}
+              onSubmit={handleFormSubmit}
+              isEditMode={!!editingItem}
+              isLoading={mutation.isPending}
+            />
+          )}
         </Card>
       )}
 
-      <Card className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Prelievi Merce OUT</h2>
-        <DataTable
-          data={outboundData || []}
-          columns={columns}
-          onEditRow={handleEdit}
-          onDeleteRow={handleDelete}
-          enableFiltering={true}
-          filterableColumns={['silos.name', 'operators.name']}
-        />
+      <Card className="p-4 flex-1 flex flex-col min-h-0">
+        <h2 className="text-lg font-semibold mb-4 flex-shrink-0">Prelievi Merce OUT</h2>
+        <div className="flex-1 min-h-0">
+          <DataTable
+            data={outboundData || []}
+            columns={columns}
+            onEditRow={handleEdit}
+            onDeleteRow={handleDelete}
+            enableFiltering={true}
+            filterableColumns={['silos.name', 'operator_name']}
+          />
+        </div>
       </Card>
     </div>
   );

@@ -66,7 +66,7 @@ function GenericForm({
     
     config.sections.forEach(section => {
       section.fields.forEach(field => {
-        if (field.name in initialData) {
+        if (initialData && field.name in initialData) {
           formData[field.name] = initialData[field.name];
         } else if (field.defaultValue !== undefined) {
           formData[field.name] = field.defaultValue;

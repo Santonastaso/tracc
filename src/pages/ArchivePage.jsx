@@ -352,8 +352,8 @@ function ArchivePage() {
   }
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="h-full flex flex-col p-4">
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Archivio Analisi</h1>
           <p className="text-gray-600 mt-1">
@@ -369,7 +369,7 @@ function ArchivePage() {
       </div>
 
       {showForm && (
-        <Card className="p-4">
+        <Card className="p-4 mb-4 flex-shrink-0">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">
               {editingItem ? 'Modifica Analisi' : 'Nuova Analisi'}
@@ -388,16 +388,18 @@ function ArchivePage() {
         </Card>
       )}
 
-      <Card className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Storico Analisi</h2>
-        <DataTable
-          data={archiveData || []}
-          columns={columns}
-          onEditRow={handleEdit}
-          onDeleteRow={handleDelete}
-          enableFiltering={true}
-          filterableColumns={['materials.name', 'silos.name', 'cleaning_status', 'operators.name']}
-        />
+      <Card className="p-4 flex-1 flex flex-col min-h-0">
+        <h2 className="text-lg font-semibold mb-4 flex-shrink-0">Storico Analisi</h2>
+        <div className="flex-1 min-h-0">
+          <DataTable
+            data={archiveData || []}
+            columns={columns}
+            onEditRow={handleEdit}
+            onDeleteRow={handleDelete}
+            enableFiltering={true}
+            filterableColumns={['materials.name', 'silos.name', 'cleaning_status', 'operators.name']}
+          />
+        </div>
       </Card>
     </div>
   );
