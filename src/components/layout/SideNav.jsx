@@ -22,11 +22,10 @@ function SideNav() {
   };
 
   const navLinks = [
-    { href: '/', label: 'Home', icon: '🏠' },
+    { href: '/', label: 'Home' },
     { 
       section: 'silos', 
-      label: 'Silos', 
-      icon: '🏭',
+      label: 'Silos',
       subLinks: [
         { href: '/silos/list', label: 'Lista Silos' },
         { href: '/silos/new', label: 'Nuovo Silos' }
@@ -34,8 +33,7 @@ function SideNav() {
     },
     { 
       section: 'operators', 
-      label: 'Operatori', 
-      icon: '👥',
+      label: 'Operatori',
       subLinks: [
         { href: '/operators/list', label: 'Lista Operatori' },
         { href: '/operators/new', label: 'Nuovo Operatore' }
@@ -43,8 +41,7 @@ function SideNav() {
     },
     { 
       section: 'materials', 
-      label: 'Materiali', 
-      icon: '📦',
+      label: 'Materiali',
       subLinks: [
         { href: '/materials/list', label: 'Lista Materiali' },
         { href: '/materials/new', label: 'Nuovo Materiale' }
@@ -52,8 +49,7 @@ function SideNav() {
     },
     { 
       section: 'suppliers', 
-      label: 'Fornitori', 
-      icon: '🚚',
+      label: 'Fornitori',
       subLinks: [
         { href: '/suppliers/list', label: 'Lista Fornitori' },
         { href: '/suppliers/new', label: 'Nuovo Fornitore' }
@@ -61,8 +57,7 @@ function SideNav() {
     },
     { 
       section: 'merceIn', 
-      label: 'Merce IN', 
-      icon: '📥',
+      label: 'Merce IN',
       subLinks: [
         { href: '/merce-in/list', label: 'Lista Movimenti' },
         { href: '/merce-in/new', label: 'Nuovo Movimento' }
@@ -70,15 +65,14 @@ function SideNav() {
     },
     { 
       section: 'merceOut', 
-      label: 'Merce OUT', 
-      icon: '📤',
+      label: 'Merce OUT',
       subLinks: [
         { href: '/merce-out/list', label: 'Lista Prelievi' },
         { href: '/merce-out/new', label: 'Nuovo Prelievo' }
       ]
     },
-    { href: '/reports', label: 'Report', icon: '📊' },
-    { href: '/archive', label: 'Archivio Analisi', icon: '📁' }
+    { href: '/reports', label: 'Report' },
+    { href: '/archive', label: 'Archivio Analisi' }
   ];
 
   if (!user) {
@@ -137,7 +131,6 @@ function SideNav() {
                     }`}
                   >
                     <span className="flex items-center">
-                      <span className="mr-1">{link.icon}</span>
                       {link.label}
                     </span>
                     <span className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
@@ -182,7 +175,6 @@ function SideNav() {
                   }`}
                 >
                   <span className="flex items-center">
-                    <span className="mr-1">{link.icon}</span>
                     {link.label}
                   </span>
                 </Link>

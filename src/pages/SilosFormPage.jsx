@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
+import { useMaterials } from '../hooks';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -10,6 +11,9 @@ function SilosFormPage() {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch materials data for the checkbox selection
+  const { data: materialsData, isLoading: materialsLoading } = useMaterials();
 
   // Fetch data for editing if ID is provided
   useEffect(() => {
@@ -34,9 +38,22 @@ function SilosFormPage() {
 
   // Handle form submission
   const handleSubmit = async (formData) => {
+    // Ensure allowed_material_ids is an array of integers
+    let allowedMaterialIds = [];
+    if (Array.isArray(formData.allowed_material_ids)) {
+      allowedMaterialIds = formData.allowed_material_ids.filter(id => !isNaN(id));
+    } else if (typeof formData.allowed_material_ids === 'string' && formData.allowed_material_ids.trim()) {
+      // Fallback for string format (comma-separated)
+      allowedMaterialIds = formData.allowed_material_ids
+        .split(',')
+        .map(id => parseInt(id.trim()))
+        .filter(id => !isNaN(id));
+    }
+
     const dataToSave = {
       ...formData,
       capacity_kg: parseInt(formData.capacity_kg),
+      allowed_material_ids: allowedMaterialIds,
       updated_at: new Date().toISOString()
     };
 
@@ -67,6 +84,46 @@ function SilosFormPage() {
     navigate('/silos/list');
   };
 
+  // Custom field renderer for material selection
+  const customFieldRenderers = {
+    'allowed_material_ids': (field, { setValue, getValues }) => {
+      const selectedIds = getValues(field.name) || [];
+      
+      return (
+        <div className="space-y-2">
+          <div className="text-[10px] text-gray-600 mb-2">
+            Seleziona i materiali che questo silos può accettare. Lascia vuoto per accettare tutti i materiali.
+          </div>
+          <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded-md p-2">
+            {materialsData?.map(material => (
+              <label key={material.id} className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(material.id)}
+                  onChange={(e) => {
+                    const currentIds = getValues(field.name) || [];
+                    if (e.target.checked) {
+                      setValue(field.name, [...currentIds, material.id]);
+                    } else {
+                      setValue(field.name, currentIds.filter(id => id !== material.id));
+                    }
+                  }}
+                  className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+                />
+                <span className="text-[10px] font-medium">{material.name}</span>
+              </label>
+            ))}
+          </div>
+          {selectedIds.length > 0 && (
+            <div className="text-[9px] text-gray-500">
+              {selectedIds.length} materiali selezionati
+            </div>
+          )}
+        </div>
+      );
+    }
+  };
+
   // Form configuration
   const formConfig = {
     sections: [
@@ -95,9 +152,8 @@ function SilosFormPage() {
           {
             name: 'allowed_material_ids',
             label: 'Materiali Consentiti',
-            type: 'text',
-            placeholder: 'Inserisci ID materiali separati da virgola (es: 1,2,3)',
-            helpText: 'Lascia vuoto per consentire tutti i materiali'
+            type: 'allowed_material_ids', // Custom type for checkbox selection
+            helpText: 'Seleziona i materiali che questo silos può accettare'
           }
         ]
       }
@@ -112,7 +168,7 @@ function SilosFormPage() {
     editErrorMessage: 'Errore durante l\'aggiornamento del silos'
   };
 
-  if (isLoading) {
+  if (isLoading || materialsLoading) {
     return (
       <div className="p-4">
         <div className="animate-pulse">
@@ -139,12 +195,13 @@ function SilosFormPage() {
           config={formConfig}
           initialData={editingItem ? {
             ...editingItem,
-            // Convert array to comma-separated string for display
-            allowed_material_ids: editingItem.allowed_material_ids ? editingItem.allowed_material_ids.join(', ') : ''
+            // Keep allowed_material_ids as array for checkbox selection
+            allowed_material_ids: editingItem.allowed_material_ids || []
           } : null}
           onSubmit={handleFormSubmit}
           isEditMode={!!editingItem}
           isLoading={isLoading}
+          customFieldRenderers={customFieldRenderers}
         />
       </Card>
     </div>

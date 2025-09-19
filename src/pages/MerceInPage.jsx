@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { 
@@ -18,6 +18,7 @@ function MerceInPage() {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
 
   // Fetch data for editing if ID is provided
   useEffect(() => {
@@ -34,6 +35,10 @@ function MerceInPage() {
             navigate('/merce-in/list');
           } else {
             setEditingItem(data);
+            // Set the selected material for filtering
+            if (data.product) {
+              setSelectedMaterial(data.product);
+            }
           }
           setIsLoading(false);
         });
@@ -43,6 +48,29 @@ function MerceInPage() {
   const { data: silosData } = useSilos();
   const { data: materialsData, isLoading: materialsLoading, error: materialsError } = useMaterials();
   const { data: operatorsData, isLoading: operatorsLoading, error: operatorsError } = useOperators();
+
+  // Filter silos based on selected material
+  const filteredSilos = useMemo(() => {
+    if (!silosData || !selectedMaterial) {
+      return silosData || [];
+    }
+
+    // Find the material ID from the selected material name
+    const material = materialsData?.find(m => m.name === selectedMaterial);
+    if (!material) {
+      return silosData;
+    }
+
+    // Filter silos that allow this material
+    return silosData.filter(silo => {
+      // If silo has no allowed_material_ids, it allows all materials
+      if (!silo.allowed_material_ids || silo.allowed_material_ids.length === 0) {
+        return true;
+      }
+      // Check if the material ID is in the allowed list
+      return silo.allowed_material_ids.includes(material.id);
+    });
+  }, [silosData, selectedMaterial, materialsData]);
 
   // Use centralized mutation hooks
   const createMutation = useCreateInbound();
@@ -76,6 +104,34 @@ function MerceInPage() {
     navigate('/merce-in/list');
   };
 
+  // Custom field renderers for dynamic behavior
+  const customFieldRenderers = {
+    'product': (field, { setValue, getValues }) => {
+      return (
+        <select
+          id={field.name}
+          className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy-800 focus:border-transparent text-[10px]"
+          value={getValues(field.name) || ''}
+          onChange={(e) => {
+            const value = e.target.value;
+            setValue(field.name, value);
+            setSelectedMaterial(value);
+            // Clear silo selection when material changes
+            setValue('silo_id', '');
+          }}
+          required={field.required}
+        >
+          <option value="">Seleziona prodotto</option>
+          {materialsData?.map(m => (
+            <option key={m.id} value={m.name}>
+              {m.name} ({m.unit || 'Kg'})
+            </option>
+          ))}
+        </select>
+      );
+    }
+  };
+
   // Form configuration
   const formConfig = {
     sections: [
@@ -92,14 +148,8 @@ function MerceInPage() {
           {
             name: 'product',
             label: 'Prodotto',
-            type: 'select',
-            required: true,
-            options: materialsData?.length > 0 
-              ? materialsData.map(m => ({ 
-                  value: m.name, 
-                  label: `${m.name} (${m.unit || 'Kg'})` 
-                }))
-              : [{ value: '', label: 'Caricamento materiali...' }]
+            type: 'product', // Custom type for dynamic behavior
+            required: true
           },
           {
             name: 'quantity_kg',
@@ -113,7 +163,20 @@ function MerceInPage() {
             label: 'Silos Destinazione',
             type: 'select',
             required: true,
-            options: silosData?.map(s => ({ value: String(s.id), label: s.name })) || []
+            options: filteredSilos?.length > 0 
+              ? filteredSilos.map(s => ({ value: String(s.id), label: s.name }))
+              : selectedMaterial 
+                ? [{ value: '', label: 'Nessun silos compatibile con questo materiale' }]
+                : [{ value: '', label: 'Seleziona prima un prodotto' }],
+            placeholder: selectedMaterial 
+              ? (filteredSilos?.length > 0 ? 'Seleziona silos compatibile' : 'Nessun silos disponibile')
+              : 'Seleziona prima un prodotto',
+            disabled: selectedMaterial && filteredSilos?.length === 0,
+            helpText: selectedMaterial 
+              ? (filteredSilos?.length > 0 
+                  ? `${filteredSilos.length} silos compatibili con "${selectedMaterial}"`
+                  : `Nessun silos configurato per accettare "${selectedMaterial}"`)
+              : 'Seleziona un prodotto per vedere i silos compatibili'
           }
         ]
       },
@@ -224,6 +287,7 @@ function MerceInPage() {
           onSubmit={handleFormSubmit}
           isEditMode={!!editingItem}
           isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
+          customFieldRenderers={customFieldRenderers}
         />
       </Card>
     </div>
