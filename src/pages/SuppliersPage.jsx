@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
+import { useCreateSupplier, useUpdateSupplier } from '../hooks';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -32,6 +33,10 @@ function SuppliersPage() {
     }
   }, [id, navigate]);
 
+  // Use centralized mutation hooks
+  const createMutation = useCreateSupplier();
+  const updateMutation = useUpdateSupplier();
+
   // Handle form submission
   const handleSubmit = async (formData) => {
     const dataToSave = {
@@ -40,18 +45,9 @@ function SuppliersPage() {
     };
 
     if (editingItem) {
-      const { error } = await supabase
-        .from('suppliers')
-        .update(dataToSave)
-        .eq('id', editingItem.id);
-      
-      if (error) throw error;
+      await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
     } else {
-      const { error } = await supabase
-        .from('suppliers')
-        .insert([dataToSave]);
-      
-      if (error) throw error;
+      await createMutation.mutateAsync(dataToSave);
     }
     
     // Navigate back to list after successful submission
@@ -193,7 +189,7 @@ function SuppliersPage() {
           } : null}
           onSubmit={handleFormSubmit}
           isEditMode={!!editingItem}
-          isLoading={isLoading}
+          isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
         />
       </Card>
     </div>

@@ -30,10 +30,21 @@ export {
   // Materials
   useMaterials,
   useMaterial,
+  useCreateMaterial,
+  useUpdateMaterial,
+  useDeleteMaterial,
   
   // Operators
   useOperators,
   useOperator,
+  useCreateOperator,
+  useUpdateOperator,
+  useDeleteOperator,
+  
+  // Suppliers
+  useCreateSupplier,
+  useUpdateSupplier,
+  useDeleteSupplier,
 } from './useQueries';
 
 // Export utility hooks

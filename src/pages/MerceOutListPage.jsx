@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { 
-  useDeleteOutbound
+  useDeleteOutbound,
+  queryKeys
 } from '../hooks';
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
@@ -14,7 +15,7 @@ function MerceOutListPage() {
 
   // Fetch data using centralized query hooks
   const { data: outboundData, isLoading } = useQuery({
-    queryKey: ['outbound-with-silos'],
+    queryKey: [...queryKeys.outbound, 'with-silos'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('outbound')
@@ -46,6 +47,11 @@ function MerceOutListPage() {
 
   // Table columns
   const columns = [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      cell: ({ getValue }) => `#${getValue()}`
+    },
     {
       accessorKey: 'created_at',
       header: 'Data/Ora',
@@ -82,15 +88,34 @@ function MerceOutListPage() {
         if (!items || items.length === 0) return 'N/A';
         
         return (
-          <div className="text-xs">
+          <div className="text-xs max-w-xs">
             {items.map((item, index) => (
-              <div key={index} className="mb-1">
-                <strong>{item.material_name}</strong>: {item.quantity_kg}kg
-                {item.supplier_lot && ` (Lotto: ${item.supplier_lot})`}
+              <div key={index} className="mb-1 p-1 bg-gray-50 rounded">
+                <div className="font-medium text-gray-900">{item.material_name}</div>
+                <div className="text-gray-600">
+                  {item.quantity_kg}kg
+                  {item.supplier_lot && ` • Lotto: ${item.supplier_lot}`}
+                  {item.tf_lot && ` • TF: ${item.tf_lot}`}
+                </div>
+                {(item.protein_content || item.moisture_content) && (
+                  <div className="text-gray-500 text-xs">
+                    {item.protein_content && `Proteine: ${item.protein_content}%`}
+                    {item.protein_content && item.moisture_content && ' • '}
+                    {item.moisture_content && `Umidità: ${item.moisture_content}%`}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         );
+      }
+    },
+    {
+      accessorKey: 'updated_at',
+      header: 'Ultima Modifica',
+      cell: ({ getValue }) => {
+        const date = new Date(getValue());
+        return date.toLocaleDateString('it-IT');
       }
     }
   ];

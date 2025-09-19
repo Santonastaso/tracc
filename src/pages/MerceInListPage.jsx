@@ -4,7 +4,8 @@ import { supabase } from '../services/supabase/client';
 import { 
   useMaterials, 
   useOperators,
-  useDeleteInbound
+  useDeleteInbound,
+  queryKeys
 } from '../hooks';
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
@@ -16,7 +17,7 @@ function MerceInListPage() {
 
   // Fetch data using centralized query hooks
   const { data: inboundData, isLoading } = useQuery({
-    queryKey: ['inbound-with-silos'],
+    queryKey: [...queryKeys.inbound, 'with-silos'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inbound')
@@ -48,6 +49,11 @@ function MerceInListPage() {
 
   // Table columns
   const columns = [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      cell: ({ getValue }) => `#${getValue()}`
+    },
     {
       accessorKey: 'created_at',
       header: 'Data/Ora',
@@ -98,19 +104,41 @@ function MerceInListPage() {
     {
       accessorKey: 'cleaned',
       header: 'Pulizia',
-      cell: ({ getValue }) => getValue() ? 'Accettata' : 'Non Accettata'
+      cell: ({ getValue }) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          getValue() ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
+        }`}>
+          {getValue() ? 'Accettata' : 'Non Accettata'}
+        </span>
+      )
     },
     {
       accessorKey: 'proteins',
-      header: 'Proteine (%)'
+      header: 'Proteine (%)',
+      cell: ({ getValue }) => {
+        const value = getValue();
+        return value ? `${value}%` : 'N/A';
+      }
     },
     {
       accessorKey: 'humidity',
-      header: 'Umidità (%)'
+      header: 'Umidità (%)',
+      cell: ({ getValue }) => {
+        const value = getValue();
+        return value ? `${value}%` : 'N/A';
+      }
     },
     {
       accessorKey: 'operator_name',
       header: 'Operatore'
+    },
+    {
+      accessorKey: 'updated_at',
+      header: 'Ultima Modifica',
+      cell: ({ getValue }) => {
+        const date = new Date(getValue());
+        return date.toLocaleDateString('it-IT');
+      }
     }
   ];
 

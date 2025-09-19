@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
+import { useMaterials, useDeleteSilo } from '../hooks';
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -23,6 +24,11 @@ function SilosListPage() {
     }
   });
 
+  const { data: materialsData, isLoading: materialsLoading } = useMaterials();
+
+  // Use centralized mutation hooks
+  const deleteMutation = useDeleteSilo();
+
   const handleEdit = (item) => {
     // Navigate to the edit page with the item data
     window.location.href = `/silos/edit/${item.id}`;
@@ -30,13 +36,17 @@ function SilosListPage() {
 
   const handleDelete = (item) => {
     if (window.confirm('Sei sicuro di voler eliminare questo silos?')) {
-      // TODO: Implement delete functionality
-      console.log('Delete silo:', item.id);
+      deleteMutation.mutate(item.id);
     }
   };
 
   // Table columns
   const columns = [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      cell: ({ getValue }) => `#${getValue()}`
+    },
     {
       accessorKey: 'name',
       header: 'Nome Silos'
@@ -52,9 +62,27 @@ function SilosListPage() {
       cell: ({ getValue }) => {
         const materialIds = getValue();
         if (!materialIds || materialIds.length === 0) {
-          return 'Tutti';
+          return <span className="text-gray-500">Tutti i materiali</span>;
         }
-        return `${materialIds.length} materiali specifici`;
+        
+        // Get material names from IDs
+        const materialNames = materialIds
+          .map(id => {
+            const material = materialsData?.find(m => m.id === id);
+            return material ? material.name : `ID: ${id}`;
+          })
+          .join(', ');
+        
+        return (
+          <div className="max-w-xs">
+            <div className="text-sm font-medium text-gray-900">
+              {materialIds.length} materiale{materialIds.length !== 1 ? 'i' : ''}
+            </div>
+            <div className="text-xs text-gray-600 truncate" title={materialNames}>
+              {materialNames}
+            </div>
+          </div>
+        );
       }
     },
     {
@@ -64,10 +92,18 @@ function SilosListPage() {
         const date = new Date(getValue());
         return date.toLocaleDateString('it-IT');
       }
+    },
+    {
+      accessorKey: 'updated_at',
+      header: 'Ultima Modifica',
+      cell: ({ getValue }) => {
+        const date = new Date(getValue());
+        return date.toLocaleDateString('it-IT');
+      }
     }
   ];
 
-  if (isLoading) {
+  if (isLoading || materialsLoading) {
     return (
       <div className="p-4">
         <div className="animate-pulse">

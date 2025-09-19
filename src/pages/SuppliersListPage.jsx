@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
+import { useDeleteSupplier } from '../hooks';
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -23,6 +24,9 @@ function SuppliersListPage() {
     }
   });
 
+  // Use centralized mutation hooks
+  const deleteMutation = useDeleteSupplier();
+
   const handleEdit = (item) => {
     // Navigate to the edit page with the item data
     window.location.href = `/suppliers/edit/${item.id}`;
@@ -30,13 +34,17 @@ function SuppliersListPage() {
 
   const handleDelete = (item) => {
     if (window.confirm('Sei sicuro di voler eliminare questo fornitore?')) {
-      // TODO: Implement delete functionality
-      console.log('Delete supplier:', item.id);
+      deleteMutation.mutate(item.id);
     }
   };
 
   // Table columns
   const columns = [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      cell: ({ getValue }) => `#${getValue()}`
+    },
     {
       accessorKey: 'name',
       header: 'Nome Fornitore'
@@ -67,6 +75,14 @@ function SuppliersListPage() {
       }
     },
     {
+      accessorKey: 'address',
+      header: 'Indirizzo',
+      cell: ({ getValue }) => {
+        const address = getValue();
+        return address ? (address.length > 30 ? `${address.substring(0, 30)}...` : address) : 'N/A';
+      }
+    },
+    {
       accessorKey: 'phone',
       header: 'Telefono'
     },
@@ -75,13 +91,35 @@ function SuppliersListPage() {
       header: 'Email'
     },
     {
+      accessorKey: 'notes',
+      header: 'Note',
+      cell: ({ getValue }) => {
+        const notes = getValue();
+        return notes ? (notes.length > 30 ? `${notes.substring(0, 30)}...` : notes) : 'N/A';
+      }
+    },
+    {
       accessorKey: 'active',
       header: 'Attivo',
-      cell: ({ getValue }) => getValue() ? 'Sì' : 'No'
+      cell: ({ getValue }) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          getValue() ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
+        }`}>
+          {getValue() ? 'Sì' : 'No'}
+        </span>
+      )
     },
     {
       accessorKey: 'created_at',
       header: 'Data Creazione',
+      cell: ({ getValue }) => {
+        const date = new Date(getValue());
+        return date.toLocaleDateString('it-IT');
+      }
+    },
+    {
+      accessorKey: 'updated_at',
+      header: 'Ultima Modifica',
       cell: ({ getValue }) => {
         const date = new Date(getValue());
         return date.toLocaleDateString('it-IT');

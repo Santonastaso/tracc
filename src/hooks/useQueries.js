@@ -207,6 +207,7 @@ export const useCreateInbound = () => {
     onSuccess: (newInbound) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: queryKeys.inbound });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.inbound, 'with-silos'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.inboundBySilo(newInbound.silo_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.silosWithLevels });
       
@@ -241,6 +242,7 @@ export const useUpdateInbound = () => {
     onSuccess: (updatedInbound, { id }) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: queryKeys.inbound });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.inbound, 'with-silos'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.inboundBySilo(updatedInbound.silo_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.silosWithLevels });
       
@@ -283,6 +285,7 @@ export const useDeleteInbound = () => {
     onSuccess: (deletedInbound) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: queryKeys.inbound });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.inbound, 'with-silos'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.inboundBySilo(deletedInbound.silo_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.silosWithLevels });
       
@@ -371,6 +374,7 @@ export const useCreateOutbound = () => {
     onSuccess: (newOutbound) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: queryKeys.outbound });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.outbound, 'with-silos'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.outboundBySilo(newOutbound.silo_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.silosWithLevels });
       
@@ -405,6 +409,7 @@ export const useUpdateOutbound = () => {
     onSuccess: (updatedOutbound, { id }) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: queryKeys.outbound });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.outbound, 'with-silos'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.outboundBySilo(updatedOutbound.silo_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.silosWithLevels });
       
@@ -447,6 +452,7 @@ export const useDeleteOutbound = () => {
     onSuccess: (deletedOutbound) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: queryKeys.outbound });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.outbound, 'with-silos'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.outboundBySilo(deletedOutbound.silo_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.silosWithLevels });
       
@@ -532,5 +538,328 @@ export const useOperator = (id) => {
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000,
+  });
+};
+
+// ===== MATERIALS MUTATIONS =====
+
+export const useCreateMaterial = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (materialData) => {
+      const { data, error } = await supabase
+        .from('materials')
+        .insert([materialData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (newMaterial) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.materials });
+      
+      // Add to cache optimistically
+      queryClient.setQueryData(queryKeys.materials, (oldData) => {
+        return oldData ? [newMaterial, ...oldData] : [newMaterial];
+      });
+      
+      showSuccess(`Materiale "${newMaterial?.name || 'Unknown'}" creato con successo`);
+    },
+    onError: (error) => {
+      showError(`Errore nella creazione del materiale: ${error.message}`);
+    },
+  });
+};
+
+export const useUpdateMaterial = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }) => {
+      const { data, error } = await supabase
+        .from('materials')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (updatedMaterial, { id }) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.materials });
+      
+      // Update cache optimistically
+      queryClient.setQueryData(queryKeys.materials, (oldData) => {
+        return oldData?.map(material => 
+          material.id === id ? { ...material, ...updatedMaterial } : material
+        );
+      });
+      
+      queryClient.setQueryData(queryKeys.material(id), updatedMaterial);
+      
+      showSuccess(`Materiale "${updatedMaterial?.name || 'Unknown'}" aggiornato con successo`);
+    },
+    onError: (error) => {
+      showError(`Errore nell'aggiornamento del materiale: ${error.message}`);
+    },
+  });
+};
+
+export const useDeleteMaterial = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id) => {
+      const { data: material, error: fetchError } = await supabase
+        .from('materials')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const { error } = await supabase
+        .from('materials')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return material;
+    },
+    onSuccess: (deletedMaterial) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.materials });
+      
+      // Remove from cache optimistically
+      queryClient.setQueryData(queryKeys.materials, (oldData) => {
+        return oldData?.filter(material => material.id !== deletedMaterial.id);
+      });
+      
+      queryClient.removeQueries({ queryKey: queryKeys.material(deletedMaterial.id) });
+      
+      showSuccess(`Materiale "${deletedMaterial?.name || 'Unknown'}" eliminato con successo`);
+    },
+    onError: (error) => {
+      showError(`Errore nell'eliminazione del materiale: ${error.message}`);
+    },
+  });
+};
+
+// ===== OPERATORS MUTATIONS =====
+
+export const useCreateOperator = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (operatorData) => {
+      const { data, error } = await supabase
+        .from('operators')
+        .insert([operatorData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (newOperator) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.operators });
+      
+      // Add to cache optimistically
+      queryClient.setQueryData(queryKeys.operators, (oldData) => {
+        return oldData ? [newOperator, ...oldData] : [newOperator];
+      });
+      
+      showSuccess(`Operatore "${newOperator?.name || 'Unknown'}" creato con successo`);
+    },
+    onError: (error) => {
+      showError(`Errore nella creazione dell'operatore: ${error.message}`);
+    },
+  });
+};
+
+export const useUpdateOperator = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }) => {
+      const { data, error } = await supabase
+        .from('operators')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (updatedOperator, { id }) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.operators });
+      
+      // Update cache optimistically
+      queryClient.setQueryData(queryKeys.operators, (oldData) => {
+        return oldData?.map(operator => 
+          operator.id === id ? { ...operator, ...updatedOperator } : operator
+        );
+      });
+      
+      queryClient.setQueryData(queryKeys.operator(id), updatedOperator);
+      
+      showSuccess(`Operatore "${updatedOperator?.name || 'Unknown'}" aggiornato con successo`);
+    },
+    onError: (error) => {
+      showError(`Errore nell'aggiornamento dell'operatore: ${error.message}`);
+    },
+  });
+};
+
+export const useDeleteOperator = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id) => {
+      const { data: operator, error: fetchError } = await supabase
+        .from('operators')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const { error } = await supabase
+        .from('operators')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return operator;
+    },
+    onSuccess: (deletedOperator) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.operators });
+      
+      // Remove from cache optimistically
+      queryClient.setQueryData(queryKeys.operators, (oldData) => {
+        return oldData?.filter(operator => operator.id !== deletedOperator.id);
+      });
+      
+      queryClient.removeQueries({ queryKey: queryKeys.operator(deletedOperator.id) });
+      
+      showSuccess(`Operatore "${deletedOperator?.name || 'Unknown'}" eliminato con successo`);
+    },
+    onError: (error) => {
+      showError(`Errore nell'eliminazione dell'operatore: ${error.message}`);
+    },
+  });
+};
+
+// ===== SUPPLIERS MUTATIONS =====
+
+export const useCreateSupplier = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (supplierData) => {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .insert([supplierData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (newSupplier) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      
+      // Add to cache optimistically
+      queryClient.setQueryData(['suppliers'], (oldData) => {
+        return oldData ? [newSupplier, ...oldData] : [newSupplier];
+      });
+      
+      showSuccess(`Fornitore "${newSupplier?.name || 'Unknown'}" creato con successo`);
+    },
+    onError: (error) => {
+      showError(`Errore nella creazione del fornitore: ${error.message}`);
+    },
+  });
+};
+
+export const useUpdateSupplier = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }) => {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (updatedSupplier, { id }) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      
+      // Update cache optimistically
+      queryClient.setQueryData(['suppliers'], (oldData) => {
+        return oldData?.map(supplier => 
+          supplier.id === id ? { ...supplier, ...updatedSupplier } : supplier
+        );
+      });
+      
+      showSuccess(`Fornitore "${updatedSupplier?.name || 'Unknown'}" aggiornato con successo`);
+    },
+    onError: (error) => {
+      showError(`Errore nell'aggiornamento del fornitore: ${error.message}`);
+    },
+  });
+};
+
+export const useDeleteSupplier = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id) => {
+      const { data: supplier, error: fetchError } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const { error } = await supabase
+        .from('suppliers')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return supplier;
+    },
+    onSuccess: (deletedSupplier) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      
+      // Remove from cache optimistically
+      queryClient.setQueryData(['suppliers'], (oldData) => {
+        return oldData?.filter(supplier => supplier.id !== deletedSupplier.id);
+      });
+      
+      showSuccess(`Fornitore "${deletedSupplier?.name || 'Unknown'}" eliminato con successo`);
+    },
+    onError: (error) => {
+      showError(`Errore nell'eliminazione del fornitore: ${error.message}`);
+    },
   });
 };

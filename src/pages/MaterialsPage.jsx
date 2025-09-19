@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
+import { useCreateMaterial, useUpdateMaterial } from '../hooks';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -32,6 +33,10 @@ function MaterialsPage() {
     }
   }, [id, navigate]);
 
+  // Use centralized mutation hooks
+  const createMutation = useCreateMaterial();
+  const updateMutation = useUpdateMaterial();
+
   // Handle form submission
   const handleSubmit = async (formData) => {
     const dataToSave = {
@@ -42,18 +47,9 @@ function MaterialsPage() {
     };
 
     if (editingItem) {
-      const { error } = await supabase
-        .from('materials')
-        .update(dataToSave)
-        .eq('id', editingItem.id);
-      
-      if (error) throw error;
+      await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
     } else {
-      const { error } = await supabase
-        .from('materials')
-        .insert([dataToSave]);
-      
-      if (error) throw error;
+      await createMutation.mutateAsync(dataToSave);
     }
     
     // Navigate back to list after successful submission
@@ -188,7 +184,7 @@ function MaterialsPage() {
           } : null}
           onSubmit={handleFormSubmit}
           isEditMode={!!editingItem}
-          isLoading={isLoading}
+          isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
         />
       </Card>
     </div>

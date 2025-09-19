@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
+import { useCreateOperator, useUpdateOperator } from '../hooks';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -32,6 +33,10 @@ function OperatorsPage() {
     }
   }, [id, navigate]);
 
+  // Use centralized mutation hooks
+  const createMutation = useCreateOperator();
+  const updateMutation = useUpdateOperator();
+
   // Handle form submission
   const handleSubmit = async (formData) => {
     const dataToSave = {
@@ -40,18 +45,9 @@ function OperatorsPage() {
     };
 
     if (editingItem) {
-      const { error } = await supabase
-        .from('operators')
-        .update(dataToSave)
-        .eq('id', editingItem.id);
-      
-      if (error) throw error;
+      await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
     } else {
-      const { error } = await supabase
-        .from('operators')
-        .insert([dataToSave]);
-      
-      if (error) throw error;
+      await createMutation.mutateAsync(dataToSave);
     }
     
     // Navigate back to list after successful submission
@@ -192,7 +188,7 @@ function OperatorsPage() {
           } : null}
           onSubmit={handleFormSubmit}
           isEditMode={!!editingItem}
-          isLoading={isLoading}
+          isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
         />
       </Card>
     </div>
