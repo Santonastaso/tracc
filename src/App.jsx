@@ -26,7 +26,7 @@ const AppLayout = () => {
         <header className="sticky top-0 z-20 bg-navy-800 border-b border-navy-700 px-2 py-3 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-white text-lg font-semibold">Tracc - Sistema Tracciabilità Molino</h1>
+              <h1 className="text-white text-lg font-semibold">Molino Rossetto - Sistema Tracciabilità Molino</h1>
             </div>
             <div className="flex items-center space-x-4">
               {user && (

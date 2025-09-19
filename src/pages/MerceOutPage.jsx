@@ -59,15 +59,16 @@ function MerceOutPage() {
       const { data: inboundData, error: inboundError } = await supabase
         .from('inbound')
         .select(`
+          id,
           silo_id,
           quantity_kg,
           created_at,
-          materials!inner(name),
-          supplier_lot,
-          tf_lot,
-          protein_content,
-          moisture_content,
-          cleaning_status
+          product,
+          lot_supplier,
+          lot_tf,
+          proteins,
+          humidity,
+          cleaned
         `)
         .order('created_at', { ascending: true }); // FIFO order
       
@@ -173,12 +174,12 @@ function MerceOutPage() {
         itemsToWithdraw.push({
           inbound_id: item.id,
           quantity_kg: withdrawFromThisItem,
-          material_name: item.materials.name,
-          supplier_lot: item.supplier_lot,
-          tf_lot: item.tf_lot,
-          protein_content: item.protein_content,
-          moisture_content: item.moisture_content,
-          cleaning_status: item.cleaning_status,
+          material_name: item.product,
+          supplier_lot: item.lot_supplier,
+          tf_lot: item.lot_tf,
+          protein_content: item.proteins,
+          moisture_content: item.humidity,
+          cleaning_status: item.cleaned,
           entry_date: item.created_at.split('T')[0]
         });
         

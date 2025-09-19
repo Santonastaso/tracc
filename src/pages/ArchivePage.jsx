@@ -22,10 +22,7 @@ function ArchivePage() {
         .from('inbound')
         .select(`
           *,
-          silos!inner(name),
-          materials!inner(name),
-          suppliers!inner(name),
-          operators!inner(name)
+          silos!inner(name)
         `)
         .order('created_at', { ascending: false });
       

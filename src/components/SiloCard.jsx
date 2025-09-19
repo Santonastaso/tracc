@@ -125,3 +125,4 @@ const SiloCard = ({ silo }) => {
 };
 
 export default SiloCard;
+
