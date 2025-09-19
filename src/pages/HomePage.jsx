@@ -8,8 +8,9 @@ import { Button } from '../components/ui/button';
 function HomePage() {
   const { user } = useAuth();
 
+
   // Fetch silos data
-  const { data: silosData, isLoading: silosLoading } = useQuery({
+  const { data: silosData, isLoading: silosLoading, error: silosError } = useQuery({
     queryKey: ['silos'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -23,7 +24,7 @@ function HomePage() {
   });
 
   // Fetch inbound data
-  const { data: inboundData, isLoading: inboundLoading } = useQuery({
+  const { data: inboundData, isLoading: inboundLoading, error: inboundError } = useQuery({
     queryKey: ['inbound'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -37,7 +38,7 @@ function HomePage() {
   });
 
   // Fetch outbound data
-  const { data: outboundData, isLoading: outboundLoading } = useQuery({
+  const { data: outboundData, isLoading: outboundLoading, error: outboundError } = useQuery({
     queryKey: ['outbound'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -119,6 +120,32 @@ function HomePage() {
   }, [silosData, inboundData, outboundData, silosLoading, inboundLoading, outboundLoading]);
 
   const isLoading = silosLoading || inboundLoading || outboundLoading;
+  const hasError = silosError || inboundError || outboundError;
+
+  // Show error state
+  if (hasError) {
+    return (
+      <div className="p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">Errore di Connessione</h2>
+          <p className="text-red-700 mb-4">
+            Impossibile connettersi al database. Controlla la console per maggiori dettagli.
+          </p>
+          <div className="space-y-2 text-sm text-red-600">
+            {silosError && <div>Errore Silos: {silosError.message}</div>}
+            {inboundError && <div>Errore Inbound: {inboundError.message}</div>}
+            {outboundError && <div>Errore Outbound: {outboundError.message}</div>}
+          </div>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-red-600 hover:bg-red-700"
+          >
+            Riprova
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

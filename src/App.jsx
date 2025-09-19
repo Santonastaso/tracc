@@ -58,6 +58,19 @@ const AppLayout = () => {
 };
 
 function App() {
+  // Handle GitHub Pages SPA redirect
+  useEffect(() => {
+    // Check if we're on GitHub Pages and have a redirect parameter
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectPath = searchParams.get('/');
+    
+    if (redirectPath) {
+      // Clean up the URL and navigate to the correct path
+      const cleanPath = redirectPath.replace(/~and~/g, '&');
+      window.history.replaceState({}, '', cleanPath);
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <Routes>
