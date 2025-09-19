@@ -10,7 +10,7 @@ function ReportsPage() {
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
-    siloId: '',
+    siloId: 'all',
     reportType: 'movements'
   });
 
@@ -49,7 +49,7 @@ function ReportsPage() {
       if (filters.endDate) {
         query = query.lte('created_at', filters.endDate + 'T23:59:59.999Z');
       }
-      if (filters.siloId) {
+      if (filters.siloId && filters.siloId !== 'all') {
         query = query.eq('silo_id', filters.siloId);
       }
 
@@ -79,7 +79,7 @@ function ReportsPage() {
       if (filters.endDate) {
         query = query.lte('created_at', filters.endDate + 'T23:59:59.999Z');
       }
-      if (filters.siloId) {
+      if (filters.siloId && filters.siloId !== 'all') {
         query = query.eq('silo_id', filters.siloId);
       }
 
@@ -416,7 +416,7 @@ function ReportsPage() {
                 <SelectValue placeholder="Tutti i silos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutti i silos</SelectItem>
+                <SelectItem value="all">Tutti i silos</SelectItem>
                 {silosData?.map(silo => (
                   <SelectItem key={silo.id} value={silo.id.toString()}>
                     {silo.name}
@@ -428,7 +428,7 @@ function ReportsPage() {
           
           <div className="flex items-end">
             <Button 
-              onClick={() => setFilters({ startDate: '', endDate: '', siloId: '', reportType: 'movements' })}
+              onClick={() => setFilters({ startDate: '', endDate: '', siloId: 'all', reportType: 'movements' })}
               variant="outline"
               className="w-full"
             >

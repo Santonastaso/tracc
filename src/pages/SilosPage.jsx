@@ -294,8 +294,6 @@ function SilosPage() {
             <SiloCard
               key={silo.id}
               silo={silo}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
             />
           ))}
         </div>

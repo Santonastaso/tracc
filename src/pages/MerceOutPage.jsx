@@ -29,7 +29,21 @@ function MerceOutPage() {
     }
   });
 
-  // Fetch silos with current levels
+  // Fetch silos for form dropdown
+  const { data: silosData } = useQuery({
+    queryKey: ['silos'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('silos')
+        .select('*')
+        .order('id');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch silos with current levels for form validation
   const { data: silosWithLevels } = useQuery({
     queryKey: ['silos-with-levels'],
     queryFn: async () => {
@@ -258,9 +272,9 @@ function MerceOutPage() {
             label: 'Silos di Prelievo',
             type: 'select',
             required: true,
-            options: silosWithLevels?.map(s => ({ 
+            options: silosData?.map(s => ({ 
               value: s.id, 
-              label: `${s.name} (${s.currentLevel} kg disponibili)` 
+              label: s.name
             })) || []
           },
           {
@@ -364,41 +378,6 @@ function MerceOutPage() {
         </Button>
       </div>
 
-      {/* Silos Status */}
-      <Card className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Stato Silos</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {silosWithLevels?.map((silo) => (
-            <div key={silo.id} className="border rounded-lg p-3">
-              <h3 className="font-semibold">{silo.name}</h3>
-              <p className="text-sm text-gray-600">
-                Capacità: {silo.capacity_kg.toLocaleString()} kg
-              </p>
-              <p className="text-sm text-gray-600">
-                Livello attuale: {silo.currentLevel.toLocaleString()} kg
-              </p>
-              <p className="text-sm text-gray-600">
-                Utilizzo: {((silo.currentLevel / silo.capacity_kg) * 100).toFixed(1)}%
-              </p>
-              {silo.availableItems.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-xs font-medium text-gray-700">Lotti disponibili:</p>
-                  {silo.availableItems.slice(0, 3).map((item, index) => (
-                    <p key={index} className="text-xs text-gray-600">
-                      {item.materials.name}: {item.available_quantity}kg
-                    </p>
-                  ))}
-                  {silo.availableItems.length > 3 && (
-                    <p className="text-xs text-gray-500">
-                      +{silo.availableItems.length - 3} altri lotti
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
 
       {showForm && (
         <Card className="p-4">

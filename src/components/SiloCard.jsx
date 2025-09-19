@@ -1,8 +1,7 @@
 import React from 'react';
 import { Card } from './ui/card';
-import { Button } from './ui/button';
 
-const SiloCard = ({ silo, onEdit, onDelete }) => {
+const SiloCard = ({ silo }) => {
   const { id, name, capacity_kg, currentLevel, availableItems = [] } = silo;
   
   // Calculate usage percentage
@@ -71,7 +70,6 @@ const SiloCard = ({ silo, onEdit, onDelete }) => {
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
-            <p className="text-sm text-gray-600">ID: {id}</p>
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-600">
@@ -88,14 +86,6 @@ const SiloCard = ({ silo, onEdit, onDelete }) => {
           <h4 className="text-sm font-medium text-gray-700">Contenuto Attuale</h4>
           <div className="flex items-end space-x-2">
             {createVerticalStackedBar()}
-            <div className="flex-1 space-y-1">
-              <div className="text-xs text-gray-500">
-                Capacità: {capacity_kg.toLocaleString()} kg
-              </div>
-              <div className="text-xs text-gray-500">
-                Utilizzato: {currentLevel.toLocaleString()} kg
-              </div>
-            </div>
           </div>
         </div>
 
@@ -129,25 +119,6 @@ const SiloCard = ({ silo, onEdit, onDelete }) => {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex space-x-2 pt-2 border-t">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(silo)}
-            className="flex-1"
-          >
-            Modifica
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => onDelete(silo)}
-            className="flex-1"
-          >
-            Elimina
-          </Button>
-        </div>
       </div>
     </Card>
   );
