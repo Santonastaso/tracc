@@ -33,6 +33,17 @@ if [ "$current_branch" != "master" ]; then
     fi
 fi
 
+# Create a temporary directory for the deployment
+temp_dir=$(mktemp -d)
+echo "📁 Using temporary directory: $temp_dir"
+
+# Copy dist contents to temp directory
+echo "📁 Copying dist contents..."
+cp -r dist/* "$temp_dir/"
+
+# Add .nojekyll file to prevent Jekyll processing
+echo "" > "$temp_dir/.nojekyll"
+
 # Check if gh-pages branch exists
 if git show-ref --verify --quiet refs/heads/gh-pages; then
     echo "📋 gh-pages branch exists, switching to it..."
@@ -44,16 +55,12 @@ else
     git rm -rf . 2>/dev/null || true
 fi
 
-# Copy dist contents to root
-echo "📁 Copying dist contents..."
-# Go back to master to get the dist folder
-git checkout master
-cp -r dist/* .
-# Switch back to gh-pages
-git checkout gh-pages
+# Copy from temp directory to current directory
+echo "📁 Copying files to gh-pages branch..."
+cp -r "$temp_dir"/* .
 
-# Add .nojekyll file to prevent Jekyll processing
-echo "" > .nojekyll
+# Clean up temp directory
+rm -rf "$temp_dir"
 
 # Add and commit
 echo "💾 Committing changes..."
