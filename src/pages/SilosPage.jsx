@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
+import { fetchSilos, fetchSilosWithLevels, createSilo, updateSilo, deleteSilo } from '../services/silos';
 import GenericForm from '../components/GenericForm';
 import SiloCard from '../components/SiloCard';
 import { Button } from '../components/ui/button';
@@ -15,87 +16,7 @@ function SilosPage() {
   // Fetch silos data with current levels and available lots
   const { data: silosData, isLoading } = useQuery({
     queryKey: ['silos-with-levels'],
-    queryFn: async () => {
-      // Get silos
-      const { data: silos, error: silosError } = await supabase
-        .from('silos')
-        .select('*')
-        .order('id');
-      
-      if (silosError) throw silosError;
-
-      // Get inbound data for each silo
-      const { data: inboundData, error: inboundError } = await supabase
-        .from('inbound')
-        .select(`
-          id,
-          silo_id,
-          quantity_kg,
-          created_at,
-          product,
-          lot_supplier,
-          lot_tf
-        `)
-        .order('created_at', { ascending: true }); // FIFO order
-      
-      if (inboundError) throw inboundError;
-
-      // Get outbound data for each silo
-      const { data: outboundData, error: outboundError } = await supabase
-        .from('outbound')
-        .select('silo_id, quantity_kg, items');
-      
-      if (outboundError) throw outboundError;
-
-      // Calculate current levels and available items for each silo
-      const silosWithData = silos.map(silo => {
-        const siloInbound = inboundData.filter(item => item.silo_id === silo.id);
-        const siloOutbound = outboundData.filter(item => item.silo_id === silo.id);
-        
-        // Calculate total outbound quantity
-        const totalOutbound = siloOutbound.reduce((sum, out) => sum + out.quantity_kg, 0);
-        
-        // Calculate available items using FIFO logic
-        let remainingOutbound = totalOutbound;
-        const availableItems = [];
-        
-        for (const inbound of siloInbound) {
-          if (remainingOutbound <= 0) {
-            // All outbound has been accounted for, this item is available
-            availableItems.push({
-              ...inbound,
-              available_quantity: inbound.quantity_kg,
-              materials: { name: inbound.product }
-            });
-          } else if (remainingOutbound < inbound.quantity_kg) {
-            // Partial outbound, some of this item is available
-            const available = inbound.quantity_kg - remainingOutbound;
-            availableItems.push({
-              ...inbound,
-              available_quantity: available,
-              materials: { name: inbound.product }
-            });
-            remainingOutbound = 0;
-          } else {
-            // This item is completely outbound
-            remainingOutbound -= inbound.quantity_kg;
-          }
-        }
-        
-        const totalInbound = siloInbound.reduce((sum, inb) => sum + inb.quantity_kg, 0);
-        const currentLevel = totalInbound - totalOutbound;
-        
-        return {
-          ...silo,
-          currentLevel,
-          availableItems,
-          totalInbound,
-          totalOutbound
-        };
-      });
-
-      return silosWithData;
-    }
+    queryFn: () => fetchSilosWithLevels(true) // Include materials object for SilosPage
   });
 
   // Fetch materials for allowed_material_ids
@@ -124,18 +45,9 @@ function SilosPage() {
       };
 
       if (editingItem) {
-        const { error } = await supabase
-          .from('silos')
-          .update(dataToSave)
-          .eq('id', editingItem.id);
-        
-        if (error) throw error;
+        return await updateSilo(editingItem.id, dataToSave);
       } else {
-        const { error } = await supabase
-          .from('silos')
-          .insert([dataToSave]);
-        
-        if (error) throw error;
+        return await createSilo(dataToSave);
       }
     },
     onSuccess: () => {
@@ -152,12 +64,7 @@ function SilosPage() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase
-        .from('silos')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      return await deleteSilo(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['silos-with-levels']);

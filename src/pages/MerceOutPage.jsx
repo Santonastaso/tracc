@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
+import { fetchOperators } from '../services/operators';
+import { fetchSilos, fetchSilosWithLevels } from '../services/silos';
 import DataTable from '../components/DataTable';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
@@ -32,117 +34,19 @@ function MerceOutPage() {
   // Fetch silos for form dropdown
   const { data: silosData } = useQuery({
     queryKey: ['silos'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('silos')
-        .select('*')
-        .order('id');
-      
-      if (error) throw error;
-      return data;
-    }
+    queryFn: fetchSilos
   });
 
   // Fetch silos with current levels for form validation
   const { data: silosWithLevels } = useQuery({
     queryKey: ['silos-with-levels'],
-    queryFn: async () => {
-      // Get silos
-      const { data: silos, error: silosError } = await supabase
-        .from('silos')
-        .select('*')
-        .order('id');
-      
-      if (silosError) throw silosError;
-
-      // Get inbound data for each silo
-      const { data: inboundData, error: inboundError } = await supabase
-        .from('inbound')
-        .select(`
-          id,
-          silo_id,
-          quantity_kg,
-          created_at,
-          product,
-          lot_supplier,
-          lot_tf,
-          proteins,
-          humidity,
-          cleaned
-        `)
-        .order('created_at', { ascending: true }); // FIFO order
-      
-      if (inboundError) throw inboundError;
-
-      // Get outbound data for each silo
-      const { data: outboundData, error: outboundError } = await supabase
-        .from('outbound')
-        .select('silo_id, quantity_kg, items');
-      
-      if (outboundError) throw outboundError;
-
-      // Calculate current levels and available items for each silo
-      const silosWithData = silos.map(silo => {
-        const siloInbound = inboundData.filter(item => item.silo_id === silo.id);
-        const siloOutbound = outboundData.filter(item => item.silo_id === silo.id);
-        
-        // Calculate total outbound quantity
-        const totalOutbound = siloOutbound.reduce((sum, out) => sum + out.quantity_kg, 0);
-        
-        // Calculate available items using FIFO logic
-        let remainingOutbound = totalOutbound;
-        const availableItems = [];
-        
-        for (const inbound of siloInbound) {
-          if (remainingOutbound <= 0) {
-            // All outbound has been accounted for, this item is available
-            availableItems.push({
-              ...inbound,
-              available_quantity: inbound.quantity_kg
-            });
-          } else if (remainingOutbound < inbound.quantity_kg) {
-            // Partial outbound, some of this item is available
-            const available = inbound.quantity_kg - remainingOutbound;
-            availableItems.push({
-              ...inbound,
-              available_quantity: available
-            });
-            remainingOutbound = 0;
-          } else {
-            // This item is completely outbound
-            remainingOutbound -= inbound.quantity_kg;
-          }
-        }
-        
-        const totalInbound = siloInbound.reduce((sum, inb) => sum + inb.quantity_kg, 0);
-        const currentLevel = totalInbound - totalOutbound;
-        
-        return {
-          ...silo,
-          currentLevel,
-          availableItems,
-          totalInbound,
-          totalOutbound
-        };
-      });
-
-      return silosWithData;
-    }
+    queryFn: fetchSilosWithLevels
   });
 
   // Fetch operators for dropdown
   const { data: operatorsData } = useQuery({
     queryKey: ['operators'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('operators')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    }
+    queryFn: fetchOperators
   });
 
   // Create/Update mutation
@@ -295,7 +199,10 @@ function MerceOutPage() {
             label: 'Operatore',
             type: 'select',
             required: true,
-            options: operatorsData?.map(o => ({ value: o.name, label: o.name })) || []
+            options: operatorsData?.map(o => ({ 
+              value: o.name, 
+              label: `${o.name}${o.code ? ` (${o.code})` : ''}` 
+            })) || []
           }
         ]
       }

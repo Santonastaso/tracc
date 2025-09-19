@@ -41,18 +41,18 @@ export const handleSupabaseError = (error, _context = '') => {
  */
 export const checkSupabaseConnection = async () => {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('silos')
       .select('count')
       .limit(1);
       
     if (error) {
-      return { success: false, error };
+      return false;
     }
     
-    return { success: true, data };
-  } catch (error) {
-    return { success: false, error };
+    return true;
+  } catch (_error) {
+    return false;
   }
 };
 

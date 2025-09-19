@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
+import { fetchSilos } from '../services/silos';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -19,15 +20,7 @@ function ReportsPage() {
   // Fetch silos for filter
   const { data: silosData } = useQuery({
     queryKey: ['silos'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('silos')
-        .select('*')
-        .order('id');
-      
-      if (error) throw error;
-      return data;
-    }
+    queryFn: fetchSilos
   });
 
   // Fetch movements report
@@ -86,13 +79,17 @@ function ReportsPage() {
   const { data: stockData, isLoading: stockLoading } = useQuery({
     queryKey: ['stock-report', filters],
     queryFn: async () => {
-      // Get all silos first
-      const { data: silos, error: silosError } = await supabase
-        .from('silos')
-        .select('*')
-        .order('id');
-      
-      if (silosError) throw silosError;
+      // Use cached silos data if available, otherwise fetch
+      let silos = silosData;
+      if (!silos) {
+        const { data, error: silosError } = await supabase
+          .from('silos')
+          .select('*')
+          .order('id');
+        
+        if (silosError) throw silosError;
+        silos = data;
+      }
 
       // Build date filter conditions
       let inboundQuery = supabase
@@ -168,13 +165,17 @@ function ReportsPage() {
 
       const snapshotDateTime = `${filters.snapshotDate}T${filters.snapshotTime}:00.000Z`;
       
-      // Get silos
-      const { data: silos, error: silosError } = await supabase
-        .from('silos')
-        .select('*')
-        .order('id');
-      
-      if (silosError) throw silosError;
+      // Use cached silos data if available, otherwise fetch
+      let silos = silosData;
+      if (!silos) {
+        const { data, error: silosError } = await supabase
+          .from('silos')
+          .select('*')
+          .order('id');
+        
+        if (silosError) throw silosError;
+        silos = data;
+      }
 
       // Get inbound data up to snapshot time
       const { data: inboundData, error: inboundError } = await supabase

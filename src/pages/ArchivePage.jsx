@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
+import { fetchSilos } from '../services/silos';
 import DataTable from '../components/DataTable';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
@@ -49,15 +50,7 @@ function ArchivePage() {
   // Fetch silos for dropdown
   const { data: silosData } = useQuery({
     queryKey: ['silos'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('silos')
-        .select('*')
-        .order('id');
-      
-      if (error) throw error;
-      return data;
-    }
+    queryFn: fetchSilos
   });
 
   // Fetch suppliers for dropdown

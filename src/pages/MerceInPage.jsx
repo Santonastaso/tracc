@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
+import { fetchMaterials } from '../services/materials';
+import { fetchOperators } from '../services/operators';
+import { fetchSilos } from '../services/silos';
 import DataTable from '../components/DataTable';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
@@ -29,14 +32,24 @@ function MerceInPage() {
   // Fetch silos for dropdown
   const { data: silosData } = useQuery({
     queryKey: ['silos'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('silos')
-        .select('*')
-        .order('id');
-      
-      if (error) throw error;
-      return data;
+    queryFn: fetchSilos
+  });
+
+  // Fetch materials for dropdown
+  const { data: materialsData, isLoading: materialsLoading, error: materialsError } = useQuery({
+    queryKey: ['materials'],
+    queryFn: fetchMaterials,
+    onError: (error) => {
+      showError('Errore nel caricamento dei materiali: ' + error.message);
+    }
+  });
+
+  // Fetch operators for dropdown
+  const { data: operatorsData, isLoading: operatorsLoading, error: operatorsError } = useQuery({
+    queryKey: ['operators'],
+    queryFn: fetchOperators,
+    onError: (error) => {
+      showError('Errore nel caricamento degli operatori: ' + error.message);
     }
   });
 
@@ -131,9 +144,14 @@ function MerceInPage() {
           {
             name: 'product',
             label: 'Prodotto',
-            type: 'text',
+            type: 'select',
             required: true,
-            placeholder: 'Inserisci nome prodotto'
+            options: materialsData?.length > 0 
+              ? materialsData.map(m => ({ 
+                  value: m.name, 
+                  label: `${m.name} (${m.unit || 'Kg'})` 
+                }))
+              : [{ value: '', label: 'Caricamento materiali...' }]
           },
           {
             name: 'quantity_kg',
@@ -201,9 +219,14 @@ function MerceInPage() {
           {
             name: 'operator_name',
             label: 'Nome Operatore',
-            type: 'text',
+            type: 'select',
             required: true,
-            placeholder: 'Inserisci nome operatore'
+            options: operatorsData?.length > 0 
+              ? operatorsData.map(o => ({ 
+                  value: o.name, 
+                  label: `${o.name}${o.code ? ` (${o.code})` : ''}` 
+                }))
+              : [{ value: '', label: 'Caricamento operatori...' }]
           }
         ]
       }
@@ -241,7 +264,13 @@ function MerceInPage() {
     },
     {
       accessorKey: 'product',
-      header: 'Prodotto'
+      header: 'Prodotto',
+      cell: ({ getValue, row }) => {
+        const product = getValue();
+        // Try to find the material to show unit
+        const material = materialsData?.find(m => m.name === product);
+        return material ? `${product} (${material.unit || 'Kg'})` : product;
+      }
     },
     {
       accessorKey: 'quantity_kg',
@@ -280,7 +309,7 @@ function MerceInPage() {
     }
   ];
 
-  if (isLoading) {
+  if (isLoading || materialsLoading || operatorsLoading) {
     return (
       <div className="p-4">
         <div className="animate-pulse">
