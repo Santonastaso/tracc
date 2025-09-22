@@ -41,6 +41,10 @@ echo "📁 Using temporary directory: $temp_dir"
 echo "📁 Copying dist contents..."
 cp -r dist/* "$temp_dir/"
 
+# Copy 404.html for SPA routing support
+echo "📁 Copying 404.html for SPA routing..."
+cp 404.html "$temp_dir/"
+
 # Add .nojekyll file to prevent Jekyll processing
 echo "" > "$temp_dir/.nojekyll"
 
