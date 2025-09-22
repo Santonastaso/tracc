@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { 
-  useSilos, 
+  useSilosWithLevels, 
   useMaterials, 
   useOperators,
   useCreateInbound,
@@ -19,6 +19,7 @@ function MerceInPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [quantity, setQuantity] = useState('');
 
   // Fetch data for editing if ID is provided
   useEffect(() => {
@@ -35,9 +36,12 @@ function MerceInPage() {
             navigate('/merce-in/list');
           } else {
             setEditingItem(data);
-            // Set the selected material for filtering
+            // Set the selected material and quantity for filtering
             if (data.product) {
               setSelectedMaterial(data.product);
+            }
+            if (data.quantity_kg) {
+              setQuantity(String(data.quantity_kg));
             }
           }
           setIsLoading(false);
@@ -45,11 +49,11 @@ function MerceInPage() {
     }
   }, [id, navigate]);
 
-  const { data: silosData } = useSilos();
+  const { data: silosData } = useSilosWithLevels();
   const { data: materialsData, isLoading: materialsLoading, error: materialsError } = useMaterials();
   const { data: operatorsData, isLoading: operatorsLoading, error: operatorsError } = useOperators();
 
-  // Filter silos based on selected material
+  // Filter silos based on selected material and capacity
   const filteredSilos = useMemo(() => {
     if (!silosData || !selectedMaterial) {
       return silosData || [];
@@ -61,16 +65,34 @@ function MerceInPage() {
       return silosData;
     }
 
-    // Filter silos that allow this material
+    // Parse quantity for capacity validation
+    const quantityToAdd = parseFloat(quantity) || 0;
+
+    // Filter silos that allow this material and have enough capacity
     return silosData.filter(silo => {
-      // If silo has no allowed_material_ids, it allows all materials
-      if (!silo.allowed_material_ids || silo.allowed_material_ids.length === 0) {
-        return true;
+      // First check if silo allows this material
+      let materialAllowed = true;
+      if (silo.allowed_material_ids && silo.allowed_material_ids.length > 0) {
+        materialAllowed = silo.allowed_material_ids.includes(material.id);
       }
-      // Check if the material ID is in the allowed list
-      return silo.allowed_material_ids.includes(material.id);
+
+      if (!materialAllowed) {
+        return false;
+      }
+
+      // Then check capacity if quantity is specified
+      if (quantityToAdd > 0) {
+        const currentLevel = silo.currentLevel || 0;
+        const capacity = silo.capacity_kg || 0;
+        const availableCapacity = capacity - currentLevel;
+        
+        // Only show silos that can accommodate the quantity without exceeding 100%
+        return availableCapacity >= quantityToAdd;
+      }
+
+      return true;
     });
-  }, [silosData, selectedMaterial, materialsData]);
+  }, [silosData, selectedMaterial, materialsData, quantity]);
 
   // Use centralized mutation hooks
   const createMutation = useCreateInbound();
@@ -78,6 +100,17 @@ function MerceInPage() {
 
   // Handle form submission
   const handleSubmit = async (formData) => {
+    // Validate that placeholder values are not selected
+    if (formData.silo_id === 'no-silos' || formData.silo_id === 'select-product') {
+      alert('Seleziona un silos valido');
+      return;
+    }
+    
+    if (formData.operator_name === 'loading') {
+      alert('Seleziona un operatore valido');
+      return;
+    }
+
     const dataToSave = {
       ...formData,
       // Convert string values back to correct types for database
@@ -117,7 +150,7 @@ function MerceInPage() {
             setValue(field.name, value);
             setSelectedMaterial(value);
             // Clear silo selection when material changes
-            setValue('silo_id', '');
+            setValue('silo_id', 'select-product');
           }}
           required={field.required}
         >
@@ -128,6 +161,25 @@ function MerceInPage() {
             </option>
           ))}
         </select>
+      );
+    },
+    'quantity_kg': (field, { setValue, getValues }) => {
+      return (
+        <input
+          id={field.name}
+          type="number"
+          className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy-800 focus:border-transparent text-[10px]"
+          value={getValues(field.name) || ''}
+          onChange={(e) => {
+            const value = e.target.value;
+            setValue(field.name, value);
+            setQuantity(value);
+            // Clear silo selection when quantity changes
+            setValue('silo_id', 'select-product');
+          }}
+          placeholder={field.placeholder}
+          required={field.required}
+        />
       );
     }
   };
@@ -154,7 +206,7 @@ function MerceInPage() {
           {
             name: 'quantity_kg',
             label: 'Quantità (Kg)',
-            type: 'number',
+            type: 'quantity_kg', // Custom type for dynamic behavior
             required: true,
             placeholder: 'Inserisci quantità in kg'
           },
@@ -164,18 +216,30 @@ function MerceInPage() {
             type: 'select',
             required: true,
             options: filteredSilos?.length > 0 
-              ? filteredSilos.map(s => ({ value: String(s.id), label: s.name }))
+              ? filteredSilos.map(s => {
+                  const currentLevel = s.currentLevel || 0;
+                  const capacity = s.capacity_kg || 0;
+                  const availableCapacity = capacity - currentLevel;
+                  const utilizationPercentage = capacity > 0 ? (currentLevel / capacity) * 100 : 0;
+                  
+                  return {
+                    value: String(s.id), 
+                    label: `${s.name} (${availableCapacity.toFixed(0)}kg disponibili, ${utilizationPercentage.toFixed(1)}% utilizzato)`
+                  };
+                })
               : selectedMaterial 
-                ? [{ value: '', label: 'Nessun silos compatibile con questo materiale' }]
-                : [{ value: '', label: 'Seleziona prima un prodotto' }],
+                ? [{ value: 'no-silos', label: quantity ? 'Nessun silos con capacità sufficiente' : 'Nessun silos compatibile con questo materiale' }]
+                : [{ value: 'select-product', label: 'Seleziona prima un prodotto' }],
             placeholder: selectedMaterial 
               ? (filteredSilos?.length > 0 ? 'Seleziona silos compatibile' : 'Nessun silos disponibile')
               : 'Seleziona prima un prodotto',
             disabled: selectedMaterial && filteredSilos?.length === 0,
             helpText: selectedMaterial 
               ? (filteredSilos?.length > 0 
-                  ? `${filteredSilos.length} silos compatibili con "${selectedMaterial}"`
-                  : `Nessun silos configurato per accettare "${selectedMaterial}"`)
+                  ? `${filteredSilos.length} silos compatibili con "${selectedMaterial}"${quantity ? ` e con capacità sufficiente per ${quantity}kg` : ''}`
+                  : quantity 
+                    ? `Nessun silos con capacità sufficiente per ${quantity}kg di "${selectedMaterial}"`
+                    : `Nessun silos configurato per accettare "${selectedMaterial}"`)
               : 'Seleziona un prodotto per vedere i silos compatibili'
           }
         ]
@@ -237,7 +301,7 @@ function MerceInPage() {
                   value: o.name, 
                   label: `${o.name}${o.code ? ` (${o.code})` : ''}` 
                 }))
-              : [{ value: '', label: 'Caricamento operatori...' }]
+              : [{ value: 'loading', label: 'Caricamento operatori...' }]
           }
         ]
       }
