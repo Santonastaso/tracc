@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useSilos, useInbound, useOutbound } from '../hooks';
 import { Card } from '../components/ui/card';
@@ -6,6 +7,7 @@ import { Button } from '../components/ui/button';
 
 function HomePage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Fetch data using centralized query hooks
   const { data: silosData, isLoading: silosLoading } = useSilos();
@@ -173,25 +175,25 @@ function HomePage() {
         <div className="flex flex-wrap gap-3">
           <Button 
             className="bg-navy-800 hover:bg-navy-700"
-            onClick={() => window.location.href = '/silos'}
+            onClick={() => navigate('/silos')}
           >
             Gestisci Silos
           </Button>
           <Button 
             variant="outline"
-            onClick={() => window.location.href = '/merce-in/new'}
+            onClick={() => navigate('/merce-in/new')}
           >
             Registra Merce IN
           </Button>
           <Button 
             variant="outline"
-            onClick={() => window.location.href = '/merce-out/new'}
+            onClick={() => navigate('/merce-out/new')}
           >
             Registra Merce OUT
           </Button>
           <Button 
             variant="outline"
-            onClick={() => window.location.href = '/reports'}
+            onClick={() => navigate('/reports')}
           >
             Visualizza Report
           </Button>
