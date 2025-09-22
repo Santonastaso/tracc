@@ -6,3 +6,4 @@ import { createInboundStore } from './storeFactory';
  * Uses the store factory pattern for consistency
  */
 export const useInboundStore = createInboundStore();
+

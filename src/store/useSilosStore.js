@@ -6,3 +6,4 @@ import { createSilosStore } from './storeFactory';
  * Uses the store factory pattern for consistency
  */
 export const useSilosStore = createSilosStore();
+

@@ -6,3 +6,4 @@ import { createMaterialsStore } from './storeFactory';
  * Uses the store factory pattern for consistency
  */
 export const useMaterialsStore = createMaterialsStore();
+

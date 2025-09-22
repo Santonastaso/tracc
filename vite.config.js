@@ -6,7 +6,7 @@ export default defineConfig(({ command }) => {
   
   return {
     plugins: [react()],
-    base: isDev ? '/' : '/tracc/', // Use root for dev, /tracc/ for production
+    base: '/tracc/', // Use /tracc/ for GitHub Pages deployment
     server: {
       // Ensure dev server works correctly
       port: 5173,

@@ -6,3 +6,4 @@ import { createOperatorsStore } from './storeFactory';
  * Uses the store factory pattern for consistency
  */
 export const useOperatorsStore = createOperatorsStore();
+

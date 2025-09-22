@@ -285,3 +285,4 @@ export const createInboundStore = () => createMovementStore('inbound');
 export const createOutboundStore = () => createMovementStore('outbound');
 export const createMaterialsStore = () => createEntityStore('Material', 'materials');
 export const createOperatorsStore = () => createEntityStore('Operator', 'operators');
+
