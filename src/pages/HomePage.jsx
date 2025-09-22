@@ -179,13 +179,13 @@ function HomePage() {
           </Button>
           <Button 
             variant="outline"
-            onClick={() => window.location.href = '/merce-in'}
+            onClick={() => window.location.href = '/merce-in/new'}
           >
             Registra Merce IN
           </Button>
           <Button 
             variant="outline"
-            onClick={() => window.location.href = '/merce-out'}
+            onClick={() => window.location.href = '/merce-out/new'}
           >
             Registra Merce OUT
           </Button>
