@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { 
   useMaterials, 
@@ -34,6 +34,17 @@ function MerceInListPage() {
 
   // Use centralized mutation hooks
   const deleteMutation = useDeleteInbound();
+  const queryClient = useQueryClient();
+  const bulkDelete = useMutation({
+    mutationFn: async (ids) => {
+      const { error } = await supabase
+        .from('inbound')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries([...queryKeys.inbound, 'with-silos'])
+  });
 
   const handleEdit = (item) => {
     // Navigate to the edit page with the item data
@@ -176,6 +187,7 @@ function MerceInListPage() {
             onDeleteRow={handleDelete}
             enableFiltering={true}
             filterableColumns={['product', 'operator_name']}
+            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
           />
         </div>
       </Card>

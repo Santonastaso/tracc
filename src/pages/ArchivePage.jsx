@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useSilos, useMaterials } from '../hooks';
 import DataTable from '../components/DataTable';
@@ -102,6 +102,7 @@ function ArchivePage() {
     }
   });
 
+  const queryClient = useQueryClient();
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
@@ -119,6 +120,18 @@ function ArchivePage() {
     onError: (error) => {
       showError('Errore durante l\'eliminazione: ' + error.message);
     }
+  });
+
+  // Bulk delete
+  const bulkDelete = useMutation({
+    mutationFn: async (ids) => {
+      const { error } = await supabase
+        .from('inbound')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries(['analysis-archive'])
   });
 
   const handleEdit = (item) => {
@@ -369,6 +382,7 @@ function ArchivePage() {
             onDeleteRow={handleDelete}
             enableFiltering={true}
             filterableColumns={['materials.name', 'silos.name', 'cleaning_status', 'operators.name']}
+            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
           />
         </div>
       </Card>

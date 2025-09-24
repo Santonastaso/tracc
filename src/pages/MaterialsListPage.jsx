@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDeleteMaterial } from '../hooks';
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
@@ -26,6 +27,19 @@ function MaterialsListPage() {
 
   // Use centralized mutation hooks
   const deleteMutation = useDeleteMaterial();
+  const queryClient = useQueryClient();
+
+  // Bulk delete using Supabase
+  const bulkDelete = useMutation({
+    mutationFn: async (ids) => {
+      const { error } = await supabase
+        .from('materials')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries(['materials'])
+  });
 
   const handleEdit = (item) => {
     // Navigate to the edit page with the item data
@@ -148,6 +162,7 @@ function MaterialsListPage() {
             onDeleteRow={handleDelete}
             enableFiltering={true}
             filterableColumns={['name', 'unit']}
+            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
           />
         </div>
       </Card>

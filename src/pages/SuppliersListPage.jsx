@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteSupplier } from '../hooks';
 import DataTable from '../components/DataTable';
@@ -26,6 +26,17 @@ function SuppliersListPage() {
 
   // Use centralized mutation hooks
   const deleteMutation = useDeleteSupplier();
+  const queryClient = useQueryClient();
+  const bulkDelete = useMutation({
+    mutationFn: async (ids) => {
+      const { error } = await supabase
+        .from('suppliers')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries(['suppliers'])
+  });
 
   const handleEdit = (item) => {
     // Navigate to the edit page with the item data
@@ -161,6 +172,9 @@ function SuppliersListPage() {
             onDeleteRow={handleDelete}
             enableFiltering={true}
             filterableColumns={['name', 'code', 'contact_person', 'status']}
+            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+            enableGlobalSearch={true}
+            enableColumnVisibility={true}
           />
         </div>
       </Card>

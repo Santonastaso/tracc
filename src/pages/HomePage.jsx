@@ -82,6 +82,108 @@ function HomePage() {
     };
   }, [silosData, inboundData, outboundData, silosLoading, inboundLoading, outboundLoading]);
 
+  // Build 14-day trend series (UTC+0)
+  const {
+    trendLabels,
+    inboundCountSeries,
+    outboundCountSeries,
+    inboundQtySeries,
+    outboundQtySeries
+  } = useMemo(() => {
+    const days = 14;
+    const todayUTC = new Date();
+    // Normalize to start of day UTC
+    const startOfDayUTC = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const endOfDayUTC = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+
+    const labels = [];
+    const inboundCounts = [];
+    const outboundCounts = [];
+    const inboundQty = [];
+    const outboundQty = [];
+
+    for (let i = days - 1; i >= 0; i--) {
+      const day = new Date(startOfDayUTC(todayUTC));
+      day.setUTCDate(day.getUTCDate() - i);
+      const dayStart = startOfDayUTC(day);
+      const dayEnd = endOfDayUTC(day);
+      const key = dayStart.toISOString().split('T')[0];
+
+      // Counts
+      const inbCount = (inboundData || []).filter(x => {
+        const t = new Date(x.created_at);
+        return t >= dayStart && t <= dayEnd;
+      }).length;
+      const outCount = (outboundData || []).filter(x => {
+        const t = new Date(x.created_at);
+        return t >= dayStart && t <= dayEnd;
+      }).length;
+
+      // Quantities
+      const inbQty = (inboundData || []).reduce((sum, x) => {
+        const t = new Date(x.created_at);
+        return (t >= dayStart && t <= dayEnd) ? sum + (x.quantity_kg || 0) : sum;
+      }, 0);
+      const outQty = (outboundData || []).reduce((sum, x) => {
+        const t = new Date(x.created_at);
+        return (t >= dayStart && t <= dayEnd) ? sum + (x.quantity_kg || 0) : sum;
+      }, 0);
+
+      labels.push(key);
+      inboundCounts.push(inbCount);
+      outboundCounts.push(outCount);
+      inboundQty.push(inbQty);
+      outboundQty.push(outQty);
+    }
+
+    return {
+      trendLabels: labels,
+      inboundCountSeries: inboundCounts,
+      outboundCountSeries: outboundCounts,
+      inboundQtySeries: inboundQty,
+      outboundQtySeries: outboundQty
+    };
+  }, [inboundData, outboundData]);
+
+  // Simple inline line chart renderer (no deps)
+  const LineChart = ({ width = 600, height = 120, labels, series, colors }) => {
+    const padding = { top: 10, right: 10, bottom: 18, left: 24 };
+    const w = width - padding.left - padding.right;
+    const h = height - padding.top - padding.bottom;
+    const n = Math.max(1, labels.length - 1);
+    const maxY = Math.max(1, ...series.flat());
+    const xFor = (i) => (w * i) / n;
+    const yFor = (v) => h - (h * v) / maxY;
+    const buildPath = (arr) => arr.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i).toFixed(2)} ${yFor(v).toFixed(2)}`).join(' ');
+    const yTicks = 3;
+    const gridY = Array.from({ length: yTicks + 1 }, (_, i) => (h * i) / yTicks);
+
+    return (
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-28">
+        <g transform={`translate(${padding.left},${padding.top})`}>
+          {/* Grid */}
+          {gridY.map((gy, idx) => (
+            <line key={idx} x1={0} y1={gy} x2={w} y2={gy} stroke="#e5e7eb" strokeWidth="1" />
+          ))}
+          {/* Lines */}
+          {series.map((arr, idx) => (
+            <path key={idx} d={buildPath(arr)} fill="none" stroke={colors[idx]} strokeWidth="2" />
+          ))}
+          {/* Last points */}
+          {series.map((arr, idx) => (
+            <circle key={`pt-${idx}`} cx={xFor(arr.length - 1)} cy={yFor(arr[arr.length - 1])} r="2.5" fill={colors[idx]} />
+          ))}
+          {/* X-axis labels (sparse) */}
+          {labels.map((d, i) => (i % 3 === 0 ? (
+            <text key={d} x={xFor(i)} y={h + 12} fontSize="9" textAnchor="middle" fill="#6b7280">{d.slice(5)}</text>
+          ) : null))}
+          {/* Y-axis max label */}
+          <text x={-8} y={-2} fontSize="9" textAnchor="end" fill="#6b7280">{Math.round(maxY)}</text>
+        </g>
+      </svg>
+    );
+  };
+
   const isLoading = silosLoading || inboundLoading || outboundLoading;
 
   if (isLoading) {
@@ -130,6 +232,30 @@ function HomePage() {
           <h3 className="text-sm font-medium text-gray-800 mb-1">Movimenti Settimana</h3>
           <div className="text-2xl font-bold text-gray-900">{metrics.weekInbound + metrics.weekOutbound}</div>
           <div className="text-xs text-gray-600">IN: {metrics.weekInbound} | OUT: {metrics.weekOutbound}</div>
+        </Card>
+      </div>
+
+      {/* Trends */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold">Trend Movimenti (14 giorni)</h2>
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1"><span className="inline-block w-3 h-1 bg-gray-800" /> IN</div>
+              <div className="flex items-center gap-1"><span className="inline-block w-3 h-1 bg-gray-400" /> OUT</div>
+            </div>
+          </div>
+          <LineChart labels={trendLabels} series={[inboundCountSeries, outboundCountSeries]} colors={["#111827", "#9ca3af"]} />
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold">Quantità IN/OUT (kg) • 14 giorni</h2>
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1"><span className="inline-block w-3 h-1 bg-green-600" /> IN</div>
+              <div className="flex items-center gap-1"><span className="inline-block w-3 h-1 bg-red-600" /> OUT</div>
+            </div>
+          </div>
+          <LineChart labels={trendLabels} series={[inboundQtySeries, outboundQtySeries]} colors={["#16a34a", "#dc2626"]} />
         </Card>
       </div>
 

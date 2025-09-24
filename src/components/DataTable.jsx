@@ -10,11 +10,37 @@ import {
 } from './ui/table';
 import { Button } from './ui/button';
 import FilterDropdown from './FilterDropdown';
+import { confirmAction } from '../utils';
 
-function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = false, filterableColumns = [], stickyColumns = [] }) {
+function DataTable({ 
+  data, 
+  columns, 
+  onEditRow, 
+  onDeleteRow, 
+  enableFiltering = false, 
+  filterableColumns = [], 
+  stickyColumns = [],
+  onBulkDelete = null,
+  initialPageSize = 10,
+  pageSizeOptions = [10, 25, 50],
+  enableGlobalSearch = true,
+  enableColumnVisibility = true
+}) {
   // Filter state management
   const [filters, setFilters] = useState({});
   const [openFilter, setOpenFilter] = useState(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [globalQuery, setGlobalQuery] = useState('');
+  const [hiddenColumns, setHiddenColumns] = useState({});
+
+  // Helper to get nested values via dot notation
+  const getNested = (obj, path) => {
+    if (!obj || !path) return undefined;
+    if (path.indexOf('.') === -1) return obj[path];
+    return path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+  };
 
   // Apply column filters
   const filteredData = useMemo(() => {
@@ -24,7 +50,7 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
       return Object.entries(filters).every(([column, filterValue]) => {
         if (!filterValue) return true;
         
-        const itemValue = item[column];
+        const itemValue = getNested(item, column);
         if (!itemValue) return false;
         
         // Handle array of selected values (multi-selection)
@@ -44,7 +70,7 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
     
     const options = {};
     filterableColumns.forEach(column => {
-      options[column] = [...new Set(data.map(item => item[column]).filter(Boolean))].sort();
+      options[column] = [...new Set(data.map(item => getNested(item, column)).filter(Boolean))].sort();
     });
     return options;
   }, [data, filterableColumns, enableFiltering]);
@@ -61,6 +87,47 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
   };
 
   const tableColumns = useMemo(() => {
+    const enableRowSelection = Boolean(onBulkDelete);
+
+    const selectionColumn = enableRowSelection ? {
+      id: 'select',
+      header: () => {
+        const currentRows = table?.getRowModel().rows || [];
+        const currentPageRows = currentRows.slice(page * pageSize, (page + 1) * pageSize);
+        const allSelected = currentPageRows.length > 0 && currentPageRows.every(r => selectedIds.has(r.original.id));
+        const someSelected = currentPageRows.some(r => selectedIds.has(r.original.id));
+        return (
+          <input
+            type="checkbox"
+            aria-label="Seleziona tutti"
+            checked={allSelected}
+            ref={el => { if (el) el.indeterminate = !allSelected && someSelected; }}
+            onChange={(e) => {
+              const newSet = new Set(selectedIds);
+              if (e.target.checked) {
+                currentPageRows.forEach(r => newSet.add(r.original.id));
+              } else {
+                currentPageRows.forEach(r => newSet.delete(r.original.id));
+              }
+              setSelectedIds(newSet);
+            }}
+          />
+        );
+      },
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label="Seleziona riga"
+          checked={selectedIds.has(row.original.id)}
+          onChange={(e) => {
+            const newSet = new Set(selectedIds);
+            if (e.target.checked) newSet.add(row.original.id); else newSet.delete(row.original.id);
+            setSelectedIds(newSet);
+          }}
+        />
+      )
+    } : null;
+
     const handleEdit = (row) => {
       onEditRow(row.original);
     };
@@ -81,8 +148,16 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
         );
       },
     };
-    return [...columns, actionColumn];
-  }, [columns, onEditRow, onDeleteRow]);
+    const base = [...columns, actionColumn];
+    const cols = enableColumnVisibility
+      ? base.filter(col => {
+          const id = col.id || col.accessorKey;
+          if (id === 'actions' || id === 'select') return true;
+          return !hiddenColumns[id];
+        })
+      : base;
+    return selectionColumn ? [selectionColumn, ...cols] : cols;
+  }, [columns, onEditRow, onDeleteRow, onBulkDelete, page, pageSize, selectedIds, enableColumnVisibility, hiddenColumns]);
 
   // Calculate sticky column positions
   const getStickyLeftPosition = (columnId, columnIndex) => {
@@ -125,8 +200,20 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
         // Duplicate objects detected but not logged
       }
     }
+    // Global search across defined accessor keys (supports nested paths)
+    if (enableGlobalSearch && globalQuery.trim().length > 0) {
+      const q = globalQuery.toLowerCase();
+      const searchableKeys = (columns || []).map(c => c.accessorKey).filter(Boolean);
+      const globallyFiltered = filteredData.filter(item => (
+        searchableKeys.some(k => {
+          const v = getNested(item, k);
+          return v !== undefined && v !== null && String(v).toLowerCase().includes(q);
+        })
+      ));
+      return globallyFiltered;
+    }
     return filteredData;
-  }, [filteredData]);
+  }, [filteredData, enableGlobalSearch, globalQuery, columns]);
 
   const table = useReactTable({
     data: tableData,
@@ -135,8 +222,68 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
     getSortedRowModel: getSortedRowModel()
   });
 
+  // Derive paginated rows from sorted row model
+  const allRows = table.getRowModel().rows;
+  const pageCount = Math.max(1, Math.ceil(allRows.length / pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const visibleRows = allRows.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+
   return (
     <div className="rounded-md border overflow-hidden h-full flex flex-col">
+      {(enableGlobalSearch || enableColumnVisibility) && (
+        <div className="flex items-center justify-between p-2 border-b bg-white">
+          {enableGlobalSearch ? (
+            <input
+              type="text"
+              value={globalQuery}
+              onChange={(e) => { setGlobalQuery(e.target.value); setPage(0); }}
+              placeholder="Cerca..."
+              className="border rounded px-2 py-1 text-[10px] w-64"
+            />
+          ) : <div />}
+          {enableColumnVisibility && (
+            <details className="relative">
+              <summary className="list-none cursor-pointer text-[10px] px-2 py-1 border rounded bg-gray-50">Colonne</summary>
+              <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow p-2 z-40">
+                {(columns || []).map(col => {
+                  const id = col.id || col.accessorKey;
+                  if (!id) return null;
+                  return (
+                    <label key={id} className="flex items-center gap-2 text-[10px] py-1">
+                      <input
+                        type="checkbox"
+                        checked={!hiddenColumns[id]}
+                        onChange={(e) => {
+                          setHiddenColumns(prev => ({ ...prev, [id]: !e.target.checked }));
+                        }}
+                      />
+                      <span>{typeof col.header === 'string' ? col.header : (col.accessorKey || id)}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+      {/* Bulk actions toolbar */}
+      {onBulkDelete && selectedIds.size > 0 && (
+        <div className="flex items-center justify-between p-2 border-b bg-gray-50">
+          <div className="text-[10px] text-gray-700">{selectedIds.size} selezionati</div>
+          <div className="flex gap-2">
+            <Button size="xs" variant="destructive" onClick={() => {
+              if (confirmAction('Eliminare gli elementi selezionati?')) {
+                const ids = Array.from(selectedIds);
+                onBulkDelete(ids);
+                setSelectedIds(new Set());
+              }
+            }}>
+              Elimina selezionati
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-auto">
         <table className="w-full caption-bottom text-[10px] !text-[10px] relative">
         <thead className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200">
@@ -178,7 +325,7 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
           ))}
         </thead>
         <tbody className="bg-white">
-          {table.getRowModel().rows.map((row) => {
+          {visibleRows.map((row) => {
             const rowKey = row.original.id || row.id;
             return (
               <TableRow key={rowKey}>
@@ -204,6 +351,42 @@ function DataTable({ data, columns, onEditRow, onDeleteRow, enableFiltering = fa
           })}
         </tbody>
         </table>
+      </div>
+      {/* Pagination footer */}
+      <div className="flex items-center justify-between p-2 border-t bg-white">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-gray-700">Righe per pagina</span>
+          <select
+            className="border rounded px-1 py-0.5 text-[10px]"
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(0);
+            }}
+          >
+            {pageSizeOptions.map(size => (
+              <option key={size} value={size}>{size}</option>
+            ))}
+          </select>
+        </div>
+        <div className="text-[10px] text-gray-700">
+          {allRows.length === 0 ? '0–0 di 0' : `${currentPage * pageSize + 1}–${Math.min((currentPage + 1) * pageSize, allRows.length)} di ${allRows.length}`}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="xs" variant="outline" onClick={() => setPage(0)} disabled={currentPage === 0}>
+            «
+          </Button>
+          <Button size="xs" variant="outline" onClick={() => setPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>
+            Prev
+          </Button>
+          <span className="text-[10px]">Pagina {currentPage + 1} / {pageCount}</span>
+          <Button size="xs" variant="outline" onClick={() => setPage(Math.min(pageCount - 1, currentPage + 1))} disabled={currentPage >= pageCount - 1}>
+            Next
+          </Button>
+          <Button size="xs" variant="outline" onClick={() => setPage(pageCount - 1)} disabled={currentPage >= pageCount - 1}>
+            »
+          </Button>
+        </div>
       </div>
     </div>
   );

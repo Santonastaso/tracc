@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteOperator } from '../hooks';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -26,6 +27,17 @@ function OperatorsListPage() {
 
   // Use centralized mutation hooks
   const deleteMutation = useDeleteOperator();
+  const queryClient = useQueryClient();
+  const bulkDelete = useMutation({
+    mutationFn: async (ids) => {
+      const { error } = await supabase
+        .from('operators')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries(['operators'])
+  });
 
   const handleEdit = (item) => {
     // Navigate to the edit page with the item data
@@ -153,6 +165,7 @@ function OperatorsListPage() {
             onDeleteRow={handleDelete}
             enableFiltering={true}
             filterableColumns={['name', 'code', 'role', 'status']}
+            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
           />
         </div>
       </Card>
