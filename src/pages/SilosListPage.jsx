@@ -6,9 +6,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function SilosListPage() {
+  const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
 
   // Fetch data using centralized query hooks
@@ -42,8 +43,7 @@ function SilosListPage() {
   });
 
   const handleEdit = (item) => {
-    // Navigate to the edit page with the item data
-    window.location.href = `/silos/edit/${item.id}`;
+    navigate(`/silos/edit/${item.id}`);
   };
 
   const handleDelete = (item) => {
@@ -102,7 +102,7 @@ function SilosListPage() {
       header: 'Data Creazione',
       cell: ({ getValue }) => {
         const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT');
+        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
       }
     },
     {
@@ -110,7 +110,7 @@ function SilosListPage() {
       header: 'Ultima Modifica',
       cell: ({ getValue }) => {
         const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT');
+        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
       }
     }
   ];

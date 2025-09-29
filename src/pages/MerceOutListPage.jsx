@@ -8,9 +8,10 @@ import {
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function MerceOutListPage() {
+  const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
 
   // Fetch data using centralized query hooks
@@ -45,9 +46,7 @@ function MerceOutListPage() {
   });
 
   const handleEdit = (item) => {
-    // Navigate to the edit page with the item data
-    // This will be handled by routing to the form page
-    window.location.href = `/merce-out/edit/${item.id}`;
+    navigate(`/merce-out/edit/${item.id}`);
   };
 
   const handleDelete = (item) => {
@@ -126,7 +125,7 @@ function MerceOutListPage() {
       header: 'Ultima Modifica',
       cell: ({ getValue }) => {
         const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT');
+        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
       }
     }
   ];

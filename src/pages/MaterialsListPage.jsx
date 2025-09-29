@@ -6,9 +6,10 @@ import { useDeleteMaterial } from '../hooks';
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function MaterialsListPage() {
+  const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
 
   // Fetch data using centralized query hooks
@@ -42,8 +43,7 @@ function MaterialsListPage() {
   });
 
   const handleEdit = (item) => {
-    // Navigate to the edit page with the item data
-    window.location.href = `/materials/edit/${item.id}`;
+    navigate(`/materials/edit/${item.id}`);
   };
 
   const handleDelete = (item) => {
@@ -115,7 +115,7 @@ function MaterialsListPage() {
       header: 'Data Creazione',
       cell: ({ getValue }) => {
         const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT');
+        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
       }
     },
     {
@@ -123,7 +123,7 @@ function MaterialsListPage() {
       header: 'Ultima Modifica',
       cell: ({ getValue }) => {
         const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT');
+        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
       }
     }
   ];

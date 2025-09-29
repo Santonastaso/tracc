@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
-import { useMaterials } from '../hooks';
+import { useMaterials, useCreateSilo, useUpdateSilo } from '../hooks';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -14,6 +14,10 @@ function SilosFormPage() {
   
   // Fetch materials data for the checkbox selection
   const { data: materialsData, isLoading: materialsLoading } = useMaterials();
+
+  // Use centralized mutation hooks with cache invalidation
+  const createMutation = useCreateSilo();
+  const updateMutation = useUpdateSilo();
 
   // Fetch data for editing if ID is provided
   useEffect(() => {
@@ -58,18 +62,9 @@ function SilosFormPage() {
     };
 
     if (editingItem) {
-      const { error } = await supabase
-        .from('silos')
-        .update(dataToSave)
-        .eq('id', editingItem.id);
-      
-      if (error) throw error;
+      await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
     } else {
-      const { error } = await supabase
-        .from('silos')
-        .insert([dataToSave]);
-      
-      if (error) throw error;
+      await createMutation.mutateAsync(dataToSave);
     }
     
     // Navigate back to list after successful submission
@@ -200,7 +195,7 @@ function SilosFormPage() {
           } : null}
           onSubmit={handleFormSubmit}
           isEditMode={!!editingItem}
-          isLoading={isLoading}
+          isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
           customFieldRenderers={customFieldRenderers}
         />
       </Card>

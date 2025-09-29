@@ -80,7 +80,7 @@ function SideNav() {
       <nav className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
         <div className="p-3 border-b border-gray-200">
           <Link to="/login" className="flex items-center justify-center">
-            <img src="/trace.svg" alt="TRACC" className="h-8 w-auto" />
+            <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-8 w-auto" />
           </Link>
         </div>
         
@@ -104,7 +104,7 @@ function SideNav() {
       {/* Logo */}
       <div className="p-3 border-b border-navy-700">
         <Link to="/" className="flex items-center justify-center">
-          <img src="/trace.svg" alt="TRACC" className="h-8 w-auto" />
+          <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-8 w-auto" />
         </Link>
       </div>
 
