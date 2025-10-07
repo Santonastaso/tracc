@@ -20,21 +20,20 @@ export function Header() {
 
   return (
     <header className="bg-secondary shadow-sm border-b border-border">
-      <div className="px-4">
-        <div className="flex justify-between items-center flex-1">
-          <div className="flex items-center gap-2 text-secondary-foreground">
-            <button
-              onClick={toggle}
-              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <h1 className="text-xl font-semibold">
-              Molino Rossetto - Sistema Tracciabilità Molino
-            </h1>
-          </div>
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2 text-secondary-foreground">
+          <button
+            onClick={toggle}
+            className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <h1 className="text-xl font-semibold">
+            Molino Rossetto - Sistema Tracciabilità Molino
+          </h1>
+        </div>
 
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-muted-foreground" />
@@ -92,7 +91,6 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
         </div>
       </div>
     </header>
