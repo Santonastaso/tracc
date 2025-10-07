@@ -2,6 +2,7 @@ import React from 'react';
 import { Menu, Bell, Search, LogOut, Settings, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { useSidebar } from '../../hooks/useSidebar';
+import { ThemeToggle } from '../ui/theme-toggle';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -47,6 +48,8 @@ export function Header() {
           <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md">
             <Bell className="h-6 w-6" />
           </button>
+
+          <ThemeToggle />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
