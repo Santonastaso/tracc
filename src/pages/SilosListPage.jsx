@@ -74,7 +74,7 @@ function SilosListPage() {
       cell: ({ getValue }) => {
         const materialIds = getValue();
         if (!materialIds || materialIds.length === 0) {
-          return <span className="text-gray-500">Tutti i materiali</span>;
+          return <span className="text-muted-foreground">Tutti i materiali</span>;
         }
         
         // Get material names from IDs
@@ -87,10 +87,10 @@ function SilosListPage() {
         
         return (
           <div className="max-w-xs">
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-sm font-medium text-foreground">
               {materialIds.length} materiale{materialIds.length !== 1 ? 'i' : ''}
             </div>
-            <div className="text-xs text-gray-600 truncate" title={materialNames}>
+            <div className="text-xs text-muted-foreground truncate" title={materialNames}>
               {materialNames}
             </div>
           </div>
@@ -119,8 +119,8 @@ function SilosListPage() {
     return (
       <div className="p-4">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-300 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-300 rounded"></div>
+          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
+          <div className="h-64 bg-muted rounded"></div>
         </div>
       </div>
     );
@@ -129,10 +129,10 @@ function SilosListPage() {
   return (
     <div className="h-full flex flex-col p-4">
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Lista Silos</h1>
+        <h1 className="text-2xl font-bold text-foreground">Lista Silos</h1>
         <div className="flex space-x-2">
           <Link to="/silos/new">
-            <Button className="bg-navy-800 hover:bg-navy-700">
+            <Button>
               Nuovo Silos
             </Button>
           </Link>

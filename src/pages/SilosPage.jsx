@@ -135,10 +135,9 @@ function SilosPage() {
   return (
     <div className="p-4 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Gestione Silos</h1>
+        <h1 className="text-2xl font-bold text-foreground">Gestione Silos</h1>
         <Button 
           onClick={() => setShowForm(true)}
-          className="bg-navy-800 hover:bg-navy-700"
         >
           Aggiungi Silos
         </Button>
@@ -165,7 +164,7 @@ function SilosPage() {
       )}
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Silos Disponibili</h2>
+        <h2 className="text-lg font-semibold text-foreground">Silos Disponibili</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {silosData?.map((silo) => (
             <SiloCard
@@ -176,8 +175,8 @@ function SilosPage() {
         </div>
         {silosData?.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Nessun silos disponibile</p>
-            <p className="text-gray-400 text-sm mt-2">
+            <p className="text-muted-foreground text-lg">Nessun silos disponibile</p>
+            <p className="text-muted-foreground/70 text-sm mt-2">
               Clicca su "Aggiungi Silos" per creare il primo silos
             </p>
           </div>

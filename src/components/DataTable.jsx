@@ -231,25 +231,25 @@ function DataTable({
   return (
     <div className="rounded-md border overflow-hidden h-full flex flex-col">
       {(enableGlobalSearch || enableColumnVisibility) && (
-        <div className="flex items-center justify-between p-2 border-b bg-white">
+        <div className="flex items-center justify-between p-2 border-b bg-background">
           {enableGlobalSearch ? (
             <input
               type="text"
               value={globalQuery}
               onChange={(e) => { setGlobalQuery(e.target.value); setPage(0); }}
               placeholder="Cerca..."
-              className="border rounded px-2 py-1 text-[10px] w-64"
+              className="border border-input rounded px-2 py-1 text-sm w-64 bg-background text-foreground placeholder-muted-foreground"
             />
           ) : <div />}
           {enableColumnVisibility && (
             <details className="relative">
-              <summary className="list-none cursor-pointer text-[10px] px-2 py-1 border rounded bg-gray-50">Colonne</summary>
-              <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow p-2 z-40">
+              <summary className="list-none cursor-pointer text-sm px-2 py-1 border border-input rounded bg-muted text-foreground">Colonne</summary>
+              <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded shadow p-2 z-40">
                 {(columns || []).map(col => {
                   const id = col.id || col.accessorKey;
                   if (!id) return null;
                   return (
-                    <label key={id} className="flex items-center gap-2 text-[10px] py-1">
+                    <label key={id} className="flex items-center gap-2 text-sm py-1 text-popover-foreground">
                       <input
                         type="checkbox"
                         checked={!hiddenColumns[id]}
@@ -268,10 +268,10 @@ function DataTable({
       )}
       {/* Bulk actions toolbar */}
       {onBulkDelete && selectedIds.size > 0 && (
-        <div className="flex items-center justify-between p-2 border-b bg-gray-50">
-          <div className="text-[10px] text-gray-700">{selectedIds.size} selezionati</div>
+        <div className="flex items-center justify-between p-2 border-b bg-muted/50">
+          <div className="text-sm text-muted-foreground">{selectedIds.size} selezionati</div>
           <div className="flex gap-2">
-            <Button size="xs" variant="destructive" onClick={() => {
+            <Button size="sm" variant="destructive" onClick={() => {
               if (confirmAction('Eliminare gli elementi selezionati?')) {
                 const ids = Array.from(selectedIds);
                 onBulkDelete(ids);
@@ -285,8 +285,8 @@ function DataTable({
       )}
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full caption-bottom text-[10px] !text-[10px] relative">
-        <thead className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200">
+        <table className="w-full caption-bottom text-sm relative">
+        <thead className="sticky top-0 z-20 bg-muted/50 border-b border-border">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header, headerIndex) => {
@@ -299,7 +299,7 @@ function DataTable({
                   <TableHead 
                     key={headerKey} 
                     onClick={header.column.getToggleSortingHandler()}
-                    className={isSticky ? 'sticky top-0 z-30 bg-gray-50 shadow-sm' : ''}
+                    className={isSticky ? 'sticky top-0 z-30 bg-muted/50 shadow-sm' : ''}
                     style={isSticky ? { 
                       left: `${getStickyLeftPosition(columnId, headerIndex)}px`
                     } : {}}
@@ -324,7 +324,7 @@ function DataTable({
             </TableRow>
           ))}
         </thead>
-        <tbody className="bg-white">
+        <tbody className="bg-background">
           {visibleRows.map((row) => {
             const rowKey = row.original.id || row.id;
             return (
@@ -337,7 +337,7 @@ function DataTable({
                   return (
                     <TableCell 
                       key={cellKey}
-                      className={isSticky ? 'sticky z-10 bg-white shadow-sm' : ''}
+                      className={isSticky ? 'sticky z-10 bg-background shadow-sm' : ''}
                       style={isSticky ? { 
                         left: `${getStickyLeftPosition(columnId, cellIndex)}px`
                       } : {}}
@@ -353,11 +353,11 @@ function DataTable({
         </table>
       </div>
       {/* Pagination footer */}
-      <div className="flex items-center justify-between p-2 border-t bg-white">
+      <div className="flex items-center justify-between p-2 border-t bg-background">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-gray-700">Righe per pagina</span>
+          <span className="text-sm text-muted-foreground">Righe per pagina</span>
           <select
-            className="border rounded px-1 py-0.5 text-[10px]"
+            className="border border-input rounded px-2 py-1 text-sm bg-background text-foreground"
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
@@ -369,21 +369,21 @@ function DataTable({
             ))}
           </select>
         </div>
-        <div className="text-[10px] text-gray-700">
+        <div className="text-sm text-muted-foreground">
           {allRows.length === 0 ? '0–0 di 0' : `${currentPage * pageSize + 1}–${Math.min((currentPage + 1) * pageSize, allRows.length)} di ${allRows.length}`}
         </div>
         <div className="flex items-center gap-2">
-          <Button size="xs" variant="outline" onClick={() => setPage(0)} disabled={currentPage === 0}>
+          <Button size="sm" variant="outline" onClick={() => setPage(0)} disabled={currentPage === 0}>
             «
           </Button>
-          <Button size="xs" variant="outline" onClick={() => setPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>
+          <Button size="sm" variant="outline" onClick={() => setPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>
             Prev
           </Button>
-          <span className="text-[10px]">Pagina {currentPage + 1} / {pageCount}</span>
-          <Button size="xs" variant="outline" onClick={() => setPage(Math.min(pageCount - 1, currentPage + 1))} disabled={currentPage >= pageCount - 1}>
+          <span className="text-sm text-muted-foreground">Pagina {currentPage + 1} / {pageCount}</span>
+          <Button size="sm" variant="outline" onClick={() => setPage(Math.min(pageCount - 1, currentPage + 1))} disabled={currentPage >= pageCount - 1}>
             Next
           </Button>
-          <Button size="xs" variant="outline" onClick={() => setPage(pageCount - 1)} disabled={currentPage >= pageCount - 1}>
+          <Button size="sm" variant="outline" onClick={() => setPage(pageCount - 1)} disabled={currentPage >= pageCount - 1}>
             »
           </Button>
         </div>
