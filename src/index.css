@@ -98,19 +98,19 @@ input[type="time"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: oklch(var(--background));
+  background-color: var(--background);
   padding: 2rem;
 }
 
 .error-boundary__container {
   max-width: 600px;
   text-align: center;
-  background: oklch(var(--card));
-  color: oklch(var(--card-foreground));
+  background: var(--card);
+  color: var(--card-foreground);
   padding: 3rem;
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid oklch(var(--border));
+  border: 1px solid var(--border);
 }
 
 .error-boundary__icon {
@@ -121,12 +121,12 @@ input[type="time"] {
 .error-boundary__title {
   font-size: 1.5rem;
   font-weight: bold;
-  color: oklch(var(--foreground));
+  color: var(--foreground);
   margin-bottom: 1rem;
 }
 
 .error-boundary__message {
-  color: oklch(var(--muted-foreground));
+  color: var(--muted-foreground);
   margin-bottom: 2rem;
   line-height: 1.6;
 }
@@ -135,7 +135,7 @@ input[type="time"] {
   text-align: left;
   margin: 2rem 0;
   padding: 1rem;
-  background: oklch(var(--muted));
+  background: var(--muted);
   border-radius: 0.25rem;
 }
 
@@ -144,8 +144,8 @@ input[type="time"] {
 }
 
 .error-boundary__stack-trace {
-  background: oklch(var(--muted));
-  color: oklch(var(--muted-foreground));
+  background: var(--muted);
+  color: var(--muted-foreground);
   padding: 1rem;
   border-radius: 0.25rem;
   overflow-x: auto;
@@ -164,33 +164,34 @@ input[type="time"] {
 .error-boundary__button {
   padding: 0.5rem 1rem;
   border-radius: 0.25rem;
-  border: 1px solid oklch(var(--border));
-  background: oklch(var(--background));
-  color: oklch(var(--foreground));
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .error-boundary__button:hover {
-  background: oklch(var(--muted));
+  background: var(--muted);
 }
 
 .error-boundary__button--secondary {
-  background: oklch(var(--secondary));
-  color: oklch(var(--secondary-foreground));
-  border-color: oklch(var(--border));
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-color: var(--border);
 }
 
 .error-boundary__button--secondary:hover {
-  background: oklch(var(--secondary) / 0.8);
+  background: var(--secondary);
+  opacity: 0.8;
 }
 
 .error-boundary__recommendations {
   margin: 2rem 0;
   padding: 1rem;
-  background: oklch(var(--accent));
+  background: var(--accent);
   border-radius: 0.25rem;
-  border-left: 4px solid oklch(var(--primary));
+  border-left: 4px solid var(--primary);
 }
 
 .error-boundary__recommendation {
@@ -198,9 +199,9 @@ input[type="time"] {
 }
 
 .error-boundary__footer {
-  border-top: 1px solid oklch(var(--border));
+  border-top: 1px solid var(--border);
   padding-top: 1rem;
-  color: oklch(var(--muted-foreground));
+  color: var(--muted-foreground);
   font-size: 0.875rem;
 }
 
@@ -209,7 +210,7 @@ input[type="time"] {
 }
 
 .error-boundary__error-id code {
-  background: oklch(var(--muted));
+  background: var(--muted);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   font-family: monospace;
