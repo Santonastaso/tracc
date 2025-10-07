@@ -9,6 +9,7 @@ import {
   TableRow,
 } from './ui/table';
 import { Button } from './ui/button';
+import { Checkbox } from './ui/checkbox';
 import { BulkActionsToolbar } from './ui/BulkActionsToolbar';
 import FilterDropdown from './FilterDropdown';
 import { confirmAction } from '../utils';
@@ -88,94 +89,7 @@ function DataTable({
     setOpenFilter(openFilter === column ? null : column);
   };
 
-  const tableColumns = useMemo(() => {
-    const enableRowSelection = Boolean(onBulkDelete);
-
-    const selectionColumn = enableRowSelection ? {
-      id: 'select',
-      header: () => {
-        const currentRows = table?.getRowModel().rows || [];
-        const currentPageRows = currentRows.slice(page * pageSize, (page + 1) * pageSize);
-        const allSelected = currentPageRows.length > 0 && currentPageRows.every(r => selectedIds.has(r.original.id));
-        const someSelected = currentPageRows.some(r => selectedIds.has(r.original.id));
-        return (
-          <input
-            type="checkbox"
-            aria-label="Seleziona tutti"
-            checked={allSelected}
-            ref={el => { if (el) el.indeterminate = !allSelected && someSelected; }}
-            onChange={(e) => {
-              const newSet = new Set(selectedIds);
-              if (e.target.checked) {
-                currentPageRows.forEach(r => newSet.add(r.original.id));
-              } else {
-                currentPageRows.forEach(r => newSet.delete(r.original.id));
-              }
-              setSelectedIds(newSet);
-            }}
-          />
-        );
-      },
-      cell: ({ row }) => (
-        <input
-          type="checkbox"
-          aria-label="Seleziona riga"
-          checked={selectedIds.has(row.original.id)}
-          onChange={(e) => {
-            const newSet = new Set(selectedIds);
-            if (e.target.checked) newSet.add(row.original.id); else newSet.delete(row.original.id);
-            setSelectedIds(newSet);
-          }}
-        />
-      )
-    } : null;
-
-    const handleEdit = (row) => {
-      onEditRow(row.original);
-    };
-
-    const actionColumn = (onEditRow || onDeleteRow) ? {
-      id: 'actions',
-      header: 'Azioni',
-      cell: ({ row }) => {
-        return (
-          <div className="flex flex-row gap-1 items-center justify-start">
-            {onEditRow && (
-              <Button size="xs" variant="outline" onClick={() => handleEdit(row)}>
-                Modifica
-              </Button>
-            )}
-            {onDeleteRow && (
-              <Button size="xs" variant="destructive" onClick={() => onDeleteRow(row.original)}>
-                Elimina
-              </Button>
-            )}
-          </div>
-        );
-      },
-    } : null;
-    
-    const base = actionColumn ? [...columns, actionColumn] : columns;
-    return selectionColumn ? [selectionColumn, ...base] : base;
-  }, [columns, onEditRow, onDeleteRow, onBulkDelete, page, pageSize, selectedIds]);
-
-  // Calculate sticky column positions
-  const getStickyLeftPosition = (columnId, columnIndex) => {
-    if (!stickyColumns.includes(columnId)) return 0;
-    
-    let leftPosition = 0;
-    for (let i = 0; i < columnIndex; i++) {
-      const colId = tableColumns[i]?.id || tableColumns[i]?.accessorKey;
-      if (stickyColumns.includes(colId)) {
-        // Approximate column widths based on content - adjusted for actual column widths
-        if (colId === 'odp_number') leftPosition += 71; // Numero ODP
-        else if (colId === 'article_code') leftPosition += 80; // Codice Articolo
-        else leftPosition += 100; // Default width
-      }
-    }
-    return leftPosition;
-  };
-
+  // Calculate table data first to avoid circular dependency
   const tableData = useMemo(() => {
     // Check for duplicate IDs
     if (filteredData && filteredData.length > 0) {
@@ -215,6 +129,100 @@ function DataTable({
     return filteredData;
   }, [filteredData, enableGlobalSearch, globalQuery, columns]);
 
+  const tableColumns = useMemo(() => {
+    const enableRowSelection = Boolean(onBulkDelete);
+
+    const selectionColumn = enableRowSelection ? {
+      id: 'select',
+      header: () => {
+        // Calculate current page rows directly from data instead of using table
+        const startIndex = page * pageSize;
+        const endIndex = startIndex + pageSize;
+        const currentPageRows = (tableData || []).slice(startIndex, endIndex);
+        const allSelected = currentPageRows.length > 0 && currentPageRows.every(r => selectedIds.has(r.id));
+        const someSelected = currentPageRows.some(r => selectedIds.has(r.id));
+        return (
+          <div className="w-8">
+            <Checkbox
+              aria-label="Seleziona tutti"
+              checked={allSelected}
+              onCheckedChange={(checked) => {
+                const newSet = new Set(selectedIds);
+                if (checked) {
+                  currentPageRows.forEach(r => newSet.add(r.id));
+                } else {
+                  currentPageRows.forEach(r => newSet.delete(r.id));
+                }
+                setSelectedIds(newSet);
+              }}
+              className="mb-2"
+            />
+          </div>
+        );
+      },
+      cell: ({ row }) => (
+        <div className="flex w-8">
+          <Checkbox
+            aria-label="Seleziona riga"
+            checked={selectedIds.has(row.original.id)}
+            onCheckedChange={(checked) => {
+              const newSet = new Set(selectedIds);
+              if (checked) newSet.add(row.original.id); else newSet.delete(row.original.id);
+              setSelectedIds(newSet);
+            }}
+          />
+        </div>
+      )
+    } : null;
+
+    const handleEdit = (row) => {
+      if (onEditRow) {
+        onEditRow(row.original);
+      }
+    };
+
+    const actionColumn = (onEditRow || onDeleteRow) ? {
+      id: 'actions',
+      header: 'Azioni',
+      cell: ({ row }) => {
+        return (
+          <div className="flex flex-row gap-1 items-center justify-start">
+            {onEditRow && (
+              <Button size="xs" variant="outline" onClick={() => handleEdit(row)}>
+                Modifica
+              </Button>
+            )}
+            {onDeleteRow && (
+              <Button size="xs" variant="destructive" onClick={() => onDeleteRow(row.original)}>
+                Elimina
+              </Button>
+            )}
+          </div>
+        );
+      },
+    } : null;
+    
+    const base = actionColumn ? [...columns, actionColumn] : columns;
+    return selectionColumn ? [selectionColumn, ...base] : base;
+  }, [columns, onEditRow, onDeleteRow, onBulkDelete, page, pageSize, selectedIds, tableData]);
+
+  // Calculate sticky column positions
+  const getStickyLeftPosition = (columnId, columnIndex) => {
+    if (!stickyColumns.includes(columnId)) return 0;
+    
+    let leftPosition = 0;
+    for (let i = 0; i < columnIndex; i++) {
+      const colId = tableColumns[i]?.id || tableColumns[i]?.accessorKey;
+      if (stickyColumns.includes(colId)) {
+        // Approximate column widths based on content - adjusted for actual column widths
+        if (colId === 'odp_number') leftPosition += 71; // Numero ODP
+        else if (colId === 'article_code') leftPosition += 80; // Codice Articolo
+        else leftPosition += 100; // Default width
+      }
+    }
+    return leftPosition;
+  };
+
   const table = useReactTable({
     data: tableData,
     columns: tableColumns,
@@ -231,13 +239,13 @@ function DataTable({
   return (
     <div className="rounded-md overflow-hidden h-full flex flex-col">
       {enableGlobalSearch && (
-        <div className="flex items-center justify-between p-2 border-b bg-background">
+        <div className="flex items-center justify-between p-2 border-b">
           <input
             type="text"
             value={globalQuery}
             onChange={(e) => { setGlobalQuery(e.target.value); setPage(0); }}
             placeholder="Cerca..."
-            className="border border-input rounded px-2 py-1 text-sm w-64 bg-background text-foreground placeholder-muted-foreground"
+            className="border border-input rounded px-2 py-1 text-sm w-64 text-foreground placeholder-muted-foreground"
           />
         </div>
       )}
@@ -282,7 +290,7 @@ function DataTable({
             </TableRow>
           ))}
         </thead>
-        <tbody className="bg-background">
+        <tbody>
           {visibleRows.map((row) => {
             const rowKey = row.original.id || row.id;
             return (
@@ -299,7 +307,7 @@ function DataTable({
                   return (
                     <TableCell 
                       key={cellKey}
-                      className={isSticky ? 'sticky z-10 bg-background shadow-sm' : ''}
+                      className={isSticky ? 'sticky z-10 shadow-sm' : ''}
                       style={isSticky ? { 
                         left: `${getStickyLeftPosition(columnId, cellIndex)}px`
                       } : {}}
@@ -321,11 +329,11 @@ function DataTable({
         </table>
       </div>
       {/* Pagination footer */}
-      <div className="flex items-center justify-between p-2 border-t bg-background">
+      <div className="flex items-center justify-between p-2 border-t">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Righe per pagina</span>
           <select
-            className="border border-input rounded px-2 py-1 text-sm bg-background text-foreground"
+            className="border border-input rounded px-2 py-1 text-sm text-foreground"
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));

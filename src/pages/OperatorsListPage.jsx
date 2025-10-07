@@ -51,6 +51,10 @@ function OperatorsListPage() {
     setSelectedOperator(null);
   };
 
+  const handleEditRow = (item) => {
+    navigate(`/operators/edit/${item.id}`);
+  };
+
   // Table columns - only essential info
   const columns = [
     {
@@ -99,18 +103,11 @@ function OperatorsListPage() {
   return (
     <div className="h-full flex flex-col p-2">
       <div className="flex justify-end items-center mb-2 flex-shrink-0">
-        <div className="flex space-x-2">
-          <input
-            type="text"
-            placeholder="Cerca..."
-            className="border border-input rounded px-3 py-2 text-sm w-64 bg-background text-foreground placeholder-muted-foreground"
-          />
-          <Link to="/operators/new">
-            <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
-              Nuovo Operatore
-            </Button>
-          </Link>
-        </div>
+        <Link to="/operators/new">
+          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
+            Nuovo Operatore
+          </Button>
+        </Link>
       </div>
 
       <Card className="p-4 flex-1 flex flex-col min-h-0">
@@ -119,6 +116,7 @@ function OperatorsListPage() {
             data={operatorsData || []}
             columns={columns}
             onRowClick={handleRowClick}
+            onEditRow={handleEditRow}
             enableFiltering={true}
             filterableColumns={['name', 'code', 'role', 'status']}
             enableGlobalSearch={false}
