@@ -102,7 +102,7 @@ export function OperatorDetailCard({ operator, onClose, onEdit }) {
                   {isEditing ? 'Edit Operator' : 'Operator Details'}
                 </h1>
                 <p className="text-muted-foreground">
-                  {isEditing ? 'Modify operator information' : `Operator #${operator.id}`}
+                  {isEditing ? 'Modify operator information' : operator.name}
                 </p>
               </div>
             </div>

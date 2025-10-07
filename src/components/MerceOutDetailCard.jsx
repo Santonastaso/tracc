@@ -122,7 +122,7 @@ export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
                   {isEditing ? 'Edit Outbound Movement' : 'Outbound Movement Details'}
                 </h1>
                 <p className="text-muted-foreground">
-                  {isEditing ? 'Modify movement information' : `Movement #${outbound.id}`}
+                  {isEditing ? 'Modify movement information' : `Movement ${outbound.id}`}
                 </p>
               </div>
             </div>

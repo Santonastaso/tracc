@@ -106,7 +106,7 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                   {isEditing ? 'Edit Inbound Movement' : 'Inbound Movement Details'}
                 </h1>
                 <p className="text-muted-foreground">
-                  {isEditing ? 'Modify movement information' : `Movement #${inbound.id}`}
+                  {isEditing ? 'Modify movement information' : `Movement ${inbound.id}`}
                 </p>
               </div>
             </div>

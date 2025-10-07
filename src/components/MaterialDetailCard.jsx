@@ -90,7 +90,7 @@ export function MaterialDetailCard({ material, onClose, onEdit }) {
                   {isEditing ? 'Edit Material' : 'Material Details'}
                 </h1>
                 <p className="text-muted-foreground">
-                  {isEditing ? 'Modify material information' : `Material #${material.id}`}
+                  {isEditing ? 'Modify material information' : material.name}
                 </p>
               </div>
             </div>

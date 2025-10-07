@@ -117,7 +117,7 @@ export function SiloDetailCard({ silo, onClose, onEdit }) {
                 {isEditing ? 'Edit Silo' : 'Silo Details'}
               </h1>
               <p className="text-muted-foreground">
-                {isEditing ? 'Modify silo information' : `Silo #${silo.id}`}
+                {isEditing ? 'Modify silo information' : silo.name}
               </p>
             </div>
           </div>

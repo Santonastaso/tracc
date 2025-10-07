@@ -104,7 +104,7 @@ export function SupplierDetailCard({ supplier, onClose, onEdit }) {
                   {isEditing ? 'Edit Supplier' : 'Supplier Details'}
                 </h1>
                 <p className="text-muted-foreground">
-                  {isEditing ? 'Modify supplier information' : `Supplier #${supplier.id}`}
+                  {isEditing ? 'Modify supplier information' : supplier.name}
                 </p>
               </div>
             </div>
