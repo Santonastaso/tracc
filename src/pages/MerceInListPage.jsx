@@ -166,7 +166,7 @@ function MerceInListPage() {
   return (
     <div className="h-full flex flex-col p-4">
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">Lista Movimenti Merce IN</h1>
+        <h1 className="text-2xl font-bold text-foreground">Movimenti Merce IN</h1>
         <div className="flex space-x-2">
           <Link to="/merce-in/new">
             <Button>
@@ -177,7 +177,6 @@ function MerceInListPage() {
       </div>
 
       <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <h2 className="text-lg font-semibold mb-4 flex-shrink-0">Movimenti Merce IN</h2>
         <div className="flex-1 min-h-0">
           <DataTable
             data={inboundData || []}
