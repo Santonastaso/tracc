@@ -96,7 +96,7 @@ function SideNav() {
 
   if (!user) {
     return (
-      <nav className="w-64 bg-background shadow-sm border-r border-border h-screen flex flex-col">
+      <nav className="w-64 bg-secondary shadow-sm border-r border-border h-screen flex flex-col">
         <div className="p-4 border-b border-border">
           <Link to="/login" className="flex items-center justify-center">
             <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-8 w-auto" />
@@ -104,7 +104,7 @@ function SideNav() {
         </div>
         
         <div className="flex-1 p-4">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">NAVIGATION</h3>
+          <h3 className="text-xs font-semibold text-secondary-foreground uppercase tracking-wider mb-4">NAVIGATION</h3>
           <div className="space-y-2">
             <Link to="/login" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
               <span className="font-medium">Accedi</span>
@@ -120,7 +120,7 @@ function SideNav() {
 
   if (!isOpen) {
     return (
-      <div className="w-16 bg-background shadow-sm border-r border-border min-h-screen">
+      <div className="w-16 bg-secondary shadow-sm border-r border-border min-h-screen">
         <div className="flex flex-col items-center py-4 space-y-4">
           {navLinks.map((item) => {
             const Icon = item.icon
@@ -146,7 +146,7 @@ function SideNav() {
   }
 
   return (
-    <nav className="w-64 bg-background shadow-sm border-r border-border h-screen flex flex-col flex-shrink-0 sticky left-0 z-30">
+    <nav className="w-64 bg-secondary shadow-sm border-r border-border h-screen flex flex-col flex-shrink-0 sticky left-0 z-30">
       {/* Logo */}
       <div className="p-4 border-b border-border">
         <Link to="/" className="flex items-center justify-center">
@@ -156,7 +156,7 @@ function SideNav() {
 
       {/* Navigation */}
       <div className="flex-1 p-4">
-        <h2 className="text-lg font-semibold text-foreground mb-6">Navigation</h2>
+        <h2 className="text-lg font-semibold text-secondary-foreground mb-6">Navigation</h2>
         <nav className="space-y-2">
           {navLinks.map((link) => {
             if (link.section) {
