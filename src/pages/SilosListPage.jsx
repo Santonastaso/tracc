@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase/client';
 import { useMaterials, useDeleteSilo } from '../hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/DataTable';
+import { SiloDetailCard } from '../components/SiloDetailCard';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 function SilosListPage() {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
+  const [selectedSilo, setSelectedSilo] = useState(null);
 
   // Fetch data using centralized query hooks
   const { data: silosData, isLoading } = useQuery({
@@ -42,17 +44,51 @@ function SilosListPage() {
     onSuccess: () => queryClient.invalidateQueries(['silos'])
   });
 
-  const handleEdit = (item) => {
+  const handleBulkExport = (ids) => {
+    const selectedSilos = silosData?.filter(silo => ids.includes(silo.id)) || [];
+    
+    // Create CSV content
+    const headers = ['ID', 'Nome Silos', 'Capacità (Kg)', 'Materiali Consentiti', 'Data Creazione', 'Ultima Modifica'];
+    const csvContent = [
+      headers.join(','),
+      ...selectedSilos.map(silo => [
+        silo.id,
+        `"${silo.name}"`,
+        silo.capacity_kg,
+        `"${silo.allowed_material_ids?.length > 0 ? silo.allowed_material_ids.map(id => {
+          const material = materialsData?.find(m => m.id === id);
+          return material ? material.name : `ID: ${id}`;
+        }).join(', ') : 'Tutti i materiali'}"`,
+        new Date(silo.created_at).toLocaleDateString('it-IT', { timeZone: 'UTC' }),
+        new Date(silo.updated_at).toLocaleDateString('it-IT', { timeZone: 'UTC' })
+      ].join(','))
+    ].join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `silos_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleRowClick = (item) => {
+    setSelectedSilo(item);
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedSilo(null);
+  };
+
+  const handleEditRow = (item) => {
     navigate(`/silos/edit/${item.id}`);
   };
 
-  const handleDelete = (item) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo silos?')) {
-      deleteMutation.mutate(item.id);
-    }
-  };
-
-  // Table columns
+  // Table columns - only essential info
   const columns = [
     {
       accessorKey: 'id',
@@ -67,92 +103,53 @@ function SilosListPage() {
       accessorKey: 'capacity_kg',
       header: 'Capacità (Kg)',
       cell: ({ getValue }) => `${getValue().toLocaleString()} kg`
-    },
-    {
-      accessorKey: 'allowed_material_ids',
-      header: 'Materiali Consentiti',
-      cell: ({ getValue }) => {
-        const materialIds = getValue();
-        if (!materialIds || materialIds.length === 0) {
-          return <span className="text-gray-500">Tutti i materiali</span>;
-        }
-        
-        // Get material names from IDs
-        const materialNames = materialIds
-          .map(id => {
-            const material = materialsData?.find(m => m.id === id);
-            return material ? material.name : `ID: ${id}`;
-          })
-          .join(', ');
-        
-        return (
-          <div className="max-w-xs">
-            <div className="text-sm font-medium text-gray-900">
-              {materialIds.length} materiale{materialIds.length !== 1 ? 'i' : ''}
-            </div>
-            <div className="text-xs text-gray-600 truncate" title={materialNames}>
-              {materialNames}
-            </div>
-          </div>
-        );
-      }
-    },
-    {
-      accessorKey: 'created_at',
-      header: 'Data Creazione',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
-      }
-    },
-    {
-      accessorKey: 'updated_at',
-      header: 'Ultima Modifica',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
-      }
     }
   ];
 
   if (isLoading || materialsLoading) {
     return (
-      <div className="p-4">
+      <div className="p-2">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-300 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-300 rounded"></div>
+          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
+          <div className="h-64 bg-muted rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col p-4">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Lista Silos</h1>
-        <div className="flex space-x-2">
-          <Link to="/silos/new">
-            <Button className="bg-navy-800 hover:bg-navy-700">
-              Nuovo Silos
-            </Button>
-          </Link>
-        </div>
+    <div className="h-full flex flex-col p-2">
+      <div className="flex justify-end items-center mb-2 flex-shrink-0">
+        <Link to="/silos/new">
+          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
+            Nuovo Silos
+          </Button>
+        </Link>
       </div>
 
       <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <h2 className="text-lg font-semibold mb-4 flex-shrink-0">Silos</h2>
         <div className="flex-1 min-h-0">
           <DataTable
             data={silosData || []}
             columns={columns}
-            onEditRow={handleEdit}
-            onDeleteRow={handleDelete}
+            onRowClick={handleRowClick}
+            onEditRow={handleEditRow}
             enableFiltering={true}
             filterableColumns={['name']}
+            enableGlobalSearch={false}
             onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+            onBulkExport={handleBulkExport}
           />
         </div>
       </Card>
+
+      {/* Detail Card */}
+      {selectedSilo && (
+        <SiloDetailCard
+          silo={selectedSilo}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 }

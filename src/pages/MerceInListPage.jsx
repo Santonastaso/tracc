@@ -8,6 +8,7 @@ import {
   queryKeys
 } from '../hooks';
 import DataTable from '../components/DataTable';
+import { MerceInDetailCard } from '../components/MerceInDetailCard';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
@@ -15,6 +16,7 @@ import { Link, useNavigate } from 'react-router-dom';
 function MerceInListPage() {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
+  const [selectedInbound, setSelectedInbound] = useState(null);
 
   // Fetch data using centralized query hooks
   const { data: inboundData, isLoading } = useQuery({
@@ -47,17 +49,19 @@ function MerceInListPage() {
     onSuccess: () => queryClient.invalidateQueries([...queryKeys.inbound, 'with-silos'])
   });
 
-  const handleEdit = (item) => {
+  const handleRowClick = (item) => {
+    setSelectedInbound(item);
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedInbound(null);
+  };
+
+  const handleEditRow = (item) => {
     navigate(`/merce-in/edit/${item.id}`);
   };
 
-  const handleDelete = (item) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo movimento?')) {
-      deleteMutation.mutate(item.id);
-    }
-  };
-
-  // Table columns
+  // Table columns - only essential info
   const columns = [
     {
       accessorKey: 'id',
@@ -80,18 +84,8 @@ function MerceInListPage() {
       }
     },
     {
-      accessorKey: 'ddt_number',
-      header: 'DDT'
-    },
-    {
       accessorKey: 'product',
-      header: 'Prodotto',
-      cell: ({ getValue, row }) => {
-        const product = getValue();
-        // Try to find the material to show unit
-        const material = materialsData?.find(m => m.name === product);
-        return material ? `${product} (${material.unit || 'Kg'})` : product;
-      }
+      header: 'Prodotto'
     },
     {
       accessorKey: 'quantity_kg',
@@ -104,92 +98,54 @@ function MerceInListPage() {
       cell: ({ row }) => row.original.silos?.name || 'N/A'
     },
     {
-      accessorKey: 'lot_supplier',
-      header: 'Lotto Fornitore'
-    },
-    {
-      accessorKey: 'lot_tf',
-      header: 'Lotto TF'
-    },
-    {
-      accessorKey: 'cleaned',
-      header: 'Pulizia',
-      cell: ({ getValue }) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          getValue() ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
-        }`}>
-          {getValue() ? 'Accettata' : 'Non Accettata'}
-        </span>
-      )
-    },
-    {
-      accessorKey: 'proteins',
-      header: 'Proteine (%)',
-      cell: ({ getValue }) => {
-        const value = getValue();
-        return value ? `${value}%` : 'N/A';
-      }
-    },
-    {
-      accessorKey: 'humidity',
-      header: 'Umidità (%)',
-      cell: ({ getValue }) => {
-        const value = getValue();
-        return value ? `${value}%` : 'N/A';
-      }
-    },
-    {
       accessorKey: 'operator_name',
       header: 'Operatore'
-    },
-    {
-      accessorKey: 'updated_at',
-      header: 'Ultima Modifica',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
-      }
     }
   ];
 
   if (isLoading || materialsLoading || operatorsLoading) {
     return (
-      <div className="p-4">
+      <div className="p-2">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-300 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-300 rounded"></div>
+          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
+          <div className="h-64 bg-muted rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col p-4">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Lista Movimenti Merce IN</h1>
-        <div className="flex space-x-2">
-          <Link to="/merce-in/new">
-            <Button className="bg-navy-800 hover:bg-navy-700">
-              Nuovo Movimento
-            </Button>
-          </Link>
-        </div>
+    <div className="h-full flex flex-col p-2">
+      <div className="flex justify-end items-center mb-2 flex-shrink-0">
+        <Link to="/merce-in/new">
+          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
+            Nuovo Movimento
+          </Button>
+        </Link>
       </div>
 
       <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <h2 className="text-lg font-semibold mb-4 flex-shrink-0">Movimenti Merce IN</h2>
         <div className="flex-1 min-h-0">
           <DataTable
             data={inboundData || []}
             columns={columns}
-            onEditRow={handleEdit}
-            onDeleteRow={handleDelete}
+            onRowClick={handleRowClick}
+            onEditRow={handleEditRow}
             enableFiltering={true}
             filterableColumns={['product', 'operator_name']}
+            enableGlobalSearch={false}
             onBulkDelete={(ids) => bulkDelete.mutate(ids)}
           />
         </div>
       </Card>
+
+      {/* Detail Card */}
+      {selectedInbound && (
+        <MerceInDetailCard
+          inbound={selectedInbound}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 }

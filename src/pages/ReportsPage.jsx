@@ -567,7 +567,7 @@ function ReportsPage() {
   return (
     <div className="p-4 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Report e Analisi</h1>
+        <h1 className="text-2xl font-bold text-foreground">Report e Analisi</h1>
         <div className="flex gap-2">
           <Button 
             onClick={() => exportToCSV(getCurrentData(), `report_${filters.reportType}`)}
@@ -577,7 +577,7 @@ function ReportsPage() {
           </Button>
           <Button 
             onClick={printReport}
-            className="bg-navy-800 hover:bg-navy-700"
+            className=""
           >
             Stampa Report
           </Button>
@@ -585,7 +585,7 @@ function ReportsPage() {
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
+      <Card className="p-2">
         <h2 className="text-lg font-semibold mb-4">Filtri Report</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
@@ -688,7 +688,7 @@ function ReportsPage() {
       </Card>
 
       {/* Report Content */}
-      <Card className="p-4">
+      <Card className="p-2">
         <h2 className="text-lg font-semibold mb-4">
           {filters.reportType === 'movements' && 'Report Movimenti IN'}
           {filters.reportType === 'outbound' && 'Report Movimenti OUT'}
@@ -698,7 +698,7 @@ function ReportsPage() {
         
         {getCurrentLoading() ? (
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-300 rounded"></div>
+            <div className="h-64 bg-muted rounded"></div>
           </div>
         ) : (
           <>

@@ -9,6 +9,8 @@ import {
   TableRow,
 } from './ui/table';
 import { Button } from './ui/button';
+import { Checkbox } from './ui/checkbox';
+import { BulkActionsToolbar } from './ui/BulkActionsToolbar';
 import FilterDropdown from './FilterDropdown';
 import { confirmAction } from '../utils';
 
@@ -17,14 +19,16 @@ function DataTable({
   columns, 
   onEditRow, 
   onDeleteRow, 
+  onRowClick,
   enableFiltering = false, 
   filterableColumns = [], 
   stickyColumns = [],
   onBulkDelete = null,
+  onBulkExport = null,
   initialPageSize = 10,
   pageSizeOptions = [10, 25, 50],
   enableGlobalSearch = true,
-  enableColumnVisibility = true
+  enableColumnVisibility = false
 }) {
   // Filter state management
   const [filters, setFilters] = useState({});
@@ -33,7 +37,6 @@ function DataTable({
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [globalQuery, setGlobalQuery] = useState('');
-  const [hiddenColumns, setHiddenColumns] = useState({});
 
   // Helper to get nested values via dot notation
   const getNested = (obj, path) => {
@@ -86,96 +89,7 @@ function DataTable({
     setOpenFilter(openFilter === column ? null : column);
   };
 
-  const tableColumns = useMemo(() => {
-    const enableRowSelection = Boolean(onBulkDelete);
-
-    const selectionColumn = enableRowSelection ? {
-      id: 'select',
-      header: () => {
-        const currentRows = table?.getRowModel().rows || [];
-        const currentPageRows = currentRows.slice(page * pageSize, (page + 1) * pageSize);
-        const allSelected = currentPageRows.length > 0 && currentPageRows.every(r => selectedIds.has(r.original.id));
-        const someSelected = currentPageRows.some(r => selectedIds.has(r.original.id));
-        return (
-          <input
-            type="checkbox"
-            aria-label="Seleziona tutti"
-            checked={allSelected}
-            ref={el => { if (el) el.indeterminate = !allSelected && someSelected; }}
-            onChange={(e) => {
-              const newSet = new Set(selectedIds);
-              if (e.target.checked) {
-                currentPageRows.forEach(r => newSet.add(r.original.id));
-              } else {
-                currentPageRows.forEach(r => newSet.delete(r.original.id));
-              }
-              setSelectedIds(newSet);
-            }}
-          />
-        );
-      },
-      cell: ({ row }) => (
-        <input
-          type="checkbox"
-          aria-label="Seleziona riga"
-          checked={selectedIds.has(row.original.id)}
-          onChange={(e) => {
-            const newSet = new Set(selectedIds);
-            if (e.target.checked) newSet.add(row.original.id); else newSet.delete(row.original.id);
-            setSelectedIds(newSet);
-          }}
-        />
-      )
-    } : null;
-
-    const handleEdit = (row) => {
-      onEditRow(row.original);
-    };
-
-    const actionColumn = {
-      id: 'actions',
-      header: 'Azioni',
-      cell: ({ row }) => {
-        return (
-          <div className="flex flex-row gap-1 items-center justify-start">
-            <Button size="xs" variant="outline" onClick={() => handleEdit(row)}>
-              Modifica
-            </Button>
-            <Button size="xs" variant="destructive" onClick={() => onDeleteRow(row.original)}>
-              Elimina
-            </Button>
-          </div>
-        );
-      },
-    };
-    const base = [...columns, actionColumn];
-    const cols = enableColumnVisibility
-      ? base.filter(col => {
-          const id = col.id || col.accessorKey;
-          if (id === 'actions' || id === 'select') return true;
-          return !hiddenColumns[id];
-        })
-      : base;
-    return selectionColumn ? [selectionColumn, ...cols] : cols;
-  }, [columns, onEditRow, onDeleteRow, onBulkDelete, page, pageSize, selectedIds, enableColumnVisibility, hiddenColumns]);
-
-  // Calculate sticky column positions
-  const getStickyLeftPosition = (columnId, columnIndex) => {
-    if (!stickyColumns.includes(columnId)) return 0;
-    
-    let leftPosition = 0;
-    for (let i = 0; i < columnIndex; i++) {
-      const colId = tableColumns[i]?.id || tableColumns[i]?.accessorKey;
-      if (stickyColumns.includes(colId)) {
-        // Approximate column widths based on content - adjusted for actual column widths
-        if (colId === 'odp_number') leftPosition += 71; // Numero ODP
-        else if (colId === 'article_code') leftPosition += 80; // Codice Articolo
-        else leftPosition += 100; // Default width
-      }
-    }
-    return leftPosition;
-  };
-
+  // Calculate table data first to avoid circular dependency
   const tableData = useMemo(() => {
     // Check for duplicate IDs
     if (filteredData && filteredData.length > 0) {
@@ -215,6 +129,100 @@ function DataTable({
     return filteredData;
   }, [filteredData, enableGlobalSearch, globalQuery, columns]);
 
+  const tableColumns = useMemo(() => {
+    const enableRowSelection = Boolean(onBulkDelete);
+
+    const selectionColumn = enableRowSelection ? {
+      id: 'select',
+      header: () => {
+        // Calculate current page rows directly from data instead of using table
+        const startIndex = page * pageSize;
+        const endIndex = startIndex + pageSize;
+        const currentPageRows = (tableData || []).slice(startIndex, endIndex);
+        const allSelected = currentPageRows.length > 0 && currentPageRows.every(r => selectedIds.has(r.id));
+        const someSelected = currentPageRows.some(r => selectedIds.has(r.id));
+        return (
+          <div className="w-8">
+            <Checkbox
+              aria-label="Seleziona tutti"
+              checked={allSelected}
+              onCheckedChange={(checked) => {
+                const newSet = new Set(selectedIds);
+                if (checked) {
+                  currentPageRows.forEach(r => newSet.add(r.id));
+                } else {
+                  currentPageRows.forEach(r => newSet.delete(r.id));
+                }
+                setSelectedIds(newSet);
+              }}
+              className="mb-2"
+            />
+          </div>
+        );
+      },
+      cell: ({ row }) => (
+        <div className="flex w-8">
+          <Checkbox
+            aria-label="Seleziona riga"
+            checked={selectedIds.has(row.original.id)}
+            onCheckedChange={(checked) => {
+              const newSet = new Set(selectedIds);
+              if (checked) newSet.add(row.original.id); else newSet.delete(row.original.id);
+              setSelectedIds(newSet);
+            }}
+          />
+        </div>
+      )
+    } : null;
+
+    const handleEdit = (row) => {
+      if (onEditRow) {
+        onEditRow(row.original);
+      }
+    };
+
+    const actionColumn = (onEditRow || onDeleteRow) ? {
+      id: 'actions',
+      header: 'Azioni',
+      cell: ({ row }) => {
+        return (
+          <div className="flex flex-row gap-1 items-center justify-start">
+            {onEditRow && (
+              <Button size="xs" variant="outline" onClick={() => handleEdit(row)}>
+                Modifica
+              </Button>
+            )}
+            {onDeleteRow && (
+              <Button size="xs" variant="destructive" onClick={() => onDeleteRow(row.original)}>
+                Elimina
+              </Button>
+            )}
+          </div>
+        );
+      },
+    } : null;
+    
+    const base = actionColumn ? [...columns, actionColumn] : columns;
+    return selectionColumn ? [selectionColumn, ...base] : base;
+  }, [columns, onEditRow, onDeleteRow, onBulkDelete, page, pageSize, selectedIds, tableData]);
+
+  // Calculate sticky column positions
+  const getStickyLeftPosition = (columnId, columnIndex) => {
+    if (!stickyColumns.includes(columnId)) return 0;
+    
+    let leftPosition = 0;
+    for (let i = 0; i < columnIndex; i++) {
+      const colId = tableColumns[i]?.id || tableColumns[i]?.accessorKey;
+      if (stickyColumns.includes(colId)) {
+        // Approximate column widths based on content - adjusted for actual column widths
+        if (colId === 'odp_number') leftPosition += 71; // Numero ODP
+        else if (colId === 'article_code') leftPosition += 80; // Codice Articolo
+        else leftPosition += 100; // Default width
+      }
+    }
+    return leftPosition;
+  };
+
   const table = useReactTable({
     data: tableData,
     columns: tableColumns,
@@ -229,64 +237,22 @@ function DataTable({
   const visibleRows = allRows.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
   return (
-    <div className="rounded-md border overflow-hidden h-full flex flex-col">
-      {(enableGlobalSearch || enableColumnVisibility) && (
-        <div className="flex items-center justify-between p-2 border-b bg-white">
-          {enableGlobalSearch ? (
-            <input
-              type="text"
-              value={globalQuery}
-              onChange={(e) => { setGlobalQuery(e.target.value); setPage(0); }}
-              placeholder="Cerca..."
-              className="border rounded px-2 py-1 text-[10px] w-64"
-            />
-          ) : <div />}
-          {enableColumnVisibility && (
-            <details className="relative">
-              <summary className="list-none cursor-pointer text-[10px] px-2 py-1 border rounded bg-gray-50">Colonne</summary>
-              <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow p-2 z-40">
-                {(columns || []).map(col => {
-                  const id = col.id || col.accessorKey;
-                  if (!id) return null;
-                  return (
-                    <label key={id} className="flex items-center gap-2 text-[10px] py-1">
-                      <input
-                        type="checkbox"
-                        checked={!hiddenColumns[id]}
-                        onChange={(e) => {
-                          setHiddenColumns(prev => ({ ...prev, [id]: !e.target.checked }));
-                        }}
-                      />
-                      <span>{typeof col.header === 'string' ? col.header : (col.accessorKey || id)}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </details>
-          )}
-        </div>
-      )}
-      {/* Bulk actions toolbar */}
-      {onBulkDelete && selectedIds.size > 0 && (
-        <div className="flex items-center justify-between p-2 border-b bg-gray-50">
-          <div className="text-[10px] text-gray-700">{selectedIds.size} selezionati</div>
-          <div className="flex gap-2">
-            <Button size="xs" variant="destructive" onClick={() => {
-              if (confirmAction('Eliminare gli elementi selezionati?')) {
-                const ids = Array.from(selectedIds);
-                onBulkDelete(ids);
-                setSelectedIds(new Set());
-              }
-            }}>
-              Elimina selezionati
-            </Button>
-          </div>
+    <div className="rounded-md overflow-hidden h-full flex flex-col">
+      {enableGlobalSearch && (
+        <div className="flex items-center justify-between p-2 border-b">
+          <input
+            type="text"
+            value={globalQuery}
+            onChange={(e) => { setGlobalQuery(e.target.value); setPage(0); }}
+            placeholder="Cerca..."
+            className="border border-input rounded px-2 py-1 text-sm w-64 text-foreground placeholder-muted-foreground"
+          />
         </div>
       )}
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full caption-bottom text-[10px] !text-[10px] relative">
-        <thead className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200">
+        <table className="w-full caption-bottom text-sm relative">
+        <thead className="sticky top-0 z-20 bg-muted/50 border-b border-border">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header, headerIndex) => {
@@ -299,7 +265,7 @@ function DataTable({
                   <TableHead 
                     key={headerKey} 
                     onClick={header.column.getToggleSortingHandler()}
-                    className={isSticky ? 'sticky top-0 z-30 bg-gray-50 shadow-sm' : ''}
+                    className={isSticky ? 'sticky top-0 z-30 bg-muted/50 shadow-sm' : ''}
                     style={isSticky ? { 
                       left: `${getStickyLeftPosition(columnId, headerIndex)}px`
                     } : {}}
@@ -324,11 +290,15 @@ function DataTable({
             </TableRow>
           ))}
         </thead>
-        <tbody className="bg-white">
+        <tbody>
           {visibleRows.map((row) => {
             const rowKey = row.original.id || row.id;
             return (
-              <TableRow key={rowKey}>
+              <TableRow 
+                key={rowKey}
+                className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''}
+                onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+              >
                 {row.getVisibleCells().map((cell, cellIndex) => {
                   const cellKey = `${rowKey}_${cell.column.id}_${cellIndex}`;
                   const columnId = cell.column.id;
@@ -337,10 +307,16 @@ function DataTable({
                   return (
                     <TableCell 
                       key={cellKey}
-                      className={isSticky ? 'sticky z-10 bg-white shadow-sm' : ''}
+                      className={isSticky ? 'sticky z-10 shadow-sm' : ''}
                       style={isSticky ? { 
                         left: `${getStickyLeftPosition(columnId, cellIndex)}px`
                       } : {}}
+                      onClick={(e) => {
+                        // Prevent row click when clicking on checkboxes or action buttons
+                        if (columnId === 'select' || columnId === 'actions') {
+                          e.stopPropagation();
+                        }
+                      }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
@@ -353,11 +329,11 @@ function DataTable({
         </table>
       </div>
       {/* Pagination footer */}
-      <div className="flex items-center justify-between p-2 border-t bg-white">
+      <div className="flex items-center justify-between p-2 border-t">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-gray-700">Righe per pagina</span>
+          <span className="text-sm text-muted-foreground">Righe per pagina</span>
           <select
-            className="border rounded px-1 py-0.5 text-[10px]"
+            className="border border-input rounded px-2 py-1 text-sm text-foreground"
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
@@ -369,25 +345,42 @@ function DataTable({
             ))}
           </select>
         </div>
-        <div className="text-[10px] text-gray-700">
+        <div className="text-sm text-muted-foreground">
           {allRows.length === 0 ? '0–0 di 0' : `${currentPage * pageSize + 1}–${Math.min((currentPage + 1) * pageSize, allRows.length)} di ${allRows.length}`}
         </div>
         <div className="flex items-center gap-2">
-          <Button size="xs" variant="outline" onClick={() => setPage(0)} disabled={currentPage === 0}>
+          <Button size="sm" variant="outline" onClick={() => setPage(0)} disabled={currentPage === 0}>
             «
           </Button>
-          <Button size="xs" variant="outline" onClick={() => setPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>
+          <Button size="sm" variant="outline" onClick={() => setPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0}>
             Prev
           </Button>
-          <span className="text-[10px]">Pagina {currentPage + 1} / {pageCount}</span>
-          <Button size="xs" variant="outline" onClick={() => setPage(Math.min(pageCount - 1, currentPage + 1))} disabled={currentPage >= pageCount - 1}>
+          <span className="text-sm text-muted-foreground">Pagina {currentPage + 1} / {pageCount}</span>
+          <Button size="sm" variant="outline" onClick={() => setPage(Math.min(pageCount - 1, currentPage + 1))} disabled={currentPage >= pageCount - 1}>
             Next
           </Button>
-          <Button size="xs" variant="outline" onClick={() => setPage(pageCount - 1)} disabled={currentPage >= pageCount - 1}>
+          <Button size="sm" variant="outline" onClick={() => setPage(pageCount - 1)} disabled={currentPage >= pageCount - 1}>
             »
           </Button>
         </div>
       </div>
+      
+      {/* Bottom action bar for selected items */}
+      <BulkActionsToolbar
+        selectedCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        onExport={onBulkExport ? () => {
+          const ids = Array.from(selectedIds);
+          onBulkExport(ids);
+        } : null}
+        onDelete={onBulkDelete ? () => {
+          if (confirmAction('Eliminare gli elementi selezionati?')) {
+            const ids = Array.from(selectedIds);
+            onBulkDelete(ids);
+            setSelectedIds(new Set());
+          }
+        } : null}
+      />
     </div>
   );
 }
