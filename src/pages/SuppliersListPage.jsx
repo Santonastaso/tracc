@@ -142,8 +142,8 @@ function SuppliersListPage() {
     return (
       <div className="p-4">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-300 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-300 rounded"></div>
+          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
+          <div className="h-64 bg-muted rounded"></div>
         </div>
       </div>
     );
@@ -152,10 +152,10 @@ function SuppliersListPage() {
   return (
     <div className="h-full flex flex-col p-4">
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Lista Fornitori</h1>
+        <h1 className="text-2xl font-bold text-foreground">Lista Fornitori</h1>
         <div className="flex space-x-2">
           <Link to="/suppliers/new">
-            <Button className="bg-navy-800 hover:bg-navy-700">
+            <Button>
               Nuovo Fornitore
             </Button>
           </Link>

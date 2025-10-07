@@ -167,8 +167,8 @@ function SilosFormPage() {
     return (
       <div className="p-4">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-300 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-300 rounded"></div>
+          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
+          <div className="h-64 bg-muted rounded"></div>
         </div>
       </div>
     );
@@ -177,7 +177,7 @@ function SilosFormPage() {
   return (
     <div className="h-full flex flex-col p-4">
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-foreground">
           {editingItem ? 'Modifica Silos' : 'Nuovo Silos'}
         </h1>
         <Button variant="outline" onClick={handleCancel}>

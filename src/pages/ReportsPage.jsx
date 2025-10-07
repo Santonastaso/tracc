@@ -567,7 +567,7 @@ function ReportsPage() {
   return (
     <div className="p-4 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Report e Analisi</h1>
+        <h1 className="text-2xl font-bold text-foreground">Report e Analisi</h1>
         <div className="flex gap-2">
           <Button 
             onClick={() => exportToCSV(getCurrentData(), `report_${filters.reportType}`)}
@@ -698,7 +698,7 @@ function ReportsPage() {
         
         {getCurrentLoading() ? (
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-300 rounded"></div>
+            <div className="h-64 bg-muted rounded"></div>
           </div>
         ) : (
           <>

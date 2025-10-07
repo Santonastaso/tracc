@@ -55,7 +55,7 @@ function GenericForm({
   isLoading = false,
   customActions = null,
   customFieldRenderers = {},
-  className = "p-1 bg-white rounded-lg shadow-sm border"
+  className = "p-1 bg-background rounded-lg shadow-sm border border-border"
 }) {
   const { handleAsyncError } = useErrorHandler('GenericForm');
   const { validate } = useValidation();
@@ -182,7 +182,7 @@ function GenericForm({
           <textarea
             {...baseInputProps}
             rows={field.rows || 3}
-            className={`w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-navy-800 focus:border-transparent text-[10px] placeholder:text-muted-foreground ${field.className || ''}`}
+            className={`w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-sm bg-background text-foreground placeholder:text-muted-foreground ${field.className || ''}`}
           />
         );
 
