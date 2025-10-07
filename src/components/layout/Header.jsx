@@ -78,16 +78,16 @@ export function Header() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
+                  <Settings className="size-4" />
                   <span>My info</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
-                  <Users className="mr-2 h-4 w-4" />
+                  <Users className="size-4" />
                   <span>Users</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="size-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
