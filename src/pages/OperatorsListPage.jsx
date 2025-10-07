@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/DataTable';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import { Link, useNavigate } from 'react-router-dom';
 
 function OperatorsListPage() {
@@ -74,15 +75,11 @@ function OperatorsListPage() {
       header: 'Stato',
       cell: ({ getValue }) => {
         const status = getValue();
-        const statusColors = {
-          'active': 'text-green-600 bg-green-100',
-          'inactive': 'text-red-600 bg-red-100',
-          'suspended': 'text-yellow-600 bg-yellow-100'
-        };
+        const statusVariant = status === 'active' ? 'default' : status === 'inactive' ? 'destructive' : status === 'suspended' ? 'secondary' : 'outline';
         return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status] || 'text-gray-600 bg-gray-100'}`}>
+          <Badge variant={statusVariant}>
             {status || 'N/A'}
-          </span>
+          </Badge>
         );
       }
     },

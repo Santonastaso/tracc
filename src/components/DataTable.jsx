@@ -229,7 +229,7 @@ function DataTable({
   const visibleRows = allRows.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
   return (
-    <div className="rounded-md border overflow-hidden h-full flex flex-col">
+    <div className="rounded-md overflow-hidden h-full flex flex-col">
       {(enableGlobalSearch || enableColumnVisibility) && (
         <div className="flex items-center justify-between p-2 border-b bg-background">
           {enableGlobalSearch ? (
