@@ -144,7 +144,7 @@ function SilosPage() {
       </div>
 
       {showForm && (
-        <Card className="p-4">
+        <Card className="p-2">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">
               {editingItem ? 'Modifica Silos' : 'Nuovo Silos'}

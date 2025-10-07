@@ -165,7 +165,7 @@ function SilosFormPage() {
 
   if (isLoading || materialsLoading) {
     return (
-      <div className="p-4">
+      <div className="p-2">
         <div className="animate-pulse">
           <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
           <div className="h-64 bg-muted rounded"></div>
@@ -175,7 +175,7 @@ function SilosFormPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-4">
+    <div className="h-full flex flex-col p-2">
       <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h1 className="text-2xl font-bold text-foreground">
           {editingItem ? 'Modifica Silos' : 'Nuovo Silos'}

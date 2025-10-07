@@ -9,6 +9,7 @@ import {
   TableRow,
 } from './ui/table';
 import { Button } from './ui/button';
+import { BulkActionsToolbar } from './ui/BulkActionsToolbar';
 import FilterDropdown from './FilterDropdown';
 import { confirmAction } from '../utils';
 
@@ -17,14 +18,16 @@ function DataTable({
   columns, 
   onEditRow, 
   onDeleteRow, 
+  onRowClick,
   enableFiltering = false, 
   filterableColumns = [], 
   stickyColumns = [],
   onBulkDelete = null,
+  onBulkExport = null,
   initialPageSize = 10,
   pageSizeOptions = [10, 25, 50],
   enableGlobalSearch = true,
-  enableColumnVisibility = true
+  enableColumnVisibility = false
 }) {
   // Filter state management
   const [filters, setFilters] = useState({});
@@ -33,7 +36,6 @@ function DataTable({
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [globalQuery, setGlobalQuery] = useState('');
-  const [hiddenColumns, setHiddenColumns] = useState({});
 
   // Helper to get nested values via dot notation
   const getNested = (obj, path) => {
@@ -132,32 +134,30 @@ function DataTable({
       onEditRow(row.original);
     };
 
-    const actionColumn = {
+    const actionColumn = (onEditRow || onDeleteRow) ? {
       id: 'actions',
       header: 'Azioni',
       cell: ({ row }) => {
         return (
           <div className="flex flex-row gap-1 items-center justify-start">
-            <Button size="xs" variant="outline" onClick={() => handleEdit(row)}>
-              Modifica
-            </Button>
-            <Button size="xs" variant="destructive" onClick={() => onDeleteRow(row.original)}>
-              Elimina
-            </Button>
+            {onEditRow && (
+              <Button size="xs" variant="outline" onClick={() => handleEdit(row)}>
+                Modifica
+              </Button>
+            )}
+            {onDeleteRow && (
+              <Button size="xs" variant="destructive" onClick={() => onDeleteRow(row.original)}>
+                Elimina
+              </Button>
+            )}
           </div>
         );
       },
-    };
-    const base = [...columns, actionColumn];
-    const cols = enableColumnVisibility
-      ? base.filter(col => {
-          const id = col.id || col.accessorKey;
-          if (id === 'actions' || id === 'select') return true;
-          return !hiddenColumns[id];
-        })
-      : base;
-    return selectionColumn ? [selectionColumn, ...cols] : cols;
-  }, [columns, onEditRow, onDeleteRow, onBulkDelete, page, pageSize, selectedIds, enableColumnVisibility, hiddenColumns]);
+    } : null;
+    
+    const base = actionColumn ? [...columns, actionColumn] : columns;
+    return selectionColumn ? [selectionColumn, ...base] : base;
+  }, [columns, onEditRow, onDeleteRow, onBulkDelete, page, pageSize, selectedIds]);
 
   // Calculate sticky column positions
   const getStickyLeftPosition = (columnId, columnIndex) => {
@@ -230,57 +230,15 @@ function DataTable({
 
   return (
     <div className="rounded-md overflow-hidden h-full flex flex-col">
-      {(enableGlobalSearch || enableColumnVisibility) && (
+      {enableGlobalSearch && (
         <div className="flex items-center justify-between p-2 border-b bg-background">
-          {enableGlobalSearch ? (
-            <input
-              type="text"
-              value={globalQuery}
-              onChange={(e) => { setGlobalQuery(e.target.value); setPage(0); }}
-              placeholder="Cerca..."
-              className="border border-input rounded px-2 py-1 text-sm w-64 bg-background text-foreground placeholder-muted-foreground"
-            />
-          ) : <div />}
-          {enableColumnVisibility && (
-            <details className="relative">
-              <summary className="list-none cursor-pointer text-sm px-2 py-1 border border-input rounded bg-muted text-foreground">Colonne</summary>
-              <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded shadow p-2 z-40">
-                {(columns || []).map(col => {
-                  const id = col.id || col.accessorKey;
-                  if (!id) return null;
-                  return (
-                    <label key={id} className="flex items-center gap-2 text-sm py-1 text-popover-foreground">
-                      <input
-                        type="checkbox"
-                        checked={!hiddenColumns[id]}
-                        onChange={(e) => {
-                          setHiddenColumns(prev => ({ ...prev, [id]: !e.target.checked }));
-                        }}
-                      />
-                      <span>{typeof col.header === 'string' ? col.header : (col.accessorKey || id)}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </details>
-          )}
-        </div>
-      )}
-      {/* Bulk actions toolbar */}
-      {onBulkDelete && selectedIds.size > 0 && (
-        <div className="flex items-center justify-between p-2 border-b bg-muted/50">
-          <div className="text-sm text-muted-foreground">{selectedIds.size} selezionati</div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="destructive" onClick={() => {
-              if (confirmAction('Eliminare gli elementi selezionati?')) {
-                const ids = Array.from(selectedIds);
-                onBulkDelete(ids);
-                setSelectedIds(new Set());
-              }
-            }}>
-              Elimina selezionati
-            </Button>
-          </div>
+          <input
+            type="text"
+            value={globalQuery}
+            onChange={(e) => { setGlobalQuery(e.target.value); setPage(0); }}
+            placeholder="Cerca..."
+            className="border border-input rounded px-2 py-1 text-sm w-64 bg-background text-foreground placeholder-muted-foreground"
+          />
         </div>
       )}
 
@@ -328,7 +286,11 @@ function DataTable({
           {visibleRows.map((row) => {
             const rowKey = row.original.id || row.id;
             return (
-              <TableRow key={rowKey}>
+              <TableRow 
+                key={rowKey}
+                className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''}
+                onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+              >
                 {row.getVisibleCells().map((cell, cellIndex) => {
                   const cellKey = `${rowKey}_${cell.column.id}_${cellIndex}`;
                   const columnId = cell.column.id;
@@ -341,6 +303,12 @@ function DataTable({
                       style={isSticky ? { 
                         left: `${getStickyLeftPosition(columnId, cellIndex)}px`
                       } : {}}
+                      onClick={(e) => {
+                        // Prevent row click when clicking on checkboxes or action buttons
+                        if (columnId === 'select' || columnId === 'actions') {
+                          e.stopPropagation();
+                        }
+                      }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
@@ -388,6 +356,23 @@ function DataTable({
           </Button>
         </div>
       </div>
+      
+      {/* Bottom action bar for selected items */}
+      <BulkActionsToolbar
+        selectedCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        onExport={onBulkExport ? () => {
+          const ids = Array.from(selectedIds);
+          onBulkExport(ids);
+        } : null}
+        onDelete={onBulkDelete ? () => {
+          if (confirmAction('Eliminare gli elementi selezionati?')) {
+            const ids = Array.from(selectedIds);
+            onBulkDelete(ids);
+            setSelectedIds(new Set());
+          }
+        } : null}
+      />
     </div>
   );
 }

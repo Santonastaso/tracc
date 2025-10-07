@@ -6,6 +6,7 @@ import {
   queryKeys
 } from '../hooks';
 import DataTable from '../components/DataTable';
+import { MerceOutDetailCard } from '../components/MerceOutDetailCard';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,6 +14,7 @@ import { Link, useNavigate } from 'react-router-dom';
 function MerceOutListPage() {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
+  const [selectedOutbound, setSelectedOutbound] = useState(null);
 
   // Fetch data using centralized query hooks
   const { data: outboundData, isLoading } = useQuery({
@@ -45,17 +47,15 @@ function MerceOutListPage() {
     onSuccess: () => queryClient.invalidateQueries([...queryKeys.outbound, 'with-silos'])
   });
 
-  const handleEdit = (item) => {
-    navigate(`/merce-out/edit/${item.id}`);
+  const handleRowClick = (item) => {
+    setSelectedOutbound(item);
   };
 
-  const handleDelete = (item) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo movimento?')) {
-      deleteMutation.mutate(item.id);
-    }
+  const handleCloseDetail = () => {
+    setSelectedOutbound(null);
   };
 
-  // Table columns
+  // Table columns - only essential info
   const columns = [
     {
       accessorKey: 'id',
@@ -89,50 +89,12 @@ function MerceOutListPage() {
     {
       accessorKey: 'operator_name',
       header: 'Operatore'
-    },
-    {
-      accessorKey: 'items',
-      header: 'Dettagli Prelievo',
-      cell: ({ getValue }) => {
-        const items = getValue();
-        if (!items || items.length === 0) return 'N/A';
-        
-        return (
-          <div className="text-xs max-w-xs">
-            {items.map((item, index) => (
-              <div key={index} className="mb-1 p-1 bg-gray-50 rounded">
-                <div className="font-medium text-gray-900">{item.material_name}</div>
-                <div className="text-gray-600">
-                  {item.quantity_kg}kg
-                  {item.supplier_lot && ` • Lotto: ${item.supplier_lot}`}
-                  {item.tf_lot && ` • TF: ${item.tf_lot}`}
-                </div>
-                {(item.protein_content || item.moisture_content) && (
-                  <div className="text-gray-500 text-xs">
-                    {item.protein_content && `Proteine: ${item.protein_content}%`}
-                    {item.protein_content && item.moisture_content && ' • '}
-                    {item.moisture_content && `Umidità: ${item.moisture_content}%`}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        );
-      }
-    },
-    {
-      accessorKey: 'updated_at',
-      header: 'Ultima Modifica',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
-      }
     }
   ];
 
   if (isLoading) {
     return (
-      <div className="p-4">
+      <div className="p-2">
         <div className="animate-pulse">
           <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
           <div className="h-64 bg-muted rounded"></div>
@@ -142,12 +104,16 @@ function MerceOutListPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-4">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">Prelievi Merce OUT</h1>
+    <div className="h-full flex flex-col p-2">
+      <div className="flex justify-end items-center mb-2 flex-shrink-0">
         <div className="flex space-x-2">
+          <input
+            type="text"
+            placeholder="Cerca..."
+            className="border border-input rounded px-3 py-2 text-sm w-64 bg-background text-foreground placeholder-muted-foreground"
+          />
           <Link to="/merce-out/new">
-            <Button>
+            <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
               Nuovo Prelievo
             </Button>
           </Link>
@@ -159,14 +125,22 @@ function MerceOutListPage() {
           <DataTable
             data={outboundData || []}
             columns={columns}
-            onEditRow={handleEdit}
-            onDeleteRow={handleDelete}
+            onRowClick={handleRowClick}
             enableFiltering={true}
             filterableColumns={['silos.name', 'operator_name']}
+            enableGlobalSearch={false}
             onBulkDelete={(ids) => bulkDelete.mutate(ids)}
           />
         </div>
       </Card>
+
+      {/* Detail Card */}
+      {selectedOutbound && (
+        <MerceOutDetailCard
+          outbound={selectedOutbound}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 }

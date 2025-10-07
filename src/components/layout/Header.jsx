@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bell, Search, LogOut, Settings, Users } from 'lucide-react';
+import { Menu, LogOut, Settings, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { useSidebar } from '../../hooks/useSidebar';
 import { ThemeDropdown } from '../ui/theme-dropdown';
@@ -20,7 +20,7 @@ export function Header() {
 
   return (
     <header className="bg-secondary shadow-sm border-b border-border">
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center">
           <button
             onClick={toggle}
@@ -28,26 +28,9 @@ export function Header() {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <h1 className="ml-4 text-xl font-semibold text-secondary-foreground">
-            Molino Rossetto - Sistema Tracciabilità Molino
-          </h1>
         </div>
 
         <div className="flex items-center space-x-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search..."
-              className="block w-full pl-10 pr-3 py-2 border border-input rounded-md leading-5 bg-background placeholder-muted-foreground focus:outline-none focus:placeholder-muted-foreground focus:ring-1 focus:ring-ring focus:border-ring sm:text-sm"
-            />
-          </div>
-
-          <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md">
-            <Bell className="h-6 w-6" />
-          </button>
 
           <ThemeDropdown />
 

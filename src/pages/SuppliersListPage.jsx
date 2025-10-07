@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteSupplier } from '../hooks';
 import DataTable from '../components/DataTable';
+import { SupplierDetailCard } from '../components/SupplierDetailCard';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -11,6 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 function SuppliersListPage() {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
 
   // Fetch data using centralized query hooks
   const { data: suppliersData, isLoading } = useQuery({
@@ -40,17 +42,15 @@ function SuppliersListPage() {
     onSuccess: () => queryClient.invalidateQueries(['suppliers'])
   });
 
-  const handleEdit = (item) => {
-    navigate(`/suppliers/edit/${item.id}`);
+  const handleRowClick = (item) => {
+    setSelectedSupplier(item);
   };
 
-  const handleDelete = (item) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo fornitore?')) {
-      deleteMutation.mutate(item.id);
-    }
+  const handleCloseDetail = () => {
+    setSelectedSupplier(null);
   };
 
-  // Table columns
+  // Table columns - only essential info
   const columns = [
     {
       accessorKey: 'id',
@@ -81,63 +81,12 @@ function SuppliersListPage() {
           </Badge>
         );
       }
-    },
-    {
-      accessorKey: 'address',
-      header: 'Indirizzo',
-      cell: ({ getValue }) => {
-        const address = getValue();
-        return address ? (address.length > 30 ? `${address.substring(0, 30)}...` : address) : 'N/A';
-      }
-    },
-    {
-      accessorKey: 'phone',
-      header: 'Telefono'
-    },
-    {
-      accessorKey: 'email',
-      header: 'Email'
-    },
-    {
-      accessorKey: 'notes',
-      header: 'Note',
-      cell: ({ getValue }) => {
-        const notes = getValue();
-        return notes ? (notes.length > 30 ? `${notes.substring(0, 30)}...` : notes) : 'N/A';
-      }
-    },
-    {
-      accessorKey: 'active',
-      header: 'Attivo',
-      cell: ({ getValue }) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          getValue() ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
-        }`}>
-          {getValue() ? 'Sì' : 'No'}
-        </span>
-      )
-    },
-    {
-      accessorKey: 'created_at',
-      header: 'Data Creazione',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
-      }
-    },
-    {
-      accessorKey: 'updated_at',
-      header: 'Ultima Modifica',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
-      }
     }
   ];
 
   if (isLoading) {
     return (
-      <div className="p-4">
+      <div className="p-2">
         <div className="animate-pulse">
           <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
           <div className="h-64 bg-muted rounded"></div>
@@ -147,12 +96,16 @@ function SuppliersListPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-4">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">Fornitori</h1>
+    <div className="h-full flex flex-col p-2">
+      <div className="flex justify-end items-center mb-2 flex-shrink-0">
         <div className="flex space-x-2">
+          <input
+            type="text"
+            placeholder="Cerca..."
+            className="border border-input rounded px-3 py-2 text-sm w-64 bg-background text-foreground placeholder-muted-foreground"
+          />
           <Link to="/suppliers/new">
-            <Button>
+            <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
               Nuovo Fornitore
             </Button>
           </Link>
@@ -164,16 +117,23 @@ function SuppliersListPage() {
           <DataTable
             data={suppliersData || []}
             columns={columns}
-            onEditRow={handleEdit}
-            onDeleteRow={handleDelete}
+            onRowClick={handleRowClick}
             enableFiltering={true}
             filterableColumns={['name', 'code', 'contact_person', 'status']}
             onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-            enableGlobalSearch={true}
-            enableColumnVisibility={true}
+            enableGlobalSearch={false}
+            enableColumnVisibility={false}
           />
         </div>
       </Card>
+
+      {/* Detail Card */}
+      {selectedSupplier && (
+        <SupplierDetailCard
+          supplier={selectedSupplier}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 }

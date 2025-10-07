@@ -99,7 +99,7 @@ function SideNav() {
       <nav className="w-64 bg-secondary shadow-sm border-r border-border h-screen flex flex-col">
         <div className="p-4 border-b border-border">
           <Link to="/login" className="flex items-center justify-center">
-            <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-8 w-auto" />
+            <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-6 w-auto" />
           </Link>
         </div>
         
@@ -150,13 +150,13 @@ function SideNav() {
       {/* Logo */}
       <div className="p-4 border-b border-border">
         <Link to="/" className="flex items-center justify-center">
-          <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-8 w-auto" />
+          <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-6 w-auto" />
         </Link>
       </div>
 
       {/* Navigation */}
       <div className="flex-1 p-4">
-        <h2 className="text-lg font-semibold text-secondary-foreground mb-6">Navigation</h2>
+        <h2 className="text-xl font-semibold text-secondary-foreground mb-6">Navigation</h2>
         <nav className="space-y-2">
           {navLinks.map((link) => {
             if (link.section) {
@@ -177,7 +177,7 @@ function SideNav() {
                   >
                     <div className="flex items-center space-x-3">
                       <Icon className="h-5 w-5" />
-                      <span className="font-medium">{link.label}</span>
+                      <span className="text-sm font-medium">{link.label}</span>
                     </div>
                     <ChevronRight className={`h-4 w-4 transform transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                   </button>
@@ -220,7 +220,7 @@ function SideNav() {
                   }`}
                 >
                   <Icon className="h-5 w-5" />
-                  <span className="font-medium">{link.label}</span>
+                  <span className="text-sm font-medium">{link.label}</span>
                 </Link>
               );
             }

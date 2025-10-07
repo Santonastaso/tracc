@@ -40,7 +40,7 @@ const AppLayout = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
         <main className="flex-1 overflow-auto bg-background min-w-0">
-          <div className="p-6">
+          <div className="p-4">
             <Outlet />
           </div>
         </main>

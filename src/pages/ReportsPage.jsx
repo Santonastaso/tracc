@@ -585,7 +585,7 @@ function ReportsPage() {
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
+      <Card className="p-2">
         <h2 className="text-lg font-semibold mb-4">Filtri Report</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
@@ -688,7 +688,7 @@ function ReportsPage() {
       </Card>
 
       {/* Report Content */}
-      <Card className="p-4">
+      <Card className="p-2">
         <h2 className="text-lg font-semibold mb-4">
           {filters.reportType === 'movements' && 'Report Movimenti IN'}
           {filters.reportType === 'outbound' && 'Report Movimenti OUT'}

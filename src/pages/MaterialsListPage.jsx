@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDeleteMaterial } from '../hooks';
 import DataTable from '../components/DataTable';
+import { MaterialDetailCard } from '../components/MaterialDetailCard';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 function MaterialsListPage() {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
 
   // Fetch data using centralized query hooks
   const { data: materialsData, isLoading } = useQuery({
@@ -42,17 +44,15 @@ function MaterialsListPage() {
     onSuccess: () => queryClient.invalidateQueries(['materials'])
   });
 
-  const handleEdit = (item) => {
-    navigate(`/materials/edit/${item.id}`);
+  const handleRowClick = (item) => {
+    setSelectedMaterial(item);
   };
 
-  const handleDelete = (item) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo materiale?')) {
-      deleteMutation.mutate(item.id);
-    }
+  const handleCloseDetail = () => {
+    setSelectedMaterial(null);
   };
 
-  // Table columns
+  // Table columns - only essential info
   const columns = [
     {
       accessorKey: 'id',
@@ -64,40 +64,8 @@ function MaterialsListPage() {
       header: 'Nome Materiale'
     },
     {
-      accessorKey: 'description',
-      header: 'Descrizione',
-      cell: ({ getValue }) => {
-        const description = getValue();
-        return description ? (description.length > 50 ? `${description.substring(0, 50)}...` : description) : 'N/A';
-      }
-    },
-    {
       accessorKey: 'unit',
       header: 'Unità'
-    },
-    {
-      accessorKey: 'min_quantity',
-      header: 'Quantità Min',
-      cell: ({ getValue }) => {
-        const value = getValue();
-        return value ? `${value}` : 'N/A';
-      }
-    },
-    {
-      accessorKey: 'max_quantity',
-      header: 'Quantità Max',
-      cell: ({ getValue }) => {
-        const value = getValue();
-        return value ? `${value}` : 'N/A';
-      }
-    },
-    {
-      accessorKey: 'notes',
-      header: 'Note',
-      cell: ({ getValue }) => {
-        const notes = getValue();
-        return notes ? (notes.length > 30 ? `${notes.substring(0, 30)}...` : notes) : 'N/A';
-      }
     },
     {
       accessorKey: 'active',
@@ -109,28 +77,12 @@ function MaterialsListPage() {
           {getValue() ? 'Sì' : 'No'}
         </span>
       )
-    },
-    {
-      accessorKey: 'created_at',
-      header: 'Data Creazione',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
-      }
-    },
-    {
-      accessorKey: 'updated_at',
-      header: 'Ultima Modifica',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleDateString('it-IT', { timeZone: 'UTC' });
-      }
     }
   ];
 
   if (isLoading) {
     return (
-      <div className="p-4">
+      <div className="p-2">
         <div className="animate-pulse">
           <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
           <div className="h-64 bg-muted rounded"></div>
@@ -140,12 +92,16 @@ function MaterialsListPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-4">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">Materiali</h1>
+    <div className="h-full flex flex-col p-2">
+      <div className="flex justify-end items-center mb-2 flex-shrink-0">
         <div className="flex space-x-2">
+          <input
+            type="text"
+            placeholder="Cerca..."
+            className="border border-input rounded px-3 py-2 text-sm w-64 bg-background text-foreground placeholder-muted-foreground"
+          />
           <Link to="/materials/new">
-            <Button>
+            <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
               Nuovo Materiale
             </Button>
           </Link>
@@ -157,14 +113,22 @@ function MaterialsListPage() {
           <DataTable
             data={materialsData || []}
             columns={columns}
-            onEditRow={handleEdit}
-            onDeleteRow={handleDelete}
+            onRowClick={handleRowClick}
             enableFiltering={true}
             filterableColumns={['name', 'unit']}
+            enableGlobalSearch={false}
             onBulkDelete={(ids) => bulkDelete.mutate(ids)}
           />
         </div>
       </Card>
+
+      {/* Detail Card */}
+      {selectedMaterial && (
+        <MaterialDetailCard
+          material={selectedMaterial}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 }
