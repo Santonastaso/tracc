@@ -44,7 +44,7 @@ function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <Card className="w-full max-w-md p-6">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-navy-800 mb-2">TRACC</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">TRACC</h1>
           <p className="text-gray-600">Sistema Tracciabilità Molino</p>
         </div>
 
@@ -97,7 +97,7 @@ function SignupPage() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-navy-800 hover:bg-navy-700"
+            className="w-full"
           >
             {isLoading ? 'Registrazione in corso...' : 'Registrati'}
           </Button>
@@ -106,7 +106,7 @@ function SignupPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Hai già un account?{' '}
-            <Link to="/login" className="text-navy-800 hover:underline font-medium">
+            <Link to="/login" className="text-primary hover:underline font-medium">
               Accedi qui
             </Link>
           </p>

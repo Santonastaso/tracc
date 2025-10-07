@@ -346,7 +346,7 @@ function ArchivePage() {
         </div>
         <Button 
           onClick={() => setShowForm(true)}
-          className="bg-navy-800 hover:bg-navy-700"
+          className=""
         >
           Registra Analisi
         </Button>

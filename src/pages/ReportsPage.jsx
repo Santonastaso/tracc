@@ -577,7 +577,7 @@ function ReportsPage() {
           </Button>
           <Button 
             onClick={printReport}
-            className="bg-navy-800 hover:bg-navy-700"
+            className=""
           >
             Stampa Report
           </Button>

@@ -69,7 +69,7 @@ function LoginPage() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-navy-800 hover:bg-navy-700"
+            className="w-full"
           >
             {isLoading ? 'Accesso in corso...' : 'Accedi'}
           </Button>
@@ -81,7 +81,7 @@ function LoginPage() {
           </p>
           <p className="text-sm text-gray-600">
             Non hai un account?{' '}
-            <Link to="/signup" className="text-navy-800 hover:underline font-medium">
+            <Link to="/signup" className="text-primary hover:underline font-medium">
               Registrati qui
             </Link>
           </p>
