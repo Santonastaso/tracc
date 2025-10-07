@@ -6,48 +6,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --radius: 0.625rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(1 0 0 / 15%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
   }
 }
 
@@ -60,6 +60,36 @@
   }
 }
 
+a,
+button {
+  cursor: pointer;
+}
+
+input {
+  cursor: text;
+}
+
+a[aria-disabled="true"],
+button[aria-disabled="true"],
+button:disabled,
+input[aria-disabled="true"],
+input:disabled {
+  cursor: not-allowed;
+}
+
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="time"] {
+  position: relative;
+}
+
+.dark ::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  position: absolute;
+  right: 0.75rem;
+}
+
 /* Custom styles for the mill tracing system - using design system colors */
 
 /* Error Boundary Styles */
@@ -68,19 +98,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: hsl(var(--background));
+  background-color: oklch(var(--background));
   padding: 2rem;
 }
 
 .error-boundary__container {
   max-width: 600px;
   text-align: center;
-  background: hsl(var(--card));
-  color: hsl(var(--card-foreground));
+  background: oklch(var(--card));
+  color: oklch(var(--card-foreground));
   padding: 3rem;
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid hsl(var(--border));
+  border: 1px solid oklch(var(--border));
 }
 
 .error-boundary__icon {
@@ -91,12 +121,12 @@
 .error-boundary__title {
   font-size: 1.5rem;
   font-weight: bold;
-  color: hsl(var(--foreground));
+  color: oklch(var(--foreground));
   margin-bottom: 1rem;
 }
 
 .error-boundary__message {
-  color: hsl(var(--muted-foreground));
+  color: oklch(var(--muted-foreground));
   margin-bottom: 2rem;
   line-height: 1.6;
 }
@@ -105,7 +135,7 @@
   text-align: left;
   margin: 2rem 0;
   padding: 1rem;
-  background: hsl(var(--muted));
+  background: oklch(var(--muted));
   border-radius: 0.25rem;
 }
 
@@ -114,8 +144,8 @@
 }
 
 .error-boundary__stack-trace {
-  background: hsl(var(--muted));
-  color: hsl(var(--muted-foreground));
+  background: oklch(var(--muted));
+  color: oklch(var(--muted-foreground));
   padding: 1rem;
   border-radius: 0.25rem;
   overflow-x: auto;
@@ -134,33 +164,33 @@
 .error-boundary__button {
   padding: 0.5rem 1rem;
   border-radius: 0.25rem;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  border: 1px solid oklch(var(--border));
+  background: oklch(var(--background));
+  color: oklch(var(--foreground));
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .error-boundary__button:hover {
-  background: hsl(var(--muted));
+  background: oklch(var(--muted));
 }
 
 .error-boundary__button--secondary {
-  background: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
-  border-color: hsl(var(--border));
+  background: oklch(var(--secondary));
+  color: oklch(var(--secondary-foreground));
+  border-color: oklch(var(--border));
 }
 
 .error-boundary__button--secondary:hover {
-  background: hsl(var(--secondary) / 0.8);
+  background: oklch(var(--secondary) / 0.8);
 }
 
 .error-boundary__recommendations {
   margin: 2rem 0;
   padding: 1rem;
-  background: hsl(var(--accent));
+  background: oklch(var(--accent));
   border-radius: 0.25rem;
-  border-left: 4px solid hsl(var(--primary));
+  border-left: 4px solid oklch(var(--primary));
 }
 
 .error-boundary__recommendation {
@@ -168,9 +198,9 @@
 }
 
 .error-boundary__footer {
-  border-top: 1px solid hsl(var(--border));
+  border-top: 1px solid oklch(var(--border));
   padding-top: 1rem;
-  color: hsl(var(--muted-foreground));
+  color: oklch(var(--muted-foreground));
   font-size: 0.875rem;
 }
 
@@ -179,7 +209,7 @@
 }
 
 .error-boundary__error-id code {
-  background: hsl(var(--muted));
+  background: oklch(var(--muted));
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   font-family: monospace;
@@ -199,3 +229,4 @@
     page-break-before: always;
   }
 }
+
