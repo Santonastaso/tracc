@@ -6,6 +6,7 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table';
 export { Badge } from './badge';
 export { ThemeToggle } from './theme-toggle';
+export { ThemeDropdown } from './theme-dropdown';
 export { Avatar, AvatarImage, AvatarFallback } from './avatar';
 export { 
   DropdownMenu, 

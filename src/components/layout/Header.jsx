@@ -2,7 +2,7 @@ import React from 'react';
 import { Menu, Bell, Search, LogOut, Settings, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { useSidebar } from '../../hooks/useSidebar';
-import { ThemeToggle } from '../ui/theme-toggle';
+import { ThemeDropdown } from '../ui/theme-dropdown';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -49,7 +49,7 @@ export function Header() {
             <Bell className="h-6 w-6" />
           </button>
 
-          <ThemeToggle />
+          <ThemeDropdown />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
