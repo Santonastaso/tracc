@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import { useSidebar } from '../../hooks/useSidebar';
 import { 
   Home, 
   Package, 
@@ -16,6 +17,7 @@ import {
 function SideNav() {
   const { user } = useAuth();
   const location = useLocation();
+  const { isOpen } = useSidebar();
   const [expandedSections, setExpandedSections] = useState({
     merceIn: location.pathname.startsWith('/merce-in'),
     merceOut: location.pathname.startsWith('/merce-out'),
@@ -94,20 +96,20 @@ function SideNav() {
 
   if (!user) {
     return (
-      <nav className="w-64 bg-white shadow-sm border-r border-gray-200 h-screen flex flex-col">
-        <div className="p-4 border-b border-gray-200">
+      <nav className="w-64 bg-background shadow-sm border-r border-border h-screen flex flex-col">
+        <div className="p-4 border-b border-border">
           <Link to="/login" className="flex items-center justify-center">
             <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-8 w-auto" />
           </Link>
         </div>
         
         <div className="flex-1 p-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">NAVIGATION</h3>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">NAVIGATION</h3>
           <div className="space-y-2">
-            <Link to="/login" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
+            <Link to="/login" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
               <span className="font-medium">Accedi</span>
             </Link>
-            <Link to="/signup" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
+            <Link to="/signup" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
               <span className="font-medium">Registrati</span>
             </Link>
           </div>
@@ -116,10 +118,37 @@ function SideNav() {
     );
   }
 
+  if (!isOpen) {
+    return (
+      <div className="w-16 bg-background shadow-sm border-r border-border min-h-screen">
+        <div className="flex flex-col items-center py-4 space-y-4">
+          {navLinks.map((item) => {
+            const Icon = item.icon
+            const isActive = location.pathname === item.href
+            return (
+              <Link
+                key={item.href || item.section}
+                to={item.href || '#'}
+                className={`p-3 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                }`}
+                title={item.label}
+              >
+                <Icon className="h-6 w-6" />
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <nav className="w-64 bg-white shadow-sm border-r border-gray-200 h-screen flex flex-col flex-shrink-0 sticky left-0 z-30">
+    <nav className="w-64 bg-background shadow-sm border-r border-border h-screen flex flex-col flex-shrink-0 sticky left-0 z-30">
       {/* Logo */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-border">
         <Link to="/" className="flex items-center justify-center">
           <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-8 w-auto" />
         </Link>
@@ -127,7 +156,7 @@ function SideNav() {
 
       {/* Navigation */}
       <div className="flex-1 p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Navigation</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-6">Navigation</h2>
         <nav className="space-y-2">
           {navLinks.map((link) => {
             if (link.section) {
@@ -142,8 +171,8 @@ function SideNav() {
                     onClick={() => toggleSection(link.section)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
                       hasActiveSubLink 
-                        ? 'bg-indigo-100 text-indigo-600' 
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'bg-primary/10 text-primary' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
@@ -163,8 +192,8 @@ function SideNav() {
                             to={subLink.href}
                             className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                               isActive 
-                                ? 'bg-indigo-50 text-indigo-600' 
-                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                ? 'bg-primary/5 text-primary' 
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                             }`}
                           >
                             {subLink.label}
@@ -186,8 +215,8 @@ function SideNav() {
                   to={link.href}
                   className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                     isActive 
-                      ? 'bg-indigo-100 text-indigo-600' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
