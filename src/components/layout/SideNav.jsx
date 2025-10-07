@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import { 
+  Home, 
+  Package, 
+  Users, 
+  Truck, 
+  TruckIcon, 
+  FileText, 
+  Archive,
+  ChevronRight,
+  Building2
+} from 'lucide-react';
 
 function SideNav() {
   const { user } = useAuth();
@@ -22,10 +33,11 @@ function SideNav() {
   };
 
   const navLinks = [
-    { href: '/', label: 'Home' },
+    { href: '/', label: 'Dashboard', icon: Home },
     { 
       section: 'silos', 
       label: 'Silos',
+      icon: Package,
       subLinks: [
         { href: '/silos/list', label: 'Lista Silos' },
         { href: '/silos/new', label: 'Nuovo Silos' }
@@ -34,6 +46,7 @@ function SideNav() {
     { 
       section: 'operators', 
       label: 'Operatori',
+      icon: Users,
       subLinks: [
         { href: '/operators/list', label: 'Lista Operatori' },
         { href: '/operators/new', label: 'Nuovo Operatore' }
@@ -42,6 +55,7 @@ function SideNav() {
     { 
       section: 'materials', 
       label: 'Materiali',
+      icon: Package,
       subLinks: [
         { href: '/materials/list', label: 'Lista Materiali' },
         { href: '/materials/new', label: 'Nuovo Materiale' }
@@ -50,6 +64,7 @@ function SideNav() {
     { 
       section: 'suppliers', 
       label: 'Fornitori',
+      icon: Building2,
       subLinks: [
         { href: '/suppliers/list', label: 'Lista Fornitori' },
         { href: '/suppliers/new', label: 'Nuovo Fornitore' }
@@ -58,6 +73,7 @@ function SideNav() {
     { 
       section: 'merceIn', 
       label: 'Merce IN',
+      icon: Truck,
       subLinks: [
         { href: '/merce-in/list', label: 'Lista Movimenti' },
         { href: '/merce-in/new', label: 'Nuovo Movimento' }
@@ -66,32 +82,33 @@ function SideNav() {
     { 
       section: 'merceOut', 
       label: 'Merce OUT',
+      icon: TruckIcon,
       subLinks: [
         { href: '/merce-out/list', label: 'Lista Prelievi' },
         { href: '/merce-out/new', label: 'Nuovo Prelievo' }
       ]
     },
-    { href: '/reports', label: 'Report' },
-    { href: '/archive', label: 'Archivio Analisi' }
+    { href: '/reports', label: 'Report', icon: FileText },
+    { href: '/archive', label: 'Archivio Analisi', icon: Archive }
   ];
 
   if (!user) {
     return (
-      <nav className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
-        <div className="p-3 border-b border-gray-200">
+      <nav className="w-64 bg-white shadow-sm border-r border-gray-200 h-screen flex flex-col">
+        <div className="p-4 border-b border-gray-200">
           <Link to="/login" className="flex items-center justify-center">
             <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-8 w-auto" />
           </Link>
         </div>
         
-        <div className="flex-1 p-1">
-          <h3 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">NAVIGATION</h3>
+        <div className="flex-1 p-4">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">NAVIGATION</h3>
           <div className="space-y-2">
-            <Link to="/login" className="block px-3 py-1 text-gray-700 hover:bg-gray-100 rounded-md">
-              <span>Accedi</span>
+            <Link to="/login" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
+              <span className="font-medium">Accedi</span>
             </Link>
-            <Link to="/signup" className="block px-3 py-1 text-gray-700 hover:bg-gray-100 rounded-md">
-              <span>Registrati</span>
+            <Link to="/signup" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
+              <span className="font-medium">Registrati</span>
             </Link>
           </div>
         </div>
@@ -100,54 +117,54 @@ function SideNav() {
   }
 
   return (
-    <nav className="w-48 bg-navy-800 border-r border-navy-700 h-screen flex flex-col flex-shrink-0 sticky left-0 z-30">
+    <nav className="w-64 bg-white shadow-sm border-r border-gray-200 h-screen flex flex-col flex-shrink-0 sticky left-0 z-30">
       {/* Logo */}
-      <div className="p-3 border-b border-navy-700">
+      <div className="p-4 border-b border-gray-200">
         <Link to="/" className="flex items-center justify-center">
           <img src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" className="h-8 w-auto" />
         </Link>
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 p-1">
-        <h3 className="text-[10px] font-semibold text-navy-200 uppercase tracking-wider mb-3">NAVIGATION</h3>
-        <div className="space-y-1">
+      <div className="flex-1 p-4">
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">Navigation</h2>
+        <nav className="space-y-2">
           {navLinks.map((link) => {
             if (link.section) {
               // Expandable section with sub-links
               const isExpanded = expandedSections[link.section];
               const hasActiveSubLink = link.subLinks.some(subLink => location.pathname === subLink.href);
+              const Icon = link.icon;
               
               return (
                 <div key={link.section}>
                   <button
                     onClick={() => toggleSection(link.section)}
-                    className={`w-full flex items-center justify-between px-1 py-1.5 rounded text-[10px] font-medium ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
                       hasActiveSubLink 
-                        ? 'bg-navy-600 text-white' 
-                        : 'text-navy-200 hover:bg-navy-700'
+                        ? 'bg-indigo-100 text-indigo-600' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                   >
-                    <span className="flex items-center">
-                      {link.label}
-                    </span>
-                    <span className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-                      ▶
-                    </span>
+                    <div className="flex items-center space-x-3">
+                      <Icon className="h-5 w-5" />
+                      <span className="font-medium">{link.label}</span>
+                    </div>
+                    <ChevronRight className={`h-4 w-4 transform transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                   </button>
                   
                   {isExpanded && (
-                    <div className="ml-3 mt-1 space-y-1">
+                    <div className="ml-6 mt-2 space-y-1">
                       {link.subLinks.map((subLink) => {
                         const isActive = location.pathname === subLink.href;
                         return (
                           <Link
                             key={subLink.href}
                             to={subLink.href}
-                            className={`block px-1 py-1 rounded text-[9px] font-medium ${
+                            className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                               isActive 
-                                ? 'bg-navy-500 text-white' 
-                                : 'text-navy-300 hover:bg-navy-600 hover:text-white'
+                                ? 'bg-indigo-50 text-indigo-600' 
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                             }`}
                           >
                             {subLink.label}
@@ -161,25 +178,25 @@ function SideNav() {
             } else {
               // Regular link
               const isActive = location.pathname === link.href;
+              const Icon = link.icon;
               
               return (
                 <Link
                   key={link.href}
                   to={link.href}
-                  className={`block px-1 py-1.5 rounded text-[10px] font-medium ${
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                     isActive 
-                      ? 'bg-navy-600 text-white' 
-                      : 'text-navy-200 hover:bg-navy-700'
+                      ? 'bg-indigo-100 text-indigo-600' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
-                  <span className="flex items-center">
-                    {link.label}
-                  </span>
+                  <Icon className="h-5 w-5" />
+                  <span className="font-medium">{link.label}</span>
                 </Link>
               );
             }
           })}
-        </div>
+        </nav>
       </div>
     </nav>
   );

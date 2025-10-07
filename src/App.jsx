@@ -33,22 +33,22 @@ const AppLayout = () => {
   useStoreSync();
   
   return (
-    <div className="flex h-screen bg-gray-200 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <SideNav />
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-20 bg-navy-800 border-b border-navy-700 px-2 py-3 flex-shrink-0">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-white text-lg font-semibold">Molino Rossetto - Sistema Tracciabilità Molino</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Molino Rossetto - Sistema Tracciabilità Molino</h1>
             </div>
             <div className="flex items-center space-x-4">
               {user && (
                 <>
-                  <span className="text-[10px] text-navy-200">{user.email}</span>
+                  <span className="text-sm text-gray-600">{user.email}</span>
                   <button 
                     onClick={signOut}
-                    className="px-3 py-1.5 text-[10px] font-medium text-navy-200 hover:text-white hover:bg-navy-700 rounded transition-colors"
+                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                   >
                     Sign out
                   </button>
@@ -57,8 +57,10 @@ const AppLayout = () => {
             </div>
           </div>
         </header>
-        <main className="flex-1 overflow-auto pt-0 min-w-0">
-          <Outlet />
+        <main className="flex-1 overflow-auto bg-gray-50 min-w-0">
+          <div className="p-6">
+            <Outlet />
+          </div>
         </main>
       </div>
       <Toaster 
