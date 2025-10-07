@@ -9,7 +9,7 @@ export function Header() {
   const { toggle } = useSidebar();
 
   return (
-    <header className="bg-background shadow-sm border-b border-border">
+    <header className="bg-secondary shadow-sm border-b border-border">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center">
           <button
@@ -18,7 +18,7 @@ export function Header() {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <h1 className="ml-4 text-xl font-semibold text-foreground">
+          <h1 className="ml-4 text-xl font-semibold text-secondary-foreground">
             Molino Rossetto - Sistema Tracciabilità Molino
           </h1>
         </div>
@@ -44,7 +44,7 @@ export function Header() {
           <div className="relative">
             <button className="flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md">
               <User className="h-6 w-6" />
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-sm font-medium text-secondary-foreground">
                 {user?.email?.split('@')[0] || 'User'}
               </span>
             </button>
