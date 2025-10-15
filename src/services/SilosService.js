@@ -130,7 +130,7 @@ export class SilosService extends BaseService {
 
       // Validate numeric ranges
       validateNumericRanges(siloData, {
-        capacity_kg: { min: 1, max: 100000 }
+        capacity_kg: { min: 1, max: 500000 }
       });
 
       // Check for duplicate name
@@ -169,7 +169,7 @@ export class SilosService extends BaseService {
       // Validate numeric ranges if capacity is being updated
       if (updates.capacity_kg !== undefined) {
         validateNumericRanges(updates, {
-          capacity_kg: { min: 1, max: 100000 }
+          capacity_kg: { min: 1, max: 500000 }
         });
       }
 

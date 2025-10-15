@@ -6,3 +6,4 @@ export const useSidebar = create((set) => ({
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
 }))
+
