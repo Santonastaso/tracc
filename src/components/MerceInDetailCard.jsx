@@ -231,6 +231,20 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                   </div>
 
                   <div>
+                    <Label htmlFor="fornitore">Fornitore</Label>
+                    {isEditing ? (
+                      <Input
+                        id="lot_supplier"
+                        value={formData.lot_supplier}
+                        onChange={(e) => setFormData(prev => ({ ...prev, lot_supplier: e.target.value }))}
+                        placeholder="Inserisci nome fornitore"
+                      />
+                    ) : (
+                      <p className="text-foreground font-medium">{inbound.lot_supplier || 'N/A'}</p>
+                    )}
+                  </div>
+
+                  <div>
                     <Label htmlFor="operator_name">Operatore</Label>
                     {isEditing ? (
                       <Input

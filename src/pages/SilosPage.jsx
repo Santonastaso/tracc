@@ -10,12 +10,14 @@ import {
 } from '../hooks';
 import GenericForm from '../components/GenericForm';
 import SiloCard from '../components/SiloCard';
+import { SiloDetailCard } from '../components/SiloDetailCard';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 
 function SilosPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [selectedSilo, setSelectedSilo] = useState(null);
 
   // Fetch data using centralized query hooks
   const { data: silosData, isLoading } = useSilosWithLevels(true); // Include materials object for SilosPage
@@ -63,6 +65,14 @@ function SilosPage() {
   const handleCancel = () => {
     setShowForm(false);
     setEditingItem(null);
+  };
+
+  const handleSiloClick = (silo) => {
+    setSelectedSilo(silo);
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedSilo(null);
   };
 
   // Form configuration
@@ -170,6 +180,7 @@ function SilosPage() {
             <SiloCard
               key={silo.id}
               silo={silo}
+              onClick={() => handleSiloClick(silo)}
             />
           ))}
         </div>
@@ -182,6 +193,14 @@ function SilosPage() {
           </div>
         )}
       </div>
+
+      {/* Detail Card */}
+      {selectedSilo && (
+        <SiloDetailCard
+          silo={selectedSilo}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 }

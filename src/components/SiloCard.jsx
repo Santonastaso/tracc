@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from './ui/card';
 
-const SiloCard = ({ silo }) => {
+const SiloCard = ({ silo, onClick }) => {
   const { id, name, capacity_kg, currentLevel, availableItems = [] } = silo;
   
   // Calculate usage percentage
@@ -59,7 +59,10 @@ const SiloCard = ({ silo }) => {
   };
 
   return (
-    <Card className="p-4 hover:shadow-lg transition-shadow duration-200">
+    <Card 
+      className="p-4 hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+      onClick={onClick}
+    >
       <div className="space-y-4">
         {/* Header */}
         <div className="flex justify-between items-start">

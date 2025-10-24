@@ -147,7 +147,11 @@ export const useInbound = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      // Map lot_supplier to fornitore for UI compatibility
+      return data?.map(item => ({
+        ...item,
+        fornitore: item.lot_supplier
+      })) || [];
     },
     staleTime: 1 * 60 * 1000, // 1 minute - inbound data changes frequently
   });
@@ -164,7 +168,11 @@ export const useInboundBySilo = (siloId) => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      // Map lot_supplier to fornitore for UI compatibility
+      return data?.map(item => ({
+        ...item,
+        fornitore: item.lot_supplier
+      })) || [];
     },
     enabled: !!siloId,
     staleTime: 1 * 60 * 1000,
@@ -183,7 +191,11 @@ export const useInboundByDate = (date) => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      // Map lot_supplier to fornitore for UI compatibility
+      return data?.map(item => ({
+        ...item,
+        fornitore: item.lot_supplier
+      })) || [];
     },
     enabled: !!date,
     staleTime: 1 * 60 * 1000,
@@ -202,7 +214,11 @@ export const useCreateInbound = () => {
         .single();
       
       if (error) throw error;
-      return data;
+      // Map lot_supplier to fornitore for UI compatibility
+      return {
+        ...data,
+        fornitore: data.lot_supplier
+      };
     },
     onSuccess: (newInbound) => {
       // Invalidate related queries
@@ -237,7 +253,11 @@ export const useUpdateInbound = () => {
         .single();
       
       if (error) throw error;
-      return data;
+      // Map lot_supplier to fornitore for UI compatibility
+      return {
+        ...data,
+        fornitore: data.lot_supplier
+      };
     },
     onSuccess: (updatedInbound, { id }) => {
       // Invalidate related queries

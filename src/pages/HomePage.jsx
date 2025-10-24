@@ -1,13 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useSilos, useInbound, useOutbound } from '../hooks';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { SiloDetailCard } from '../components/SiloDetailCard';
 
 function HomePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [selectedSilo, setSelectedSilo] = useState(null);
 
   // Fetch data using centralized query hooks
   const { data: silosData, isLoading: silosLoading } = useSilos();
@@ -184,6 +186,14 @@ function HomePage() {
     );
   };
 
+  const handleSiloClick = (silo) => {
+    setSelectedSilo(silo);
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedSilo(null);
+  };
+
   const isLoading = silosLoading || inboundLoading || outboundLoading;
 
   if (isLoading) {
@@ -291,7 +301,11 @@ function HomePage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {metrics.silosWithLevels?.map((silo) => (
-              <div key={silo.id} className="border rounded-lg p-4 bg-card">
+              <div 
+                key={silo.id} 
+                className="border rounded-lg p-4 bg-card cursor-pointer hover:shadow-md transition-shadow duration-200"
+                onClick={() => handleSiloClick(silo)}
+              >
                 <h3 className="font-semibold text-card-foreground mb-3">{silo.name}</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
@@ -356,6 +370,14 @@ function HomePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Detail Card */}
+      {selectedSilo && (
+        <SiloDetailCard
+          silo={selectedSilo}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 }

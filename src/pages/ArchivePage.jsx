@@ -6,6 +6,7 @@ import DataTable from '../components/DataTable';
 import GenericForm from '../components/GenericForm';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
+import { showSuccess, showError } from '../utils';
 
 function ArchivePage() {
   const [showForm, setShowForm] = useState(false);
@@ -26,6 +27,11 @@ function ArchivePage() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
+      
+      // Debug: Log the data to see what we're getting
+      console.log('Archive data:', data);
+      console.log('First item:', data?.[0]);
+      
       return data;
     }
   });
@@ -70,9 +76,9 @@ function ArchivePage() {
       const now = new Date();
       const dataToSave = {
         ...formData,
-        entry_date: now.toISOString().split('T')[0],
-        entry_time: now.toTimeString().split(' ')[0],
-        created_at: now.toISOString(),
+        // Convert string values to correct types for database
+        silo_id: parseInt(formData.silo_id),
+        cleaned: formData.cleaned === 'true',
         updated_at: now.toISOString()
       };
 
@@ -168,11 +174,11 @@ function ArchivePage() {
             placeholder: 'Inserisci numero DDT'
           },
           {
-            name: 'material_id',
+            name: 'product',
             label: 'Prodotto',
-            type: 'select',
+            type: 'text',
             required: true,
-            options: materialsData?.map(m => ({ value: m.id, label: m.name })) || []
+            placeholder: 'Inserisci nome prodotto'
           },
           {
             name: 'quantity_kg',
@@ -187,6 +193,13 @@ function ArchivePage() {
             type: 'select',
             required: true,
             options: silosData?.map(s => ({ value: s.id, label: s.name })) || []
+          },
+          {
+            name: 'lot_supplier',
+            label: 'Fornitore',
+            type: 'text',
+            required: true,
+            placeholder: 'Inserisci nome fornitore'
           }
         ]
       },
@@ -194,22 +207,10 @@ function ArchivePage() {
         title: 'Dettagli Lotto',
         fields: [
           {
-            name: 'supplier_lot',
-            label: 'Lotto Fornitore',
-            type: 'text',
-            placeholder: 'Inserisci lotto fornitore'
-          },
-          {
-            name: 'tf_lot',
+            name: 'lot_tf',
             label: 'Lotto TF',
             type: 'text',
             placeholder: 'Inserisci lotto TF'
-          },
-          {
-            name: 'supplier_id',
-            label: 'Fornitore',
-            type: 'select',
-            options: suppliersData?.map(s => ({ value: s.id, label: s.name })) || []
           }
         ]
       },
@@ -217,23 +218,23 @@ function ArchivePage() {
         title: 'Analisi Qualità',
         fields: [
           {
-            name: 'cleaning_status',
+            name: 'cleaned',
             label: 'Pulizia Merce',
             type: 'select',
             required: true,
             options: [
-              { value: 'accepted', label: 'Accettata' },
-              { value: 'rejected', label: 'Non Accettata' }
+              { value: 'true', label: 'Accettata' },
+              { value: 'false', label: 'Non Accettata' }
             ]
           },
           {
-            name: 'protein_content',
+            name: 'proteins',
             label: 'Proteine Prodotto (%)',
             type: 'number',
             placeholder: 'Inserisci percentuale proteine'
           },
           {
-            name: 'moisture_content',
+            name: 'humidity',
             label: 'Umidità Prodotto (%)',
             type: 'number',
             placeholder: 'Inserisci percentuale umidità'
@@ -244,11 +245,11 @@ function ArchivePage() {
         title: 'Operatore',
         fields: [
           {
-            name: 'operator_id',
+            name: 'operator_name',
             label: 'Nome Operatore',
-            type: 'select',
+            type: 'text',
             required: true,
-            options: operatorsData?.map(o => ({ value: o.id, label: o.name })) || []
+            placeholder: 'Inserisci nome operatore'
           }
         ]
       }
@@ -265,6 +266,11 @@ function ArchivePage() {
 
   // Table columns
   const columns = [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      cell: ({ getValue }) => `#${getValue()}`
+    },
     {
       accessorKey: 'created_at',
       header: 'Data/Ora',
@@ -285,7 +291,7 @@ function ArchivePage() {
       header: 'DDT'
     },
     {
-      accessorKey: 'materials.name',
+      accessorKey: 'product',
       header: 'Prodotto'
     },
     {
@@ -295,32 +301,49 @@ function ArchivePage() {
     },
     {
       accessorKey: 'silos.name',
-      header: 'Silos'
+      header: 'Silos',
+      cell: ({ row }) => row.original.silos?.name || 'N/A'
     },
     {
-      accessorKey: 'supplier_lot',
-      header: 'Lotto Fornitore'
+      accessorKey: 'lot_supplier',
+      header: 'Fornitore'
     },
     {
-      accessorKey: 'tf_lot',
-      header: 'Lotto TF'
+      accessorKey: 'lot_tf',
+      header: 'Lotto TF',
+      cell: ({ getValue }) => {
+        const value = getValue();
+        console.log('Lot TF value:', value);
+        return value || 'N/A';
+      }
     },
     {
-      accessorKey: 'cleaning_status',
+      accessorKey: 'cleaned',
       header: 'Pulizia',
-      cell: ({ getValue }) => getValue() === 'accepted' ? 'Accettata' : 'Non Accettata'
+      cell: ({ getValue }) => {
+        const value = getValue();
+        console.log('Cleaned value:', value, typeof value);
+        return value ? 'Accettata' : 'Non Accettata';
+      }
     },
     {
-      accessorKey: 'protein_content',
-      header: 'Proteine (%)'
+      accessorKey: 'proteins',
+      header: 'Proteine (%)',
+      cell: ({ getValue }) => getValue() ? `${getValue()}%` : 'N/A'
     },
     {
-      accessorKey: 'moisture_content',
-      header: 'Umidità (%)'
+      accessorKey: 'humidity',
+      header: 'Umidità (%)',
+      cell: ({ getValue }) => getValue() ? `${getValue()}%` : 'N/A'
     },
     {
-      accessorKey: 'operators.name',
-      header: 'Operatore'
+      accessorKey: 'operator_name',
+      header: 'Operatore',
+      cell: ({ getValue }) => {
+        const value = getValue();
+        console.log('Operator name value:', value);
+        return value || 'N/A';
+      }
     }
   ];
 
@@ -381,7 +404,7 @@ function ArchivePage() {
             onEditRow={handleEdit}
             onDeleteRow={handleDelete}
             enableFiltering={true}
-            filterableColumns={['materials.name', 'silos.name', 'cleaning_status', 'operators.name']}
+            filterableColumns={['product', 'silos.name', 'cleaned', 'operator_name', 'lot_supplier']}
             onBulkDelete={(ids) => bulkDelete.mutate(ids)}
           />
         </div>

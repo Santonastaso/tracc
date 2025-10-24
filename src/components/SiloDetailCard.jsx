@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
-import { useMaterials, useDeleteSilo } from '../hooks';
+import { useMaterials, useDeleteSilo, useSilosWithLevels } from '../hooks';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { ArrowLeft, Edit, Save, X, Trash2 } from 'lucide-react';
+import { Badge } from './ui/badge';
+import { ArrowLeft, Edit, Save, X, Trash2, Warehouse, Package, Calendar } from 'lucide-react';
 import { confirmAction } from '../utils';
 
 export function SiloDetailCard({ silo, onClose, onEdit }) {
@@ -19,8 +20,12 @@ export function SiloDetailCard({ silo, onClose, onEdit }) {
   });
 
   const { data: materialsData } = useMaterials();
+  const { data: silosWithLevels } = useSilosWithLevels(true);
   const deleteMutation = useDeleteSilo();
   const queryClient = useQueryClient();
+
+  // Get current silo data with levels and inventory
+  const currentSiloData = silosWithLevels?.find(s => s.id === silo.id) || silo;
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
@@ -112,13 +117,18 @@ export function SiloDetailCard({ silo, onClose, onEdit }) {
               <ArrowLeft className="h-4 w-4" />
               Back to List
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                {isEditing ? 'Edit Silo' : 'Silo Details'}
-              </h1>
-              <p className="text-muted-foreground">
-                {isEditing ? 'Modify silo information' : silo.name}
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                <Warehouse className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {isEditing ? 'Edit Silo' : 'Silo Details'}
+                </h1>
+                <p className="text-muted-foreground">
+                  {isEditing ? 'Modify silo information' : silo.name}
+                </p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -246,16 +256,46 @@ export function SiloDetailCard({ silo, onClose, onEdit }) {
               </div>
             </div>
 
-            {/* Right Column - Metadata */}
+            {/* Right Column - Status & Inventory */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-4">Metadata</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Status & Settings</h3>
                 <div className="space-y-4">
                   <div>
                     <Label>ID Silos</Label>
                     <p className="text-foreground font-medium">#{silo.id}</p>
                   </div>
 
+                  <div>
+                    <Label>Capacità Attuale</Label>
+                    <p className="text-foreground font-medium">
+                      {currentSiloData.currentLevel?.toLocaleString() || 0} / {silo.capacity_kg?.toLocaleString()} kg
+                    </p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div 
+                        className="bg-primary h-2 rounded-full" 
+                        style={{ 
+                          width: `${Math.min(((currentSiloData.currentLevel || 0) / (silo.capacity_kg || 1)) * 100, 100)}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {Math.round(((currentSiloData.currentLevel || 0) / (silo.capacity_kg || 1)) * 100)}% utilizzato
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label>Stato</Label>
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      Attivo
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Timestamps</h3>
+                <div className="space-y-4">
                   <div>
                     <Label>Data Creazione</Label>
                     <p className="text-foreground font-medium">
@@ -287,20 +327,130 @@ export function SiloDetailCard({ silo, onClose, onEdit }) {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-4">Status</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Giacenza Attuale</h3>
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-foreground">Active</span>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Questo silos contiene {currentSiloData.availableItems?.length || 0} lotti di materiale.
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm text-foreground">Available</span>
-                  </div>
+                  {currentSiloData.availableItems?.length > 0 && (
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        Totale giacenza: {currentSiloData.currentLevel?.toLocaleString()} kg
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Inventory Breakdown Section */}
+          {currentSiloData.availableItems && currentSiloData.availableItems.length > 0 && (
+            <div className="border-t border-border pt-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Giacenza Scorporata nei Lotti
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Lista dei materiali attualmente presenti nel silos, organizzati per lotti
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                {currentSiloData.availableItems.map((item, index) => (
+                  <div key={index} className="border border-border rounded-lg p-4 bg-card">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: `hsl(${(index * 137.5) % 360}, 70%, 50%)` }}></div>
+                        <span className="font-medium text-foreground">
+                          {item.materials?.name || item.product || 'Materiale'}
+                        </span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        Lotto #{index + 1}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Quantità Disponibile</Label>
+                        <p className="font-medium">{item.available_quantity?.toLocaleString()} kg</p>
+                      </div>
+                      
+                      {item.lot_supplier && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Lotto Fornitore</Label>
+                          <p className="font-medium">{item.lot_supplier}</p>
+                        </div>
+                      )}
+                      
+                      {item.lot_tf && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Lotto TF</Label>
+                          <p className="font-medium">{item.lot_tf}</p>
+                        </div>
+                      )}
+                      
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Data Entrata</Label>
+                        <p className="font-medium flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(item.created_at).toLocaleDateString('it-IT', { 
+                            timeZone: 'UTC',
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {(item.proteins || item.humidity || item.cleaned) && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <div className="grid grid-cols-3 gap-4 text-xs">
+                          {item.proteins && (
+                            <div>
+                              <Label className="text-muted-foreground">Proteine</Label>
+                              <p className="font-medium">{item.proteins}%</p>
+                            </div>
+                          )}
+                          {item.humidity && (
+                            <div>
+                              <Label className="text-muted-foreground">Umidità</Label>
+                              <p className="font-medium">{item.humidity}%</p>
+                            </div>
+                          )}
+                          {item.cleaned !== undefined && (
+                            <div>
+                              <Label className="text-muted-foreground">Pulito</Label>
+                              <Badge variant={item.cleaned ? "default" : "secondary"} className="text-xs">
+                                {item.cleaned ? 'Sì' : 'No'}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(!currentSiloData.availableItems || currentSiloData.availableItems.length === 0) && (
+            <div className="border-t border-border pt-6">
+              <div className="text-center py-8">
+                <Warehouse className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">Silos Vuoto</h3>
+                <p className="text-muted-foreground">
+                  Questo silos non contiene attualmente alcun materiale.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
     </div>

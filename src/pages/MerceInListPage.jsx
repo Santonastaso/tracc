@@ -100,6 +100,10 @@ function MerceInListPage() {
     {
       accessorKey: 'operator_name',
       header: 'Operatore'
+    },
+    {
+      accessorKey: 'lot_supplier',
+      header: 'Fornitore'
     }
   ];
 

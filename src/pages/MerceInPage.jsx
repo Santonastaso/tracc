@@ -116,8 +116,13 @@ function MerceInPage() {
       // Convert string values back to correct types for database
       silo_id: parseInt(formData.silo_id),
       cleaned: formData.cleaned === 'true',
+      // Map fornitore to lot_supplier for database
+      lot_supplier: formData.fornitore,
       updated_at: new Date().toISOString()
     };
+    
+    // Remove fornitore field before saving to database
+    delete dataToSave.fornitore;
 
     if (editingItem) {
       await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
@@ -211,6 +216,13 @@ function MerceInPage() {
             placeholder: 'Inserisci quantità in kg'
           },
           {
+            name: 'lot_supplier',
+            label: 'Fornitore',
+            type: 'text',
+            required: true,
+            placeholder: 'Inserisci nome fornitore'
+          },
+          {
             name: 'silo_id',
             label: 'Silos Destinazione',
             type: 'select',
@@ -247,12 +259,6 @@ function MerceInPage() {
       {
         title: 'Dettagli Lotto',
         fields: [
-          {
-            name: 'lot_supplier',
-            label: 'Lotto Fornitore',
-            type: 'text',
-            placeholder: 'Inserisci lotto fornitore'
-          },
           {
             name: 'lot_tf',
             label: 'Lotto TF',
