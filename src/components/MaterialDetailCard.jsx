@@ -16,8 +16,6 @@ export function MaterialDetailCard({ material, onClose, onEdit }) {
     name: material.name || '',
     description: material.description || '',
     unit: material.unit || '',
-    min_quantity: material.min_quantity || '',
-    max_quantity: material.max_quantity || '',
     notes: material.notes || '',
     active: material.active !== undefined ? material.active : true
   });
@@ -48,8 +46,6 @@ export function MaterialDetailCard({ material, onClose, onEdit }) {
       name: material.name || '',
       description: material.description || '',
       unit: material.unit || '',
-      min_quantity: material.min_quantity || '',
-      max_quantity: material.max_quantity || '',
       notes: material.notes || '',
       active: material.active !== undefined ? material.active : true
     });
@@ -195,40 +191,6 @@ export function MaterialDetailCard({ material, onClose, onEdit }) {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-4">Quantity Limits</h3>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="min_quantity">Quantità Minima</Label>
-                    {isEditing ? (
-                      <Input
-                        id="min_quantity"
-                        type="number"
-                        value={formData.min_quantity}
-                        onChange={(e) => setFormData(prev => ({ ...prev, min_quantity: e.target.value }))}
-                        placeholder="Inserisci quantità minima"
-                      />
-                    ) : (
-                      <p className="text-foreground font-medium">{material.min_quantity || 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="max_quantity">Quantità Massima</Label>
-                    {isEditing ? (
-                      <Input
-                        id="max_quantity"
-                        type="number"
-                        value={formData.max_quantity}
-                        onChange={(e) => setFormData(prev => ({ ...prev, max_quantity: e.target.value }))}
-                        placeholder="Inserisci quantità massima"
-                      />
-                    ) : (
-                      <p className="text-foreground font-medium">{material.max_quantity || 'N/A'}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
 
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-4">Notes</h3>
@@ -321,13 +283,6 @@ export function MaterialDetailCard({ material, onClose, onEdit }) {
                       Questo materiale può essere utilizzato nei silos e nei movimenti di merce.
                     </p>
                   </div>
-                  {material.min_quantity && material.max_quantity && (
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        Range di quantità: {material.min_quantity} - {material.max_quantity} {material.unit}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

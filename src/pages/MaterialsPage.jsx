@@ -41,8 +41,6 @@ function MaterialsPage() {
   const handleSubmit = async (formData) => {
     const dataToSave = {
       ...formData,
-      min_quantity: formData.min_quantity ? parseFloat(formData.min_quantity) : null,
-      max_quantity: formData.max_quantity ? parseFloat(formData.max_quantity) : null,
       updated_at: new Date().toISOString()
     };
 
@@ -99,23 +97,6 @@ function MaterialsPage() {
               { value: 'm²', label: 'Metri Quadri' },
               { value: 'm³', label: 'Metri Cubi' }
             ]
-          }
-        ]
-      },
-      {
-        title: 'Quantità e Limiti',
-        fields: [
-          {
-            name: 'min_quantity',
-            label: 'Quantità Minima',
-            type: 'number',
-            placeholder: 'Inserisci quantità minima'
-          },
-          {
-            name: 'max_quantity',
-            label: 'Quantità Massima',
-            type: 'number',
-            placeholder: 'Inserisci quantità massima'
           }
         ]
       },
