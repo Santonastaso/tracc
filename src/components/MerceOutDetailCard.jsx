@@ -8,7 +8,7 @@ import { Input } from '@santonastaso/shared';
 import { Label } from '@santonastaso/shared';
 
 import { ArrowLeft, Edit, Save, X, Trash2, ArrowUp } from 'lucide-react';
-import { confirmAction } from '../utils';
+import { confirmAction } from '@santonastaso/shared';
 
 export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);

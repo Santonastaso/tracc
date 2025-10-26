@@ -6,7 +6,7 @@ import { DataTable } from '@santonastaso/shared';
 import GenericForm from '../components/GenericForm';
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
-import { showSuccess, showError } from '../utils';
+import { showSuccess, showError } from '@santonastaso/shared';
 
 function ArchivePage() {
   const [showForm, setShowForm] = useState(false);

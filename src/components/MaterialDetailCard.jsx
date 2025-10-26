@@ -8,7 +8,7 @@ import { Input } from '@santonastaso/shared';
 import { Label } from '@santonastaso/shared';
 
 import { ArrowLeft, Edit, Save, X, Trash2, Package } from 'lucide-react';
-import { confirmAction } from '../utils';
+import { confirmAction } from '@santonastaso/shared';
 
 export function MaterialDetailCard({ material, onClose, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useErrorHandler, useValidation } from '../hooks';
-import { showValidationError } from '../utils';
+import { showValidationError } from '@santonastaso/shared';
 import { Input, Label, Button } from '@santonastaso/shared';
 
 /**

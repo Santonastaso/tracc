@@ -47,10 +47,12 @@ export {
   useDeleteSupplier,
 } from './useQueries';
 
-// Export utility hooks
+// Export utility hooks from shared package
 export { 
   useErrorHandler, 
   useValidationErrorHandler
-} from './useErrorHandler';
+} from '@santonastaso/shared';
+
+// Export local utility hooks
 export { useValidation } from './useValidation';
 export { useStoreSync } from './useStoreSync';

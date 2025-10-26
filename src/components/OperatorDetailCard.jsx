@@ -9,7 +9,7 @@ import { Label } from '@santonastaso/shared';
 
 import { Badge } from '@santonastaso/shared';
 import { ArrowLeft, Edit, Save, X, Trash2, User } from 'lucide-react';
-import { confirmAction } from '../utils';
+import { confirmAction } from '@santonastaso/shared';
 
 export function OperatorDetailCard({ operator, onClose, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);

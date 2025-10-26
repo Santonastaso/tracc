@@ -6,7 +6,7 @@ import { Button, Input, Label } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
 
 import { ArrowLeft, Edit, Save, X, Trash2, ArrowDown } from 'lucide-react';
-import { confirmAction } from '../utils';
+import { confirmAction } from '@santonastaso/shared';
 
 export function MerceInDetailCard({ inbound, onClose, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
