@@ -1,4 +1,4 @@
-import { BaseService } from '@andrea/crm-data';
+import { BaseService } from '@santonastaso/crm-data';
 import { supabase } from './supabase/client';
 
 /**

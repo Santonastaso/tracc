@@ -5,9 +5,9 @@ import { useDeleteOperator } from '../hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/DataTable';
 import { OperatorDetailCard } from '../components/OperatorDetailCard';
-import { Button } from '@andrea/crm-ui';
-import { Card } from '@andrea/crm-ui';
-import { Badge } from '@andrea/crm-ui';
+import { Button } from '@santonastaso/crm-ui';
+import { Card } from '@santonastaso/crm-ui';
+import { Badge } from '@santonastaso/crm-ui';
 import { Link, useNavigate } from 'react-router-dom';
 
 function OperatorsListPage() {

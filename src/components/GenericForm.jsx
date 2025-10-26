@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useErrorHandler, useValidation } from '../hooks';
 import { showValidationError } from '../utils';
-import { Input, Label, Button } from '@andrea/crm-ui';
+import { Input, Label, Button } from '@santonastaso/crm-ui';
 
 /**
  * Generic Form Component

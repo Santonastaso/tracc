@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useDataService, DataTable } from '@andrea/crm-data';
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Badge } from '@andrea/crm-ui';
+import { useDataService, DataTable } from '@santonastaso/crm-data';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Badge } from '@santonastaso/crm-ui';
 import { ModernSilosService } from '../services/ModernSilosService';
-import { showSuccess, showError } from '@andrea/shared-utils';
+import { showSuccess, showError } from '@santonastaso/shared-utils';
 
 // Create service instance
 const silosService = new ModernSilosService();
@@ -152,7 +152,7 @@ function ModernSilosPage() {
         <div>
           <h1 className="text-3xl font-bold">Modern Silos Management</h1>
           <p className="text-muted-foreground">
-            Powered by @andrea/crm-data - Professional data handling patterns
+            Powered by @santonastaso/crm-data - Professional data handling patterns
           </p>
         </div>
         <Button onClick={() => console.log('Add new silo')}>

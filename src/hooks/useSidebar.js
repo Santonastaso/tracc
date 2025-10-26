@@ -1,3 +1,3 @@
 // Re-export from shared components
-export { useSidebar } from '@andrea/shared-components/hooks';
+export { useSidebar } from '@santonastaso/shared-components/hooks';
 

@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useSilos } from '../hooks';
-import { Button } from '@andrea/crm-ui';
-import { Card } from '@andrea/crm-ui';
-import { Input } from '@andrea/crm-ui';
+import { Button } from '@santonastaso/crm-ui';
+import { Card } from '@santonastaso/crm-ui';
+import { Input } from '@santonastaso/crm-ui';
 // Using native HTML select instead of complex Select component
 
 function ReportsPage() {

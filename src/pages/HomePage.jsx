@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useSilos, useInbound, useOutbound } from '../hooks';
-import { Card, CardHeader, CardTitle, CardContent } from '@andrea/crm-ui';
-import { Button } from '@andrea/crm-ui';
+import { Card, CardHeader, CardTitle, CardContent } from '@santonastaso/crm-ui';
+import { Button } from '@santonastaso/crm-ui';
 import { SiloDetailCard } from '../components/SiloDetailCard';
 
 function HomePage() {

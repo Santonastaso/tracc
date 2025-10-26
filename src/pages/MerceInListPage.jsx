@@ -9,8 +9,8 @@ import {
 } from '../hooks';
 import DataTable from '../components/DataTable';
 import { MerceInDetailCard } from '../components/MerceInDetailCard';
-import { Button } from '@andrea/crm-ui';
-import { Card } from '@andrea/crm-ui';
+import { Button } from '@santonastaso/crm-ui';
+import { Card } from '@santonastaso/crm-ui';
 import { Link, useNavigate } from 'react-router-dom';
 
 function MerceInListPage() {

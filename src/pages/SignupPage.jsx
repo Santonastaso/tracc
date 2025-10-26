@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Button, Input } from '@andrea/crm-ui';
-import { Card } from '@andrea/crm-ui';
-import { showError, showSuccess } from '@andrea/shared-utils';
+import { Button, Input } from '@santonastaso/crm-ui';
+import { Card } from '@santonastaso/crm-ui';
+import { showError, showSuccess } from '@santonastaso/shared-utils';
 
 function SignupPage() {
   const [email, setEmail] = useState('');

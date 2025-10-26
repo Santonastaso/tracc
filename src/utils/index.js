@@ -5,7 +5,7 @@ export {
   showWarning, 
   showInfo, 
   showValidationError 
-} from '@andrea/shared-utils';
+} from '@santonastaso/shared-utils';
 
 // Date/Time formatting (UTC+0 always)
 export const formatUtcDate = (isoString) => {

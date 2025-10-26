@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from '@andrea/crm-ui';
+import { Card } from '@santonastaso/crm-ui';
 
 const SiloCard = ({ silo, onClick }) => {
   const { id, name, capacity_kg, currentLevel, availableItems = [] } = silo;

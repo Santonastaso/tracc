@@ -1,2 +1,2 @@
 // Use shared error handler hooks
-export { useErrorHandler, useValidationErrorHandler } from '@andrea/shared-components/hooks';
+export { useErrorHandler, useValidationErrorHandler } from '@santonastaso/shared-components/hooks';

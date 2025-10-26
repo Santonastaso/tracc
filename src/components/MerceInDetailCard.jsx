@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteInbound, useMaterials, useOperators, useSilos } from '../hooks';
-import { Button, Input, Label } from '@andrea/crm-ui';
-import { Card } from '@andrea/crm-ui';
+import { Button, Input, Label } from '@santonastaso/crm-ui';
+import { Card } from '@santonastaso/crm-ui';
 
 import { ArrowLeft, Edit, Save, X, Trash2, ArrowDown } from 'lucide-react';
 import { confirmAction } from '../utils';

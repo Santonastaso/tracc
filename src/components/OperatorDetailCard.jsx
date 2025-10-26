@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteOperator } from '../hooks';
-import { Button } from '@andrea/crm-ui';
-import { Card } from '@andrea/crm-ui';
-import { Input } from '@andrea/crm-ui';
-import { Label } from '@andrea/crm-ui';
+import { Button } from '@santonastaso/crm-ui';
+import { Card } from '@santonastaso/crm-ui';
+import { Input } from '@santonastaso/crm-ui';
+import { Label } from '@santonastaso/crm-ui';
 
-import { Badge } from '@andrea/crm-ui';
+import { Badge } from '@santonastaso/crm-ui';
 import { ArrowLeft, Edit, Save, X, Trash2, User } from 'lucide-react';
 import { confirmAction } from '../utils';
 
