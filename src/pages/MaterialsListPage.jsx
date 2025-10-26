@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDeleteMaterial } from '../hooks';
-import DataTable from '../components/DataTable';
+import { DataTable } from '@santonastaso/shared';
 import { MaterialDetailCard } from '../components/MaterialDetailCard';
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';

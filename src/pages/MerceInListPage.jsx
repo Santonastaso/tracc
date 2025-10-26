@@ -7,7 +7,7 @@ import {
   useDeleteInbound,
   queryKeys
 } from '../hooks';
-import DataTable from '../components/DataTable';
+import { DataTable } from '@santonastaso/shared';
 import { MerceInDetailCard } from '../components/MerceInDetailCard';
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';

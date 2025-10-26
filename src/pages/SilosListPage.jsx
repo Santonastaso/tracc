@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useMaterials, useDeleteSilo } from '../hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import DataTable from '../components/DataTable';
+import { DataTable } from '@santonastaso/shared';
 import { SiloDetailCard } from '../components/SiloDetailCard';
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';

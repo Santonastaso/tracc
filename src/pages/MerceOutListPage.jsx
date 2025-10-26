@@ -5,7 +5,7 @@ import {
   useDeleteOutbound,
   queryKeys
 } from '../hooks';
-import DataTable from '../components/DataTable';
+import { DataTable } from '@santonastaso/shared';
 import { MerceOutDetailCard } from '../components/MerceOutDetailCard';
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';

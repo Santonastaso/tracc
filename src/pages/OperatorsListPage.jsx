@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteOperator } from '../hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import DataTable from '../components/DataTable';
+import { DataTable } from '@santonastaso/shared';
 import { OperatorDetailCard } from '../components/OperatorDetailCard';
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
