@@ -19,13 +19,14 @@ import MerceOutListPage from './pages/MerceOutListPage';
 import MerceOutPage from './pages/MerceOutPage';
 import ReportsPage from './pages/ReportsPage';
 import ArchivePage from './pages/ArchivePage';
+import ModernSilosPage from './pages/ModernSilosPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './auth/ProtectedRoute';
 import { useAuth } from './auth/AuthContext';
 import { useStoreSync } from './hooks';
-import { ThemeProvider } from './components/ThemeProvider';
+import { ThemeProvider } from '@andrea/crm-ui';
 
 // This component creates the main layout with the sidebar
 const AppLayout = () => {
@@ -74,6 +75,7 @@ function App() {
             {/* Silos routes */}
             <Route path="silos" element={<SilosPage />} />
             <Route path="silos/list" element={<SilosListPage />} />
+            <Route path="silos/modern" element={<ModernSilosPage />} />
             <Route path="silos/new" element={<SilosFormPage />} />
             <Route path="silos/edit/:id" element={<SilosFormPage />} />
             

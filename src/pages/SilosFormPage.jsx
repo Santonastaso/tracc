@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
 import { useMaterials, useCreateSilo, useUpdateSilo } from '../hooks';
 import GenericForm from '../components/GenericForm';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
 
 function SilosFormPage() {

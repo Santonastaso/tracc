@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useSilos } from '../hooks';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
-import { Input } from '../components/ui/input';
+import { Input } from '@andrea/crm-ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 function ReportsPage() {

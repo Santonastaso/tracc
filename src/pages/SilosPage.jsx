@@ -11,7 +11,7 @@ import {
 import GenericForm from '../components/GenericForm';
 import SiloCard from '../components/SiloCard';
 import { SiloDetailCard } from '../components/SiloDetailCard';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
 
 function SilosPage() {

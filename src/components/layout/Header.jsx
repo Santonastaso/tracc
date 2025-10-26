@@ -2,7 +2,7 @@ import React from 'react';
 import { Menu, LogOut, Settings, Users } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { useSidebar } from '../../hooks/useSidebar';
-import { ThemeDropdown } from '../ui/theme-dropdown';
+import { ThemeSwitch } from '@andrea/crm-ui';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger 
 } from '../ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { Button } from '../ui/button';
+import { Button } from '@andrea/crm-ui';
 
 export function Header() {
   const { user, signOut } = useAuth();
@@ -32,7 +32,7 @@ export function Header() {
 
         <div className="flex items-center space-x-4">
 
-          <ThemeDropdown />
+          <ThemeSwitch />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -7,7 +7,7 @@ import {
 } from '../hooks';
 import DataTable from '../components/DataTable';
 import { MerceOutDetailCard } from '../components/MerceOutDetailCard';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
 

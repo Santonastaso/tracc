@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { Button } from './ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Checkbox } from './ui/checkbox';
 import { BulkActionsToolbar } from './ui/BulkActionsToolbar';
 import FilterDropdown from './FilterDropdown';

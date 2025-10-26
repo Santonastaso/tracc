@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useSilos, useInbound, useOutbound } from '../hooks';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { SiloDetailCard } from '../components/SiloDetailCard';
 
 function HomePage() {

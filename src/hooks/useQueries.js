@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { silosService } from '../services';
-import { showSuccess, showError } from '../utils/toast';
+import { showSuccess, showError } from '@andrea/shared-utils';
 
 // Query Keys - Centralized key management
 export const queryKeys = {

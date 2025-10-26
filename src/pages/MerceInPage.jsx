@@ -9,7 +9,7 @@ import {
   useUpdateInbound
 } from '../hooks';
 import GenericForm from '../components/GenericForm';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
 import { useParams, useNavigate } from 'react-router-dom';
 

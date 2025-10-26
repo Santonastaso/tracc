@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDeleteMaterial } from '../hooks';
 import DataTable from '../components/DataTable';
 import { MaterialDetailCard } from '../components/MaterialDetailCard';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
 import { Link, useNavigate } from 'react-router-dom';
 

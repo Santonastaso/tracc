@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
+import { Button, Input } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
-import { showError } from '../utils/toast';
+import { showError } from '@andrea/shared-utils';
 
 function LoginPage() {
   const [email, setEmail] = useState('');

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
 import { useCreateMaterial, useUpdateMaterial } from '../hooks';
 import GenericForm from '../components/GenericForm';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
 
 function MaterialsPage() {

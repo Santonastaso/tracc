@@ -5,7 +5,7 @@ import { useDeleteOperator } from '../hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/DataTable';
 import { OperatorDetailCard } from '../components/OperatorDetailCard';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Link, useNavigate } from 'react-router-dom';

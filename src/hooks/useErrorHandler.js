@@ -9,7 +9,7 @@ import {
   retryOperation,
   createErrorHandler
 } from '../services/errorHandling';
-import { showError, showWarning, showInfo } from '../utils/toast';
+import { showError, showWarning, showInfo } from '@andrea/shared-utils';
 
 /**
  * Enhanced error handling hook

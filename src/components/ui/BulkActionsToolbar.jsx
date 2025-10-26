@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Download, Trash2 } from 'lucide-react';
-import { Button } from './button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from './card';
 
 export function BulkActionsToolbar({ 

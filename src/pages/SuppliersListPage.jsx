@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase/client';
 import { useDeleteSupplier } from '../hooks';
 import DataTable from '../components/DataTable';
 import { SupplierDetailCard } from '../components/SupplierDetailCard';
-import { Button } from '../components/ui/button';
+import { Button } from '@andrea/crm-ui';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Link, useNavigate } from 'react-router-dom';
