@@ -3,11 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteSupplier } from '../hooks';
 import { Button } from '@andrea/crm-ui';
-import { Card } from './ui/card';
+import { Card } from '@andrea/crm-ui';
 import { Input } from '@andrea/crm-ui';
 import { Label } from '@andrea/crm-ui';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
+
+import { Badge } from '@andrea/crm-ui';
 import { ArrowLeft, Edit, Save, X, Trash2, Building2 } from 'lucide-react';
 import { confirmAction } from '../utils';
 
@@ -234,7 +234,7 @@ export function SupplierDetailCard({ supplier, onClose, onEdit }) {
                   <div>
                     <Label htmlFor="address">Indirizzo</Label>
                     {isEditing ? (
-                      <Textarea
+                      <textarea
                         id="address"
                         value={formData.address}
                         onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
@@ -280,7 +280,7 @@ export function SupplierDetailCard({ supplier, onClose, onEdit }) {
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-4">Notes</h3>
                 {isEditing ? (
-                  <Textarea
+                  <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Inserisci note aggiuntive"

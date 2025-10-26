@@ -12,7 +12,7 @@ import GenericForm from '../components/GenericForm';
 import SiloCard from '../components/SiloCard';
 import { SiloDetailCard } from '../components/SiloDetailCard';
 import { Button } from '@andrea/crm-ui';
-import { Card } from '../components/ui/card';
+import { Card } from '@andrea/crm-ui';
 
 function SilosPage() {
   const [showForm, setShowForm] = useState(false);

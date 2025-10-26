@@ -3,13 +3,6 @@ import { useForm } from 'react-hook-form';
 import { useErrorHandler, useValidation } from '../hooks';
 import { showValidationError } from '../utils';
 import { Input, Label, Button } from '@andrea/crm-ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui';
 
 /**
  * Generic Form Component
@@ -157,22 +150,18 @@ function GenericForm({
     switch (field.type) {
       case 'select':
         return (
-          <Select 
-            onValueChange={(value) => setValue(field.name, value)} 
-            value={String(getValues(field.name) || '')}
+          <select
+            {...register(field.name, field.validation)}
             disabled={field.disabled || isSubmitting}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <SelectTrigger>
-              <SelectValue placeholder={field.placeholder || `Seleziona ${field.label.toLowerCase()}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {field.options?.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="">{field.placeholder || `Seleziona ${field.label.toLowerCase()}`}</option>
+            {field.options?.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         );
 
       case 'textarea':

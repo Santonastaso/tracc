@@ -3,11 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useMaterials, useDeleteSilo, useSilosWithLevels } from '../hooks';
 import { Button } from '@andrea/crm-ui';
-import { Card } from './ui/card';
+import { Card } from '@andrea/crm-ui';
 import { Input } from '@andrea/crm-ui';
 import { Label } from '@andrea/crm-ui';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
+
+import { Badge } from '@andrea/crm-ui';
 import { ArrowLeft, Edit, Save, X, Trash2, Warehouse, Package, Calendar } from 'lucide-react';
 import { confirmAction } from '../utils';
 

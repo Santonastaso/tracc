@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/DataTable';
 import { SiloDetailCard } from '../components/SiloDetailCard';
 import { Button } from '@andrea/crm-ui';
-import { Card } from '../components/ui/card';
+import { Card } from '@andrea/crm-ui';
 import { Link, useNavigate } from 'react-router-dom';
 
 function SilosListPage() {

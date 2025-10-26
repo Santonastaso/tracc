@@ -7,10 +7,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from './ui/table';
+} from '@andrea/crm-ui';
 import { Button } from '@andrea/crm-ui';
-import { Checkbox } from './ui/checkbox';
-import { BulkActionsToolbar } from './ui/BulkActionsToolbar';
+// Removed legacy UI imports - using native HTML elements
 import FilterDropdown from './FilterDropdown';
 import { confirmAction } from '../utils';
 
@@ -143,33 +142,36 @@ function DataTable({
         const someSelected = currentPageRows.some(r => selectedIds.has(r.id));
         return (
           <div className="w-8">
-            <Checkbox
+            <input
+              type="checkbox"
               aria-label="Seleziona tutti"
               checked={allSelected}
-              onCheckedChange={(checked) => {
+              onChange={(e) => {
                 const newSet = new Set(selectedIds);
-                if (checked) {
+                if (e.target.checked) {
                   currentPageRows.forEach(r => newSet.add(r.id));
                 } else {
                   currentPageRows.forEach(r => newSet.delete(r.id));
                 }
                 setSelectedIds(newSet);
               }}
-              className="mb-2"
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mb-2"
             />
           </div>
         );
       },
       cell: ({ row }) => (
         <div className="flex w-8">
-          <Checkbox
+          <input
+            type="checkbox"
             aria-label="Seleziona riga"
             checked={selectedIds.has(row.original.id)}
-            onCheckedChange={(checked) => {
+            onChange={(e) => {
               const newSet = new Set(selectedIds);
-              if (checked) newSet.add(row.original.id); else newSet.delete(row.original.id);
+              if (e.target.checked) newSet.add(row.original.id); else newSet.delete(row.original.id);
               setSelectedIds(newSet);
             }}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
         </div>
       )
@@ -366,21 +368,49 @@ function DataTable({
       </div>
       
       {/* Bottom action bar for selected items */}
-      <BulkActionsToolbar
-        selectedCount={selectedIds.size}
-        onClearSelection={() => setSelectedIds(new Set())}
-        onExport={onBulkExport ? () => {
-          const ids = Array.from(selectedIds);
-          onBulkExport(ids);
-        } : null}
-        onDelete={onBulkDelete ? () => {
-          if (confirmAction('Eliminare gli elementi selezionati?')) {
-            const ids = Array.from(selectedIds);
-            onBulkDelete(ids);
-            setSelectedIds(new Set());
-          }
-        } : null}
-      />
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between p-4 bg-muted rounded-md mt-4">
+          <span className="text-sm text-muted-foreground">
+            {selectedIds.size} elementi selezionati
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Deseleziona tutto
+            </Button>
+            {onBulkExport && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const ids = Array.from(selectedIds);
+                  onBulkExport(ids);
+                }}
+              >
+                Esporta
+              </Button>
+            )}
+            {onBulkDelete && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  if (confirmAction('Eliminare gli elementi selezionati?')) {
+                    const ids = Array.from(selectedIds);
+                    onBulkDelete(ids);
+                    setSelectedIds(new Set());
+                  }
+                }}
+              >
+                Elimina
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

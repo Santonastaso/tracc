@@ -1,4 +1,4 @@
-import { BaseService } from './BaseService';
+import { BaseService } from '@andrea/crm-data';
 import { 
   safeAsync, 
   validateRequiredFields,

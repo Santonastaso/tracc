@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useSilos } from '../hooks';
 import { Button } from '@andrea/crm-ui';
-import { Card } from '../components/ui/card';
+import { Card } from '@andrea/crm-ui';
 import { Input } from '@andrea/crm-ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+// Using native HTML select instead of complex Select component
 
 function ReportsPage() {
   const [filters, setFilters] = useState({
@@ -590,20 +590,16 @@ function ReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Tipo Report</label>
-            <Select 
-              value={filters.reportType} 
-              onValueChange={(value) => handleFilterChange('reportType', value)}
+            <select
+              value={filters.reportType}
+              onChange={(e) => handleFilterChange('reportType', e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="movements">Movimenti IN</SelectItem>
-                <SelectItem value="outbound">Movimenti OUT</SelectItem>
-                <SelectItem value="stock">Giacenze Silos</SelectItem>
-                <SelectItem value="snapshot">Snapshot Silos</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="movements">Movimenti IN</option>
+              <option value="outbound">Movimenti OUT</option>
+              <option value="stock">Giacenze Silos</option>
+              <option value="snapshot">Snapshot Silos</option>
+            </select>
           </div>
           
           {filters.reportType === 'snapshot' ? (
@@ -650,22 +646,18 @@ function ReportsPage() {
           
           <div>
             <label className="block text-sm font-medium mb-1">Silos</label>
-            <Select 
-              value={filters.siloId} 
-              onValueChange={(value) => handleFilterChange('siloId', value)}
+            <select
+              value={filters.siloId}
+              onChange={(e) => handleFilterChange('siloId', e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Tutti i silos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti i silos</SelectItem>
-                {silosData?.map(silo => (
-                  <SelectItem key={silo.id} value={silo.id.toString()}>
-                    {silo.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="all">Tutti i silos</option>
+              {silosData?.map(silo => (
+                <option key={silo.id} value={silo.id.toString()}>
+                  {silo.name}
+                </option>
+              ))}
+            </select>
           </div>
           
           <div className="flex items-end">

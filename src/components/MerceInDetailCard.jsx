@@ -3,8 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteInbound, useMaterials, useOperators, useSilos } from '../hooks';
 import { Button, Input, Label } from '@andrea/crm-ui';
-import { Card } from './ui/card';
-import { Textarea } from './ui/textarea';
+import { Card } from '@andrea/crm-ui';
+
 import { ArrowLeft, Edit, Save, X, Trash2, ArrowDown } from 'lucide-react';
 import { confirmAction } from '../utils';
 
@@ -390,7 +390,7 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-4">Notes</h3>
                 {isEditing ? (
-                  <Textarea
+                  <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Inserisci note aggiuntive"

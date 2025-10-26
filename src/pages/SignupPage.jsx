@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Button, Input } from '@andrea/crm-ui';
-import { Card } from '../components/ui/card';
+import { Card } from '@andrea/crm-ui';
 import { showError, showSuccess } from '@andrea/shared-utils';
 
 function SignupPage() {

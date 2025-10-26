@@ -10,7 +10,7 @@ import {
 import DataTable from '../components/DataTable';
 import { MerceInDetailCard } from '../components/MerceInDetailCard';
 import { Button } from '@andrea/crm-ui';
-import { Card } from '../components/ui/card';
+import { Card } from '@andrea/crm-ui';
 import { Link, useNavigate } from 'react-router-dom';
 
 function MerceInListPage() {

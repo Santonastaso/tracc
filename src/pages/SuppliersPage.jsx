@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase/client';
 import { useCreateSupplier, useUpdateSupplier } from '../hooks';
 import GenericForm from '../components/GenericForm';
 import { Button } from '@andrea/crm-ui';
-import { Card } from '../components/ui/card';
+import { Card } from '@andrea/crm-ui';
 
 function SuppliersPage() {
   const { id } = useParams();

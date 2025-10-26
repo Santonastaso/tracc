@@ -5,8 +5,8 @@ import { useDeleteSupplier } from '../hooks';
 import DataTable from '../components/DataTable';
 import { SupplierDetailCard } from '../components/SupplierDetailCard';
 import { Button } from '@andrea/crm-ui';
-import { Card } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
+import { Card } from '@andrea/crm-ui';
+import { Badge } from '@andrea/crm-ui';
 import { Link, useNavigate } from 'react-router-dom';
 
 function SuppliersListPage() {
