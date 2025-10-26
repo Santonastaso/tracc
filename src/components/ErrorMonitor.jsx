@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useErrorHandler } from '../hooks/useErrorHandler';
+import { useErrorHandler } from '../hooks';
 import { ERROR_TYPES } from '../services/errorHandling';
 
 /**
