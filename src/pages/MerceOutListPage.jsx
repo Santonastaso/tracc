@@ -7,8 +7,8 @@ import {
 } from '../hooks';
 import DataTable from '../components/DataTable';
 import { MerceOutDetailCard } from '../components/MerceOutDetailCard';
-import { Button } from '@santonastaso/crm-ui';
-import { Card } from '@santonastaso/crm-ui';
+import { Button } from '@santonastaso/shared';
+import { Card } from '@santonastaso/shared';
 import { Link, useNavigate } from 'react-router-dom';
 
 function MerceOutListPage() {

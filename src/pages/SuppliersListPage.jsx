@@ -4,9 +4,9 @@ import { supabase } from '../services/supabase/client';
 import { useDeleteSupplier } from '../hooks';
 import DataTable from '../components/DataTable';
 import { SupplierDetailCard } from '../components/SupplierDetailCard';
-import { Button } from '@santonastaso/crm-ui';
-import { Card } from '@santonastaso/crm-ui';
-import { Badge } from '@santonastaso/crm-ui';
+import { Button } from '@santonastaso/shared';
+import { Card } from '@santonastaso/shared';
+import { Badge } from '@santonastaso/shared';
 import { Link, useNavigate } from 'react-router-dom';
 
 function SuppliersListPage() {

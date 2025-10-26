@@ -4,8 +4,8 @@ import { supabase } from '../services/supabase/client';
 import { useSilos, useMaterials } from '../hooks';
 import DataTable from '../components/DataTable';
 import GenericForm from '../components/GenericForm';
-import { Button } from '@santonastaso/crm-ui';
-import { Card } from '@santonastaso/crm-ui';
+import { Button } from '@santonastaso/shared';
+import { Card } from '@santonastaso/shared';
 import { showSuccess, showError } from '../utils';
 
 function ArchivePage() {

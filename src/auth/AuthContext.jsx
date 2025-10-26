@@ -1,4 +1,4 @@
-import { AuthProvider as SharedAuthProvider, useAuth as useSharedAuth } from '@santonastaso/shared-utils';
+import { AuthProvider as SharedAuthProvider, useAuth as useSharedAuth } from '@santonastaso/shared';
 import { supabase } from '../services/supabase/client';
 
 /**

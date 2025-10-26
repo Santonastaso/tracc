@@ -9,8 +9,8 @@ import {
   useUpdateInbound
 } from '../hooks';
 import GenericForm from '../components/GenericForm';
-import { Button } from '@santonastaso/crm-ui';
-import { Card } from '@santonastaso/crm-ui';
+import { Button } from '@santonastaso/shared';
+import { Card } from '@santonastaso/shared';
 import { useParams, useNavigate } from 'react-router-dom';
 
 function MerceInPage() {

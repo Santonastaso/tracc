@@ -11,8 +11,8 @@ import {
 import GenericForm from '../components/GenericForm';
 import SiloCard from '../components/SiloCard';
 import { SiloDetailCard } from '../components/SiloDetailCard';
-import { Button } from '@santonastaso/crm-ui';
-import { Card } from '@santonastaso/crm-ui';
+import { Button } from '@santonastaso/shared';
+import { Card } from '@santonastaso/shared';
 
 function SilosPage() {
   const [showForm, setShowForm] = useState(false);

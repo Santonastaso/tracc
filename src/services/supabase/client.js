@@ -1,4 +1,4 @@
-import { createSupabaseClient, handleSupabaseError as sharedHandleSupabaseError, checkSupabaseConnection as sharedCheckSupabaseConnection } from '@santonastaso/shared-utils';
+import { createSupabaseClient, handleSupabaseError as sharedHandleSupabaseError, checkSupabaseConnection as sharedCheckSupabaseConnection } from '@santonastaso/shared';
 
 // Supabase configuration for tracc project
 const SUPABASE_URL = 'https://odlymzidujfrvufeocsz.supabase.co';

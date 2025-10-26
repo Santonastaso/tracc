@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
 import { useCreateMaterial, useUpdateMaterial } from '../hooks';
 import GenericForm from '../components/GenericForm';
-import { Button } from '@santonastaso/crm-ui';
-import { Card } from '@santonastaso/crm-ui';
+import { Button } from '@santonastaso/shared';
+import { Card } from '@santonastaso/shared';
 
 function MaterialsPage() {
   const { id } = useParams();

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Menu, LogOut } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
-import { Header as SharedHeader, useSidebar } from '@santonastaso/shared-components';
-import { ThemeSwitch, Button } from '@santonastaso/crm-ui';
+import { Header as SharedHeader, useSidebar } from '@santonastaso/shared';
+import { ThemeSwitch, Button } from '@santonastaso/shared';
 
 export function Header() {
   const { user, signOut } = useAuth();

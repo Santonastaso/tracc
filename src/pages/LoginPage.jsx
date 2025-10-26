@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Button, Input } from '@santonastaso/crm-ui';
-import { Card } from '@santonastaso/crm-ui';
-import { showError } from '@santonastaso/shared-utils';
+import { Button, Input } from '@santonastaso/shared';
+import { Card } from '@santonastaso/shared';
+import { showError } from '@santonastaso/shared';
 
 function LoginPage() {
   const [email, setEmail] = useState('');

@@ -5,7 +5,7 @@ export {
   showWarning, 
   showInfo, 
   showValidationError 
-} from '@santonastaso/shared-utils';
+} from '@santonastaso/shared';
 
 // Date/Time formatting (UTC+0 always)
 export const formatUtcDate = (isoString) => {

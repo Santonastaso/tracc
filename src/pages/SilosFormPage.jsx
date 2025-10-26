@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
 import { useMaterials, useCreateSilo, useUpdateSilo } from '../hooks';
 import GenericForm from '../components/GenericForm';
-import { Button } from '@santonastaso/crm-ui';
-import { Card } from '@santonastaso/crm-ui';
+import { Button } from '@santonastaso/shared';
+import { Card } from '@santonastaso/shared';
 
 function SilosFormPage() {
   const { id } = useParams();

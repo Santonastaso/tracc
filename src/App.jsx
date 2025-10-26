@@ -26,7 +26,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './auth/ProtectedRoute';
 import { useAuth } from './auth/AuthContext';
 import { useStoreSync } from './hooks';
-import { ThemeProvider } from '@santonastaso/crm-ui';
+import { ThemeProvider } from '@santonastaso/shared';
 
 // This component creates the main layout with the sidebar
 const AppLayout = () => {

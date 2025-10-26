@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteOutbound, useSilos } from '../hooks';
-import { Button } from '@santonastaso/crm-ui';
-import { Card } from '@santonastaso/crm-ui';
-import { Input } from '@santonastaso/crm-ui';
-import { Label } from '@santonastaso/crm-ui';
+import { Button } from '@santonastaso/shared';
+import { Card } from '@santonastaso/shared';
+import { Input } from '@santonastaso/shared';
+import { Label } from '@santonastaso/shared';
 
 import { ArrowLeft, Edit, Save, X, Trash2, ArrowUp } from 'lucide-react';
 import { confirmAction } from '../utils';

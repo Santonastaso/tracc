@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useDataService, DataTable } from '@santonastaso/crm-data';
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Badge } from '@santonastaso/crm-ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Badge } from '@santonastaso/shared';
 import { ModernSilosService } from '../services/ModernSilosService';
-import { showSuccess, showError } from '@santonastaso/shared-utils';
+import { showSuccess, showError } from '@santonastaso/shared';
 
 // Create service instance
 const silosService = new ModernSilosService();
