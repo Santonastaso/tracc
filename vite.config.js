@@ -9,7 +9,7 @@ export default defineConfig(({ command }) => {
     base: isDev ? '/' : '/tracc/', // Use root for dev, /tracc/ for production
     server: {
       // Ensure dev server works correctly
-      port: 5174,
+      port: 5173,
       host: true,
     },
     build: {
