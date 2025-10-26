@@ -50,8 +50,7 @@ export {
 // Export utility hooks
 export { 
   useErrorHandler, 
-  useValidationErrorHandler, 
-  useApiErrorHandler 
+  useValidationErrorHandler
 } from './useErrorHandler';
 export { useValidation } from './useValidation';
 export { useStoreSync } from './useStoreSync';
