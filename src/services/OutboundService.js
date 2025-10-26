@@ -1,4 +1,4 @@
-import { BaseService } from '@santonastaso/crm-data';
+import { BaseService } from '@santonastaso/shared';
 import { 
   safeAsync, 
   validateRequiredFields, 

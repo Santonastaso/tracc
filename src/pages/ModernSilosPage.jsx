@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useDataService, DataTable } from '@santonastaso/crm-data';
+import { useDataService, DataTable } from '@santonastaso/shared';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Badge } from '@santonastaso/shared';
 import { ModernSilosService } from '../services/ModernSilosService';
 import { showSuccess, showError } from '@santonastaso/shared';
@@ -152,7 +152,7 @@ function ModernSilosPage() {
         <div>
           <h1 className="text-3xl font-bold">Modern Silos Management</h1>
           <p className="text-muted-foreground">
-            Powered by @santonastaso/crm-data - Professional data handling patterns
+            Powered by @santonastaso/shared - Professional data handling patterns
           </p>
         </div>
         <Button onClick={() => console.log('Add new silo')}>

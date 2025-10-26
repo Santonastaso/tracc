@@ -5,7 +5,7 @@
  */
 
 // Export base service class
-export { BaseService } from '@santonastaso/crm-data';
+export { BaseService } from '@santonastaso/shared';
 
 // Export error handling utilities
 export {
