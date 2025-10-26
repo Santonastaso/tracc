@@ -3,8 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-// TODO: Switch back to "@santonastaso/crm-ui/styles.css" once package is published
-import './temp-crm-ui-styles.css';
+import '@santonastaso/crm-ui/styles.css';
 import App from './App';
 import { AuthProvider } from './auth/AuthContext';
 import './index.css';
