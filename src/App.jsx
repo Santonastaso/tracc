@@ -22,7 +22,7 @@ import ArchivePage from './pages/ArchivePage';
 import ModernSilosPage from './pages/ModernSilosPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import ErrorBoundary from './components/ErrorBoundary';
+import { ErrorBoundary } from '@santonastaso/shared';
 import ProtectedRoute from './auth/ProtectedRoute';
 import { useAuth } from './auth/AuthContext';
 import { useStoreSync } from './hooks';
