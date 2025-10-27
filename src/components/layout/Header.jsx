@@ -1,14 +1,21 @@
 import React from 'react';
 import { useAuth } from '../../auth/AuthContext';
-import { AppHeader, useSidebar } from '@santonastaso/shared';
+import { ExactHeader } from '@santonastaso/shared';
 
 export function Header() {
   const { user, signOut } = useAuth();
-  const { toggle } = useSidebar();
+
+  const navigationItems = [
+    { label: 'Dashboard', to: '/', isActive: true },
+    { label: 'Machines', to: '/machines' },
+    { label: 'Orders', to: '/orders' },
+    { label: 'Reports', to: '/reports' },
+  ];
 
   return (
-    <AppHeader
+    <ExactHeader
       title="Tracc"
+      navigationItems={navigationItems}
       user={{
         name: user?.email?.split('@')[0] || 'User',
         email: user?.email,
@@ -16,7 +23,6 @@ export function Header() {
       }}
       onLogout={() => signOut()}
       onRefresh={() => window.location.reload()}
-      onToggleSidebar={toggle}
     />
   );
 }
