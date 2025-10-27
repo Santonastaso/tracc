@@ -9,7 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  packages: read
+  
 
 concurrency:
   group: "pages"
@@ -27,12 +27,10 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
 
       - name: Install dependencies
         run: npm install --prefer-offline --no-audit --no-fund --legacy-peer-deps
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
         run: npm run build
