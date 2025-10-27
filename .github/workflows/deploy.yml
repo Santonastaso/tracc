@@ -9,7 +9,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  
 
 concurrency:
   group: "pages"
@@ -30,7 +29,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install --prefer-offline --no-audit --no-fund --legacy-peer-deps
-        env:
 
       - name: Build
         run: npm run build
