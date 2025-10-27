@@ -8,7 +8,7 @@ import {
   useDeleteSilo,
   useMaterials 
 } from '../hooks';
-import GenericForm from '../components/GenericForm';
+import { GenericForm } from "@santonastaso/shared";
 import SiloCard from '../components/SiloCard';
 import { SiloDetailCard } from '../components/SiloDetailCard';
 import { Button } from '@santonastaso/shared';

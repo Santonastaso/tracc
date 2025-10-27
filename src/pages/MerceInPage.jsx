@@ -8,7 +8,7 @@ import {
   useCreateInbound,
   useUpdateInbound
 } from '../hooks';
-import GenericForm from '../components/GenericForm';
+import { GenericForm } from "@santonastaso/shared";
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
 import { useParams, useNavigate } from 'react-router-dom';

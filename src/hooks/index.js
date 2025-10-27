@@ -50,7 +50,8 @@ export {
 // Export utility hooks from shared package
 export { 
   useErrorHandler, 
-  useValidationErrorHandler
+  useValidationErrorHandler,
+  useTheme
 } from '@santonastaso/shared';
 
 // Export local utility hooks

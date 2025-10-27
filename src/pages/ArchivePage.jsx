@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useSilos, useMaterials } from '../hooks';
 import { DataTable } from '@santonastaso/shared';
-import GenericForm from '../components/GenericForm';
+import { GenericForm } from "@santonastaso/shared";
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
 import { showSuccess, showError } from '@santonastaso/shared';

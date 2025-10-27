@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
 import { useCreateSupplier, useUpdateSupplier } from '../hooks';
-import GenericForm from '../components/GenericForm';
+import { GenericForm } from "@santonastaso/shared";
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
 
