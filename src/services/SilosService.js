@@ -1,14 +1,23 @@
 import { BaseService } from '@santonastaso/shared';
 import { 
-  safeAsync, 
   validateRequiredFields, 
   validateNumericRanges,
   throwNotFoundError,
   throwBusinessError,
-  createServiceError,
-  ERROR_TYPES
-} from './errorHandling';
+  ServiceError
+} from '@santonastaso/shared';
 import { supabase } from './supabase/client';
+
+/**
+ * Simple safeAsync replacement - wraps async operations with error handling
+ */
+const safeAsync = async (asyncFn) => {
+  try {
+    return await asyncFn();
+  } catch (error) {
+    throw error;
+  }
+};
 
 /**
  * Silos Service

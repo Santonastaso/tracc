@@ -1,11 +1,20 @@
 import { BaseService } from '@santonastaso/shared';
 import { 
-  safeAsync, 
   validateRequiredFields,
   throwNotFoundError,
-  createServiceError,
-  ERROR_TYPES
-} from './errorHandling';
+  ServiceError
+} from '@santonastaso/shared';
+
+/**
+ * Simple safeAsync replacement - wraps async operations with error handling
+ */
+const safeAsync = async (asyncFn) => {
+  try {
+    return await asyncFn();
+  } catch (error) {
+    throw error;
+  }
+};
 
 /**
  * Materials Service

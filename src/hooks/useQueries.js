@@ -34,7 +34,7 @@ export const queryKeys = {
 export const useSilos = () => {
   return useQuery({
     queryKey: queryKeys.silos,
-    queryFn: () => silosService.getAll(),
+    queryFn: () => silosService.getSilosWithLevels(),
     staleTime: 5 * 60 * 1000, // 5 minutes - silos don't change often
   });
 };

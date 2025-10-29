@@ -8,12 +8,8 @@ export { useOperatorsStore } from './useOperatorsStore';
 
 // Export store factory
 export { 
-  createEntityStore, 
-  createSiloStore, 
-  createMovementStore,
-  createSilosStore,
-  createInboundStore,
-  createOutboundStore,
-  createMaterialsStore,
-  createOperatorsStore
-} from './storeFactory';
+  createEntityStore,
+  createCRUDStore,
+  createPaginatedStore,
+  createUIStore
+} from '@santonastaso/shared';

@@ -1,9 +1,9 @@
-import { createMaterialsStore } from './storeFactory';
+import { createEntityStore } from '@santonastaso/shared';
 
 /**
  * Materials Store
  * Manages materials data
  * Uses the store factory pattern for consistency
  */
-export const useMaterialsStore = createMaterialsStore();
+export const useMaterialsStore = createEntityStore('materials');
 

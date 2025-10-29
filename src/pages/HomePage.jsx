@@ -12,9 +12,20 @@ function HomePage() {
   const [selectedSilo, setSelectedSilo] = useState(null);
 
   // Fetch data using centralized query hooks
-  const { data: silosData, isLoading: silosLoading } = useSilos();
-  const { data: inboundData, isLoading: inboundLoading } = useInbound();
-  const { data: outboundData, isLoading: outboundLoading } = useOutbound();
+  const { data: silosData, isLoading: silosLoading, error: silosError } = useSilos();
+  const { data: inboundData, isLoading: inboundLoading, error: inboundError } = useInbound();
+  const { data: outboundData, isLoading: outboundLoading, error: outboundError } = useOutbound();
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🏠 HomePage data status:', {
+      silosData: silosData?.length || 0,
+      inboundData: inboundData?.length || 0,
+      outboundData: outboundData?.length || 0,
+      loading: { silosLoading, inboundLoading, outboundLoading },
+      errors: { silosError, inboundError, outboundError }
+    });
+  }, [silosData, inboundData, outboundData, silosLoading, inboundLoading, outboundLoading, silosError, inboundError, outboundError]);
 
   // Calculate metrics
   const metrics = useMemo(() => {

@@ -20,12 +20,12 @@ export const useStoreSync = () => {
   const { data: materialsData } = useMaterials();
   const { data: operatorsData } = useOperators();
 
-  // Zustand stores
-  const { setSilos } = useSilosStore();
-  const { setInbound } = useInboundStore();
-  const { setOutbound } = useOutboundStore();
-  const { setMaterials } = useMaterialsStore();
-  const { setOperators } = useOperatorsStore();
+  // Zustand stores (using new shared store API)
+  const { setEntities: setSilos } = useSilosStore();
+  const { setEntities: setInbound } = useInboundStore();
+  const { setEntities: setOutbound } = useOutboundStore();
+  const { setEntities: setMaterials } = useMaterialsStore();
+  const { setEntities: setOperators } = useOperatorsStore();
 
   // Sync silos data
   useEffect(() => {

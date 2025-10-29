@@ -10,34 +10,29 @@ export { BaseService } from '@santonastaso/shared';
 // Export error handling utilities
 export {
   ServiceError,
-  ERROR_TYPES,
   handleSupabaseError,
-  createServiceError,
-  safeAsync,
   validateRequiredFields,
-  validateFieldTypes,
   validateNumericRanges,
   throwBusinessError,
-  throwNotFoundError,
-  throwDuplicateError
-} from './errorHandling';
+  throwNotFoundError
+} from '@santonastaso/shared';
 
 // Export entity services
-export { SilosService } from './SilosService';
-export { InboundService } from './InboundService';
-export { OutboundService } from './OutboundService';
-export { MaterialsService } from './MaterialsService';
-export { OperatorsService } from './OperatorsService';
+export { SilosService } from './SilosService.js';
+export { InboundService } from './InboundService.js';
+export { OutboundService } from './OutboundService.js';
+export { MaterialsService } from './MaterialsService.js';
+export { OperatorsService } from './OperatorsService.js';
 
 // Export Supabase client
-export { supabase } from './supabase/client';
+export { supabase } from './supabase/client.js';
 
 // Create service instances
-import { SilosService } from './SilosService';
-import { InboundService } from './InboundService';
-import { OutboundService } from './OutboundService';
-import { MaterialsService } from './MaterialsService';
-import { OperatorsService } from './OperatorsService';
+import { SilosService } from './SilosService.js';
+import { InboundService } from './InboundService.js';
+import { OutboundService } from './OutboundService.js';
+import { MaterialsService } from './MaterialsService.js';
+import { OperatorsService } from './OperatorsService.js';
 
 /**
  * Service instances for easy access
