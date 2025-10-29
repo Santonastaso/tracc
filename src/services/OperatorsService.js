@@ -1,9 +1,4 @@
 import { BaseService } from '@santonastaso/shared';
-import { 
-  validateRequiredFields,
-  throwNotFoundError,
-  ServiceError
-} from '@santonastaso/shared';
 
 /**
  * Simple safeAsync replacement - wraps async operations with error handling
@@ -15,6 +10,11 @@ const safeAsync = async (asyncFn) => {
     throw error;
   }
 };
+import { 
+  validateRequiredFields,
+  throwNotFoundError,
+  ServiceError
+} from '@santonastaso/shared';
 
 /**
  * Operators Service

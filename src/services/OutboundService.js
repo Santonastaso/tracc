@@ -1,12 +1,4 @@
 import { BaseService } from '@santonastaso/shared';
-import { 
-  validateRequiredFields, 
-  validateNumericRanges,
-  throwNotFoundError,
-  throwBusinessError,
-  ServiceError
-} from '@santonastaso/shared';
-import { supabase } from './supabase/client';
 
 /**
  * Simple safeAsync replacement - wraps async operations with error handling
@@ -18,6 +10,14 @@ const safeAsync = async (asyncFn) => {
     throw error;
   }
 };
+import { 
+  validateRequiredFields, 
+  validateNumericRanges,
+  throwNotFoundError,
+  throwBusinessError,
+  ServiceError
+} from '@santonastaso/shared';
+import { supabase } from './supabase/client';
 
 /**
  * Outbound Service
