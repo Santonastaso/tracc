@@ -72,6 +72,61 @@ function ReportsPage() {
     enabled: filters.reportType === 'outbound'
   });
 
+  // Fetch combined movements report (IN & OUT)
+  const { data: combinedMovementsData, isLoading: combinedMovementsLoading } = useQuery({
+    queryKey: ['combined-movements-report', filters],
+    queryFn: async () => {
+      // Fetch inbound movements
+      let inboundQuery = supabase
+        .from('inbound')
+        .select('*, silos(name)')
+        .order('created_at', { ascending: false });
+
+      if (filters.startDate) {
+        inboundQuery = inboundQuery.gte('created_at', filters.startDate + 'T00:00:00.000Z');
+      }
+      if (filters.endDate) {
+        inboundQuery = inboundQuery.lte('created_at', filters.endDate + 'T23:59:59.999Z');
+      }
+      if (filters.siloId && filters.siloId !== 'all') {
+        inboundQuery = inboundQuery.eq('silo_id', filters.siloId);
+      }
+
+      // Fetch outbound movements
+      let outboundQuery = supabase
+        .from('outbound')
+        .select('*, silos(name)')
+        .order('created_at', { ascending: false });
+
+      if (filters.startDate) {
+        outboundQuery = outboundQuery.gte('created_at', filters.startDate + 'T00:00:00.000Z');
+      }
+      if (filters.endDate) {
+        outboundQuery = outboundQuery.lte('created_at', filters.endDate + 'T23:59:59.999Z');
+      }
+      if (filters.siloId && filters.siloId !== 'all') {
+        outboundQuery = outboundQuery.eq('silo_id', filters.siloId);
+      }
+
+      const [inboundResult, outboundResult] = await Promise.all([
+        inboundQuery,
+        outboundQuery
+      ]);
+
+      if (inboundResult.error) throw inboundResult.error;
+      if (outboundResult.error) throw outboundResult.error;
+
+      // Combine and sort by date
+      const combinedData = [
+        ...inboundResult.data.map(item => ({ ...item, movement_type: 'IN' })),
+        ...outboundResult.data.map(item => ({ ...item, movement_type: 'OUT' }))
+      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      return combinedData;
+    },
+    enabled: filters.reportType === 'combined'
+  });
+
   // Fetch stock levels report
   const { data: stockData, isLoading: stockLoading } = useQuery({
     queryKey: ['stock-report', filters],
@@ -286,6 +341,8 @@ function ReportsPage() {
         return movementsData;
       case 'outbound':
         return outboundData;
+      case 'combined':
+        return combinedMovementsData;
       case 'stock':
         return stockData;
       case 'snapshot':
@@ -301,6 +358,8 @@ function ReportsPage() {
         return movementsLoading;
       case 'outbound':
         return outboundLoading;
+      case 'combined':
+        return combinedMovementsLoading;
       case 'stock':
         return stockLoading;
       case 'snapshot':
@@ -407,6 +466,74 @@ function ReportsPage() {
                     ))}
                   </div>
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderCombinedMovementsTable = () => {
+    if (!combinedMovementsData || combinedMovementsData.length === 0) {
+      return <p className="text-gray-500 text-center py-4">Nessun movimento trovato</p>;
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left p-2">Data/Ora</th>
+              <th className="text-left p-2">Tipo</th>
+              <th className="text-left p-2">DDT</th>
+              <th className="text-left p-2">Silos</th>
+              <th className="text-left p-2">Prodotto</th>
+              <th className="text-left p-2">Quantità</th>
+              <th className="text-left p-2">Lotto Fornitore</th>
+              <th className="text-left p-2">Lotto TF</th>
+              <th className="text-left p-2">Pulizia</th>
+              <th className="text-left p-2">Proteine</th>
+              <th className="text-left p-2">Umidità</th>
+              <th className="text-left p-2">Operatore</th>
+            </tr>
+          </thead>
+          <tbody>
+            {combinedMovementsData.map((movement) => (
+              <tr key={`${movement.movement_type}-${movement.id}`} className="border-b">
+                <td className="p-2">
+                  {new Date(movement.created_at).toLocaleString('it-IT', { 
+                    timeZone: 'UTC',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </td>
+                <td className="p-2">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    movement.movement_type === 'IN' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {movement.movement_type}
+                  </span>
+                </td>
+                <td className="p-2">{movement.ddt_number || '-'}</td>
+                <td className="p-2">{movement.silos.name}</td>
+                <td className="p-2">{movement.product || '-'}</td>
+                <td className="p-2">{movement.quantity_kg} kg</td>
+                <td className="p-2">{movement.lot_supplier || '-'}</td>
+                <td className="p-2">{movement.lot_tf || '-'}</td>
+                <td className="p-2">
+                  {movement.movement_type === 'IN' ? (
+                    movement.cleaned ? 'Accettata' : 'Non Accettata'
+                  ) : '-'}
+                </td>
+                <td className="p-2">{movement.proteins ? `${movement.proteins}%` : '-'}</td>
+                <td className="p-2">{movement.humidity ? `${movement.humidity}%` : '-'}</td>
+                <td className="p-2">{movement.operator_name || '-'}</td>
               </tr>
             ))}
           </tbody>
@@ -559,6 +686,7 @@ function ReportsPage() {
             >
               <option value="movements">Movimenti IN</option>
               <option value="outbound">Movimenti OUT</option>
+              <option value="combined">Movimenti IN & OUT</option>
               <option value="stock">Giacenze Silos</option>
               <option value="snapshot">Snapshot Silos</option>
             </select>
@@ -646,6 +774,7 @@ function ReportsPage() {
         <h2 className="text-lg font-semibold mb-4">
           {filters.reportType === 'movements' && 'Report Movimenti IN'}
           {filters.reportType === 'outbound' && 'Report Movimenti OUT'}
+          {filters.reportType === 'combined' && 'Report Movimenti IN & OUT'}
           {filters.reportType === 'stock' && 'Report Giacenze Silos'}
           {filters.reportType === 'snapshot' && 'Report Snapshot Silos'}
         </h2>
@@ -658,6 +787,7 @@ function ReportsPage() {
           <>
             {filters.reportType === 'movements' && renderMovementsTable()}
             {filters.reportType === 'outbound' && renderOutboundTable()}
+            {filters.reportType === 'combined' && renderCombinedMovementsTable()}
             {filters.reportType === 'stock' && renderStockTable()}
             {filters.reportType === 'snapshot' && renderSnapshotTable()}
           </>
