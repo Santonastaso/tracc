@@ -152,7 +152,7 @@ function ReportsPage() {
     enabled: filters.reportType === 'stock'
   });
 
-  // Fetch snapshot report - shows silo contents at a specific point in time
+  // Fetch snapshot report - shows silo stock levels at a specific point in time
   const { data: snapshotData, isLoading: snapshotLoading } = useQuery({
     queryKey: ['snapshot-report', filters],
     queryFn: async () => {
@@ -160,7 +160,7 @@ function ReportsPage() {
         throw new Error('Data e ora snapshot sono richiesti');
       }
 
-      const snapshotDateTime = `${filters.snapshotDate}T${filters.snapshotTime}:00.000Z`;
+      const snapshotDateTime = `${filters.snapshotDate}T${filters.snapshotTime}:59.999Z`;
       
       // Use cached silos data if available, otherwise fetch
       let silos = silosData;
@@ -174,83 +174,68 @@ function ReportsPage() {
         silos = data;
       }
 
-      // Get inbound data up to snapshot time
-      const { data: inboundData, error: inboundError } = await supabase
+      // Build date filter conditions - same logic as stock report but with snapshot time as end date
+      let inboundQuery = supabase
         .from('inbound')
-        .select(`
-          id,
-          silo_id,
-          quantity_kg,
-          created_at,
-          product,
-          lot_supplier,
-          lot_tf,
-          protein_content,
-          moisture_content,
-          cleaning_status
-        `)
-        .lte('created_at', snapshotDateTime)
-        .order('created_at', { ascending: true }); // FIFO order
-      
-      if (inboundError) throw inboundError;
+        .select('silo_id, quantity_kg, created_at')
+        .order('created_at', { ascending: true });
 
-      // Get outbound data up to snapshot time
-      const { data: outboundData, error: outboundError } = await supabase
+      let outboundQuery = supabase
         .from('outbound')
-        .select('silo_id, quantity_kg, items, created_at')
-        .lte('created_at', snapshotDateTime);
-      
-      if (outboundError) throw outboundError;
+        .select('silo_id, quantity_kg, created_at')
+        .order('created_at', { ascending: true });
 
-      // Calculate silo contents at snapshot time
-      const silosWithSnapshotData = silos.map(silo => {
+      // Apply snapshot time as end date filter
+      inboundQuery = inboundQuery.lte('created_at', snapshotDateTime);
+      outboundQuery = outboundQuery.lte('created_at', snapshotDateTime);
+
+      // Apply silo filter if provided
+      if (filters.siloId && filters.siloId !== 'all') {
+        inboundQuery = inboundQuery.eq('silo_id', filters.siloId);
+        outboundQuery = outboundQuery.eq('silo_id', filters.siloId);
+      }
+
+      // Fetch inbound and outbound data
+      const { data: inboundData, error: inboundError } = await inboundQuery;
+      if (inboundError) {
+        console.error('Inbound query error:', inboundError);
+        console.error('Snapshot datetime:', snapshotDateTime);
+        throw inboundError;
+      }
+
+      const { data: outboundData, error: outboundError } = await outboundQuery;
+      if (outboundError) {
+        console.error('Outbound query error:', outboundError);
+        throw outboundError;
+      }
+
+      // Calculate stock levels for each silo at snapshot time - same logic as stock report
+      const stockLevels = silos.map(silo => {
         const siloInbound = inboundData.filter(item => item.silo_id === silo.id);
         const siloOutbound = outboundData.filter(item => item.silo_id === silo.id);
         
-        // Calculate total outbound quantity
-        const totalOutbound = siloOutbound.reduce((sum, out) => sum + out.quantity_kg, 0);
-        
-        // Calculate available items using FIFO logic
-        let remainingOutbound = totalOutbound;
-        const availableItems = [];
-        
-        for (const inbound of siloInbound) {
-          if (remainingOutbound <= 0) {
-            // All outbound has been accounted for, this item is available
-            availableItems.push({
-              ...inbound,
-              available_quantity: inbound.quantity_kg
-            });
-          } else if (remainingOutbound < inbound.quantity_kg) {
-            // Partial outbound, some of this item is available
-            const available = inbound.quantity_kg - remainingOutbound;
-            availableItems.push({
-              ...inbound,
-              available_quantity: available
-            });
-            remainingOutbound = 0;
-          } else {
-            // This item is completely outbound
-            remainingOutbound -= inbound.quantity_kg;
-          }
-        }
-        
-        const totalInbound = siloInbound.reduce((sum, inb) => sum + inb.quantity_kg, 0);
-        const currentLevel = totalInbound - totalOutbound;
+        const totalInbound = siloInbound.reduce((sum, item) => sum + item.quantity_kg, 0);
+        const totalOutbound = siloOutbound.reduce((sum, item) => sum + item.quantity_kg, 0);
+        const currentStock = totalInbound - totalOutbound;
         
         return {
           ...silo,
-          currentLevel,
-          availableItems,
           totalInbound,
           totalOutbound,
+          currentStock,
+          utilizationPercentage: silo.capacity_kg > 0 ? (currentStock / silo.capacity_kg) * 100 : 0,
           snapshotDateTime
         };
       });
 
-      return silosWithSnapshotData;
+      // Filter silos if specific silo is selected
+      if (filters.siloId && filters.siloId !== 'all') {
+        return stockLevels.filter(silo => silo.id === parseInt(filters.siloId));
+      }
+      
+      return stockLevels;
     },
-    enabled: filters.reportType === 'snapshot' && filters.snapshotDate && filters.snapshotTime
+    enabled: filters.reportType === 'snapshot' && !!filters.snapshotDate && !!filters.snapshotTime
   });
 
   const handleFilterChange = (field, value) => {
@@ -497,69 +482,46 @@ function ReportsPage() {
           })}
         </div>
         
-        {snapshotData.map((silo) => (
-          <div key={silo.id} className="border rounded-lg p-4">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-semibold">{silo.name}</h3>
-              <div className="text-sm text-gray-600">
-                <span className="font-medium">{silo.currentLevel.toLocaleString()} kg</span> / {silo.capacity_kg.toLocaleString()} kg
-                <span className="ml-2">
-                  ({Math.round((silo.currentLevel / silo.capacity_kg) * 100)}%)
-                </span>
-              </div>
-            </div>
-            
-            {silo.availableItems.length === 0 ? (
-              <p className="text-gray-500 text-sm">Silos vuoto</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">Prodotto</th>
-                      <th className="text-left p-2">Lotto Fornitore</th>
-                      <th className="text-left p-2">Lotto TF</th>
-                      <th className="text-left p-2">Quantità Disponibile</th>
-                      <th className="text-left p-2">Data Entrata</th>
-                      <th className="text-left p-2">Proteine</th>
-                      <th className="text-left p-2">Umidità</th>
-                      <th className="text-left p-2">Pulizia</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {silo.availableItems.map((item, index) => (
-                      <tr key={`${item.id}-${index}`} className="border-b">
-                        <td className="p-2">{item.product}</td>
-                        <td className="p-2">{item.lot_supplier || '-'}</td>
-                        <td className="p-2">{item.lot_tf || '-'}</td>
-                        <td className="p-2 font-medium">{item.available_quantity.toLocaleString()} kg</td>
-                        <td className="p-2">
-                          {new Date(item.created_at).toLocaleDateString('it-IT', { 
-                            timeZone: 'UTC',
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit'
-                          })}
-                        </td>
-                        <td className="p-2">{item.protein_content ? `${item.protein_content}%` : '-'}</td>
-                        <td className="p-2">{item.moisture_content ? `${item.moisture_content}%` : '-'}</td>
-                        <td className="p-2">
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            item.cleaning_status === 'accepted' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {item.cleaning_status === 'accepted' ? 'Accettata' : 'Non Accettata'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        ))}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left p-2">Silos</th>
+                <th className="text-left p-2">Capacità</th>
+                <th className="text-left p-2">Totale Entrate</th>
+                <th className="text-left p-2">Totale Uscite</th>
+                <th className="text-left p-2">Giacenza Attuale</th>
+                <th className="text-left p-2">Utilizzo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {snapshotData.map((silo) => (
+                <tr key={silo.id} className="border-b">
+                  <td className="p-2">{silo.name}</td>
+                  <td className="p-2">{silo.capacity_kg.toLocaleString()} kg</td>
+                  <td className="p-2">{silo.totalInbound.toLocaleString()} kg</td>
+                  <td className="p-2">{silo.totalOutbound.toLocaleString()} kg</td>
+                  <td className="p-2">{silo.currentStock.toLocaleString()} kg</td>
+                  <td className="p-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${
+                            silo.utilizationPercentage >= 90 ? 'bg-red-500' :
+                            silo.utilizationPercentage >= 70 ? 'bg-yellow-500' :
+                            silo.utilizationPercentage >= 30 ? 'bg-green-500' : 'bg-gray-300'
+                          }`}
+                          style={{ width: `${Math.min(silo.utilizationPercentage, 100)}%` }}
+                        />
+                      </div>
+                      <span>{Math.round(silo.utilizationPercentage)}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
