@@ -131,13 +131,8 @@ function MerceInPage() {
       // Convert string values back to correct types for database
       silo_id: parseInt(formData.silo_id),
       cleaned: formData.cleaned === 'true',
-      // Map fornitore to lot_supplier for database
-      lot_supplier: formData.fornitore,
       updated_at: new Date().toISOString()
     };
-    
-    // Remove fornitore field before saving to database
-    delete dataToSave.fornitore;
 
     if (editingItem) {
       await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });

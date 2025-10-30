@@ -136,7 +136,7 @@ function MerceInListPage() {
             onRowClick={handleRowClick}
             onEditRow={handleEditRow}
             enableFiltering={true}
-            filterableColumns={['product', 'operator_name']}
+            filterableColumns={['product', 'operator_name', 'lot_supplier']}
             enableGlobalSearch={false}
             onBulkDelete={(ids) => bulkDelete.mutate(ids)}
           />
