@@ -59,8 +59,8 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
       console.log('Update successful');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['inbound']);
-      queryClient.invalidateQueries(['inbound', 'with-silos']);
+      queryClient.invalidateQueries({ queryKey: ['inbound'] });
+      queryClient.invalidateQueries({ queryKey: ['inbound', 'with-silos'] });
       setIsEditing(false);
     }
   });
