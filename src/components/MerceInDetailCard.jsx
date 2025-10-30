@@ -55,11 +55,13 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['inbound']);
+      queryClient.invalidateQueries(['inbound', 'with-silos']);
       setIsEditing(false);
     }
   });
 
   const handleSave = () => {
+    console.log('Saving formData:', formData);
     updateMutation.mutate(formData);
   };
 
