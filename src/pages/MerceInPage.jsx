@@ -115,6 +115,9 @@ function MerceInPage() {
 
   // Handle form submission
   const handleSubmit = async (formData) => {
+    console.log('MerceInPage handleSubmit called with:', formData);
+    console.log('lot_supplier value:', formData.lot_supplier);
+    
     // Validate that placeholder values are not selected
     if (formData.silo_id === 'no-silos' || formData.silo_id === 'select-product') {
       alert('Seleziona un silos valido');
@@ -131,13 +134,10 @@ function MerceInPage() {
       // Convert string values back to correct types for database
       silo_id: parseInt(formData.silo_id),
       cleaned: formData.cleaned === 'true',
-      // Map fornitore to lot_supplier for database
-      lot_supplier: formData.fornitore,
       updated_at: new Date().toISOString()
     };
     
-    // Remove fornitore field before saving to database
-    delete dataToSave.fornitore;
+    console.log('dataToSave:', dataToSave);
 
     if (editingItem) {
       await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
