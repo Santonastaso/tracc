@@ -276,7 +276,10 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                         value={formData.lot_supplier}
                         onChange={(e) => {
                           console.log('Fornitore changed to:', e.target.value);
-                          setFormData(prev => ({ ...prev, lot_supplier: e.target.value }));
+                          console.log('Previous formData:', formData);
+                          const newFormData = { ...formData, lot_supplier: e.target.value };
+                          console.log('New formData:', newFormData);
+                          setFormData(newFormData);
                         }}
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
                       >
