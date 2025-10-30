@@ -17,11 +17,6 @@ export default defineConfig(({ command }) => {
       assetsDir: 'assets',
       chunkSizeWarningLimit: 1200,
       rollupOptions: {
-        external: [
-          // Externalize peer dependencies that are already installed in tracc
-          '@radix-ui/react-dialog',
-          'vaul'
-        ],
         output: {
           manualChunks: undefined,
           chunkFileNames: 'assets/[name]-[hash].js',
