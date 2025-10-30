@@ -249,30 +249,33 @@ export class InboundService extends BaseService {
 
         // Group by product
         data.forEach(item => {
+          if (!item || !item.product) return;
           if (!stats.products[item.product]) {
             stats.products[item.product] = { count: 0, quantity: 0 };
           }
           stats.products[item.product].count++;
-          stats.products[item.product].quantity += item.quantity_kg;
+          stats.products[item.product].quantity += item.quantity_kg || 0;
         });
 
         // Group by silo
         data.forEach(item => {
+          if (!item || item.silo_id === null || item.silo_id === undefined) return;
           if (!stats.silos[item.silo_id]) {
             stats.silos[item.silo_id] = { count: 0, quantity: 0 };
           }
           stats.silos[item.silo_id].count++;
-          stats.silos[item.silo_id].quantity += item.quantity_kg;
+          stats.silos[item.silo_id].quantity += item.quantity_kg || 0;
         });
 
         // Group by day
         data.forEach(item => {
+          if (!item || !item.created_at) return;
           const date = item.created_at.split('T')[0];
           if (!stats.dailyStats[date]) {
             stats.dailyStats[date] = { count: 0, quantity: 0 };
           }
           stats.dailyStats[date].count++;
-          stats.dailyStats[date].quantity += item.quantity_kg;
+          stats.dailyStats[date].quantity += item.quantity_kg || 0;
         });
       }
 

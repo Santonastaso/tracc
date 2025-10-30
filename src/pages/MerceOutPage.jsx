@@ -206,7 +206,7 @@ function MerceOutPage() {
               ...editingItem,
               // Convert database values to strings for Select components
               silo_id: String(editingItem.silo_id)
-            } : null}
+            } : {}}
             onSubmit={handleFormSubmit}
             isEditMode={!!editingItem}
             isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}

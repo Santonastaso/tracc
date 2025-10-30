@@ -353,7 +353,7 @@ function MerceInPage() {
             // Convert database values to strings for Select components
             silo_id: String(editingItem.silo_id),
             cleaned: String(editingItem.cleaned)
-          } : null}
+          } : {}}
           onSubmit={handleFormSubmit}
           isEditMode={!!editingItem}
           isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}

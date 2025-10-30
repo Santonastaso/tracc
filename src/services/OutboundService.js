@@ -282,44 +282,47 @@ export class OutboundService extends BaseService {
 
         // Group by operator
         data.forEach(item => {
+          if (!item || item.operator_name === null || item.operator_name === undefined) return;
           if (!stats.operators[item.operator_name]) {
             stats.operators[item.operator_name] = { count: 0, quantity: 0 };
           }
           stats.operators[item.operator_name].count++;
-          stats.operators[item.operator_name].quantity += item.quantity_kg;
+          stats.operators[item.operator_name].quantity += item.quantity_kg || 0;
         });
 
         // Group by silo
         data.forEach(item => {
+          if (!item || item.silo_id === null || item.silo_id === undefined) return;
           if (!stats.silos[item.silo_id]) {
             stats.silos[item.silo_id] = { count: 0, quantity: 0 };
           }
           stats.silos[item.silo_id].count++;
-          stats.silos[item.silo_id].quantity += item.quantity_kg;
+          stats.silos[item.silo_id].quantity += item.quantity_kg || 0;
         });
 
         // Group by day
         data.forEach(item => {
+          if (!item || !item.created_at) return;
           const date = item.created_at.split('T')[0];
           if (!stats.dailyStats[date]) {
             stats.dailyStats[date] = { count: 0, quantity: 0 };
           }
           stats.dailyStats[date].count++;
-          stats.dailyStats[date].quantity += item.quantity_kg;
+          stats.dailyStats[date].quantity += item.quantity_kg || 0;
         });
 
         // Group by product (from FIFO items)
         data.forEach(item => {
-          if (item.items && Array.isArray(item.items)) {
-            item.items.forEach(fifoItem => {
-              const product = fifoItem.material_name;
-              if (!stats.products[product]) {
-                stats.products[product] = { count: 0, quantity: 0 };
-              }
-              stats.products[product].count++;
-              stats.products[product].quantity += fifoItem.quantity_kg;
-            });
-          }
+          if (!item || !item.items || !Array.isArray(item.items)) return;
+          item.items.forEach(fifoItem => {
+            if (!fifoItem || !fifoItem.material_name) return;
+            const product = fifoItem.material_name;
+            if (!stats.products[product]) {
+              stats.products[product] = { count: 0, quantity: 0 };
+            }
+            stats.products[product].count++;
+            stats.products[product].quantity += fifoItem.quantity_kg || 0;
+          });
         });
       }
 

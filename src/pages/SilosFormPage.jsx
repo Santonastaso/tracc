@@ -192,7 +192,7 @@ function SilosFormPage() {
             ...editingItem,
             // Keep allowed_material_ids as array for checkbox selection
             allowed_material_ids: editingItem.allowed_material_ids || []
-          } : null}
+          } : {}}
           onSubmit={handleFormSubmit}
           isEditMode={!!editingItem}
           isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}

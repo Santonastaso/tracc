@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { SimpleHeader, useSidebar } from '@santonastaso/shared';
 
@@ -17,6 +18,7 @@ export function Header() {
       onLogout={() => signOut()}
       onRefresh={() => window.location.reload()}
       onToggleSidebar={toggle}
+      LinkComponent={Link}
     />
   );
 }

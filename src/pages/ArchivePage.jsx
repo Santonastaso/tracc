@@ -387,7 +387,7 @@ function ArchivePage() {
           </div>
           <GenericForm
             config={formConfig}
-            initialData={editingItem}
+            initialData={editingItem || {}}
             onSubmit={handleFormSubmit}
             isEditMode={!!editingItem}
             isLoading={mutation.isPending}

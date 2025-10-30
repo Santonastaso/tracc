@@ -162,7 +162,7 @@ function MaterialsPage() {
             ...editingItem,
             // Convert boolean values to strings for Select components
             active: String(editingItem.active)
-          } : null}
+          } : {}}
           onSubmit={handleFormSubmit}
           isEditMode={!!editingItem}
           isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}

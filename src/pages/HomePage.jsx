@@ -36,11 +36,11 @@ function HomePage() {
 
     // Calculate current stock levels
     const silosWithLevels = silosData?.map(silo => {
-      const siloInbound = inboundData?.filter(item => item.silo_id === silo.id) || [];
-      const siloOutbound = outboundData?.filter(item => item.silo_id === silo.id) || [];
+      const siloInbound = inboundData?.filter(item => item && item.silo_id === silo.id) || [];
+      const siloOutbound = outboundData?.filter(item => item && item.silo_id === silo.id) || [];
       
-      const totalInbound = siloInbound.reduce((sum, item) => sum + (item.quantity_kg || 0), 0);
-      const totalOutbound = siloOutbound.reduce((sum, item) => sum + (item.quantity_kg || 0), 0);
+      const totalInbound = siloInbound.reduce((sum, item) => sum + (item?.quantity_kg || 0), 0);
+      const totalOutbound = siloOutbound.reduce((sum, item) => sum + (item?.quantity_kg || 0), 0);
       const currentLevel = totalInbound - totalOutbound;
       
       return {
@@ -56,11 +56,11 @@ function HomePage() {
     // Calculate today's movements
     const today = new Date().toISOString().split('T')[0];
     const todayInbound = inboundData?.filter(item => 
-      item.created_at?.split('T')[0] === today
+      item && item.created_at?.split('T')[0] === today
     ).length || 0;
     
     const todayOutbound = outboundData?.filter(item => 
-      item.created_at?.split('T')[0] === today
+      item && item.created_at?.split('T')[0] === today
     ).length || 0;
 
     // Calculate this week's movements
@@ -69,16 +69,16 @@ function HomePage() {
     const weekAgoISO = weekAgo.toISOString();
     
     const weekInbound = inboundData?.filter(item => 
-      item.created_at >= weekAgoISO
+      item && item.created_at >= weekAgoISO
     ).length || 0;
     
     const weekOutbound = outboundData?.filter(item => 
-      item.created_at >= weekAgoISO
+      item && item.created_at >= weekAgoISO
     ).length || 0;
 
     // Calculate total quantities
-    const totalInboundQuantity = inboundData?.reduce((sum, item) => sum + (item.quantity_kg || 0), 0) || 0;
-    const totalOutboundQuantity = outboundData?.reduce((sum, item) => sum + (item.quantity_kg || 0), 0) || 0;
+    const totalInboundQuantity = inboundData?.reduce((sum, item) => sum + (item?.quantity_kg || 0), 0) || 0;
+    const totalOutboundQuantity = outboundData?.reduce((sum, item) => sum + (item?.quantity_kg || 0), 0) || 0;
 
     return {
       totalSilos: silosData?.length || 0,
@@ -122,25 +122,29 @@ function HomePage() {
       const dayEnd = endOfDayUTC(day);
       const key = dayStart.toISOString().split('T')[0];
 
-      // Counts
-      const inbCount = (inboundData || []).filter(x => {
-        const t = new Date(x.created_at);
-        return t >= dayStart && t <= dayEnd;
-      }).length;
-      const outCount = (outboundData || []).filter(x => {
-        const t = new Date(x.created_at);
-        return t >= dayStart && t <= dayEnd;
-      }).length;
+    // Counts
+    const inbCount = (inboundData || []).filter(x => {
+      if (!x || !x.created_at) return false;
+      const t = new Date(x.created_at);
+      return t >= dayStart && t <= dayEnd;
+    }).length;
+    const outCount = (outboundData || []).filter(x => {
+      if (!x || !x.created_at) return false;
+      const t = new Date(x.created_at);
+      return t >= dayStart && t <= dayEnd;
+    }).length;
 
-      // Quantities
-      const inbQty = (inboundData || []).reduce((sum, x) => {
-        const t = new Date(x.created_at);
-        return (t >= dayStart && t <= dayEnd) ? sum + (x.quantity_kg || 0) : sum;
-      }, 0);
-      const outQty = (outboundData || []).reduce((sum, x) => {
-        const t = new Date(x.created_at);
-        return (t >= dayStart && t <= dayEnd) ? sum + (x.quantity_kg || 0) : sum;
-      }, 0);
+    // Quantities
+    const inbQty = (inboundData || []).reduce((sum, x) => {
+      if (!x || !x.created_at) return sum;
+      const t = new Date(x.created_at);
+      return (t >= dayStart && t <= dayEnd) ? sum + (x.quantity_kg || 0) : sum;
+    }, 0);
+    const outQty = (outboundData || []).reduce((sum, x) => {
+      if (!x || !x.created_at) return sum;
+      const t = new Date(x.created_at);
+      return (t >= dayStart && t <= dayEnd) ? sum + (x.quantity_kg || 0) : sum;
+    }, 0);
 
       labels.push(key);
       inboundCounts.push(inbCount);

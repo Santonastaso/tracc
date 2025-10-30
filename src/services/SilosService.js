@@ -319,6 +319,7 @@ export class SilosService extends BaseService {
         stats.averageUtilization = silosWithLevels.reduce((sum, silo) => sum + silo.utilizationPercentage, 0) / stats.totalSilos;
         
         silosWithLevels.forEach(silo => {
+          if (!silo || silo.utilizationPercentage === null || silo.utilizationPercentage === undefined) return;
           const utilization = silo.utilizationPercentage;
           if (utilization === 0) stats.silosByUtilization.empty++;
           else if (utilization < 25) stats.silosByUtilization.low++;
