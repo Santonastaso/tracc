@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useDeleteInbound, useMaterials, useOperators, useSilos } from '../hooks';
 import { Button, Input, Label } from '@santonastaso/shared';
@@ -27,6 +27,21 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
   const { data: materialsData } = useMaterials();
   const { data: operatorsData } = useOperators();
   const { data: silosData } = useSilos();
+  
+  // Fetch suppliers for dropdown
+  const { data: suppliersData } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('id, name')
+        .eq('active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
   const deleteMutation = useDeleteInbound();
   const queryClient = useQueryClient();
 
@@ -231,12 +246,19 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                   <div>
                     <Label htmlFor="fornitore">Fornitore</Label>
                     {isEditing ? (
-                      <Input
-                        id="lot_supplier"
+                      <select
+                        id="fornitore"
                         value={formData.lot_supplier}
                         onChange={(e) => setFormData(prev => ({ ...prev, lot_supplier: e.target.value }))}
-                        placeholder="Inserisci nome fornitore"
-                      />
+                        className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+                      >
+                        <option value="">Seleziona fornitore</option>
+                        {suppliersData?.map(supplier => (
+                          <option key={supplier.id} value={supplier.name}>
+                            {supplier.name}
+                          </option>
+                        ))}
+                      </select>
                     ) : (
                       <p className="text-foreground font-medium">{inbound.lot_supplier || 'N/A'}</p>
                     )}
@@ -262,32 +284,19 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                 <h3 className="text-lg font-semibold text-foreground mb-4">Lot Information</h3>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="lot_supplier">Lotto Fornitore</Label>
+                    <Label htmlFor="lot_code">Codice Lotto</Label>
                     {isEditing ? (
                       <Input
-                        id="lot_supplier"
-                        value={formData.lot_supplier}
-                        onChange={(e) => setFormData(prev => ({ ...prev, lot_supplier: e.target.value }))}
-                        placeholder="Inserisci lotto fornitore"
-                      />
-                    ) : (
-                      <p className="text-foreground font-medium">{inbound.lot_supplier || 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="lot_tf">Lotto TF</Label>
-                    {isEditing ? (
-                      <Input
-                        id="lot_tf"
+                        id="lot_code"
                         value={formData.lot_tf}
                         onChange={(e) => setFormData(prev => ({ ...prev, lot_tf: e.target.value }))}
-                        placeholder="Inserisci lotto TF"
+                        placeholder="Inserisci codice lotto"
                       />
                     ) : (
                       <p className="text-foreground font-medium">{inbound.lot_tf || 'N/A'}</p>
                     )}
                   </div>
+
                 </div>
               </div>
             </div>
