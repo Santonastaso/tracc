@@ -47,11 +47,16 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
+      console.log('About to update with data:', data);
       const { error } = await supabase
         .from('inbound')
         .update(data)
         .eq('id', inbound.id);
-      if (error) throw error;
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
+      console.log('Update successful');
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['inbound']);
@@ -62,7 +67,19 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
 
   const handleSave = () => {
     console.log('Saving formData:', formData);
-    updateMutation.mutate(formData);
+    console.log('lot_supplier value:', formData.lot_supplier);
+    console.log('Original inbound lot_supplier:', inbound.lot_supplier);
+    
+    // Prepare data with proper type conversions
+    const dataToSave = {
+      ...formData,
+      silo_id: parseInt(formData.silo_id), // Convert to integer
+      quantity_kg: parseFloat(formData.quantity_kg), // Convert to number
+      // lot_supplier stays as string - no conversion needed
+    };
+    
+    console.log('Processed dataToSave:', dataToSave);
+    updateMutation.mutate(dataToSave);
   };
 
   const handleCancel = () => {
