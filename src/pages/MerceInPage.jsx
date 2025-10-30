@@ -52,6 +52,21 @@ function MerceInPage() {
   const { data: silosData } = useSilosWithLevels();
   const { data: materialsData, isLoading: materialsLoading, error: materialsError } = useMaterials();
   const { data: operatorsData, isLoading: operatorsLoading, error: operatorsError } = useOperators();
+  
+  // Fetch suppliers for dropdown
+  const { data: suppliersData } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('id, name')
+        .eq('active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
   // Filter silos based on selected material and capacity
   const filteredSilos = useMemo(() => {
@@ -218,9 +233,9 @@ function MerceInPage() {
           {
             name: 'lot_supplier',
             label: 'Fornitore',
-            type: 'text',
+            type: 'select',
             required: true,
-            placeholder: 'Inserisci nome fornitore'
+            options: suppliersData?.map(s => ({ value: s.name, label: s.name })) || []
           },
           {
             name: 'silo_id',
