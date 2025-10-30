@@ -132,7 +132,10 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => {
+                    console.log('Edit button clicked');
+                    setIsEditing(true);
+                  }}
                   className="flex items-center gap-2"
                 >
                   <Edit className="h-4 w-4" />
@@ -161,7 +164,10 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={handleSave}
+                  onClick={() => {
+                    console.log('Save button clicked');
+                    handleSave();
+                  }}
                   disabled={updateMutation.isPending}
                   className="flex items-center gap-2"
                 >
@@ -251,7 +257,10 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                       <select
                         id="fornitore"
                         value={formData.lot_supplier}
-                        onChange={(e) => setFormData(prev => ({ ...prev, lot_supplier: e.target.value }))}
+                        onChange={(e) => {
+                          console.log('Fornitore changed to:', e.target.value);
+                          setFormData(prev => ({ ...prev, lot_supplier: e.target.value }));
+                        }}
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
                       >
                         <option value="">Seleziona fornitore</option>
