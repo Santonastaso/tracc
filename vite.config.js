@@ -1,5 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(({ command }) => {
   const isDev = command === 'serve'
@@ -11,6 +15,15 @@ export default defineConfig(({ command }) => {
       // Ensure dev server works correctly
       port: 5173,
       host: true,
+    },
+    resolve: {
+      // Ensure single React instance to prevent hook conflicts
+      dedupe: ['react', 'react-dom'],
+      alias: {
+        // Force all React imports to use the same instance
+        'react': path.resolve(__dirname, 'node_modules/react'),
+        'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      }
     },
     build: {
       outDir: 'dist',

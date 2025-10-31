@@ -1,23 +1,18 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Button, Input } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { showError } from '@santonastaso/shared';
+import { LoginPage as SharedLoginPage, showError } from '@santonastaso/shared';
 
 function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (data) => {
     setIsLoading(true);
 
     try {
-      await signIn(email, password);
+      await signIn(data.email, data.password);
       navigate('/');
     } catch (error) {
       showError('Errore durante il login: ' + error.message);
@@ -26,67 +21,28 @@ function LoginPage() {
     }
   };
 
+  console.log('🔍 TRACC LoginPage: Using SharedLoginPage component', { SharedLoginPage });
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card className="w-full max-w-md p-6">
-        <div className="text-center mb-6">
-          <img src="/trace.svg" alt="TRACC" className="h-12 w-auto mx-auto mb-2" />
-          <p className="text-gray-600">Sistema Tracciabilità Molino</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="Inserisci la tua email"
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="Inserisci la tua password"
-              className="w-full"
-            />
-          </div>
-
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading ? 'Accesso in corso...' : 'Accedi'}
-          </Button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600 mb-2">
-            Sistema di tracciabilità per la gestione dei silos del molino
-          </p>
-          <p className="text-sm text-gray-600">
-            Non hai un account?{' '}
-            <Link to="/signup" className="text-primary hover:underline font-medium">
-              Registrati qui
-            </Link>
-          </p>
-        </div>
-      </Card>
-    </div>
+    <SharedLoginPage
+      title="TRACC"
+      logo="/trace.svg"
+      subtitle="Sistema Tracciabilità Molino"
+      labels={{
+        signIn: 'Accedi',
+        email: 'Email',
+        password: 'Password',
+        forgotPassword: 'Password dimenticata?',
+        signUp: 'Registrati qui',
+        signUpText: 'Non hai un account?'
+      }}
+      demoCredentials={{ email: 'admin@tracc.com', password: 'admin123' }}
+      isLoading={isLoading}
+      onSubmit={handleSubmit}
+      signUpUrl="/signup"
+      backgroundImage="/trace-bg.jpg" // Optional background
+      backgroundColor="#18181b" // Match CRM_demo's bg-zinc-900
+    />
   );
 }
 
