@@ -114,8 +114,16 @@ function MaterialsListPage() {
             onEditRow={handleEditRow}
             enableFiltering={true}
             filterableColumns={['name', 'unit']}
-            enableGlobalSearch={false}
+            enableGlobalSearch={true}
+            enableColumnVisibility={true}
+            enableRowSelection={true}
+            loading={isLoading}
+            emptyMessage="No materials found. Create your first material to get started."
             onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+            onBulkExport={(ids) => {
+              console.log('Exporting materials:', ids);
+              // TODO: Implement export functionality
+            }}
           />
         </div>
       </Card>
