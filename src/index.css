@@ -1,96 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --radius: 0.625rem;
-  }
-
-  .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(1 0 0 / 15%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground font-sans;
-  }
-}
-
-a,
-button {
-  cursor: pointer;
-}
-
-input {
-  cursor: text;
-}
-
-a[aria-disabled="true"],
-button[aria-disabled="true"],
-button:disabled,
-input[aria-disabled="true"],
-input:disabled {
-  cursor: not-allowed;
-}
-
-input[type="date"],
-input[type="datetime-local"],
-input[type="month"],
-input[type="time"] {
-  position: relative;
-}
-
-.dark ::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  position: absolute;
-  right: 0.75rem;
-}
-
-/* Custom styles for the mill tracing system - using design system colors */
+/* Only app-specific styles - NO color palettes, NO fonts */
+/* All colors and fonts come from @santonastaso/shared/styles.css */
 
 /* Error Boundary Styles */
 .error-boundary {
@@ -230,4 +143,3 @@ input[type="time"] {
     page-break-before: always;
   }
 }
-
