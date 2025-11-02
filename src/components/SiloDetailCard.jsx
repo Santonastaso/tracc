@@ -25,7 +25,8 @@ export function SiloDetailCard({ silo, onClose, onEdit, isSnapshot = false, snap
   const queryClient = useQueryClient();
 
   // Get current silo data with levels and inventory
-  const currentSiloData = silosWithLevels?.find(s => s.id === silo.id) || silo;
+  // In snapshot mode, use the passed silo data which already contains snapshot calculations
+  const currentSiloData = isSnapshot ? silo : (silosWithLevels?.find(s => s.id === silo.id) || silo);
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
