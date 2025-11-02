@@ -8,16 +8,22 @@ import {
   useCreateOutbound,
   useUpdateOutbound
 } from '../hooks';
-import { GenericForm } from "@santonastaso/shared";
-import { Button } from '@santonastaso/shared';
+import { Button, Input, Label } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Plus, Trash2 } from 'lucide-react';
 
 function MerceOutPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // New state for manual lot selection
+  const [selectedSilo, setSelectedSilo] = useState('');
+  const [operatorName, setOperatorName] = useState('');
+  const [selectedLots, setSelectedLots] = useState([]);
+  const [availableLots, setAvailableLots] = useState([]);
 
   // Fetch data for editing if ID is provided
   useEffect(() => {
@@ -47,61 +53,60 @@ function MerceOutPage() {
   const { data: silosWithLevels } = useSilosWithLevels();
   const { data: operatorsData } = useOperators();
 
+  // Update available lots when silo changes
+  useEffect(() => {
+    if (selectedSilo && silosWithLevels) {
+      const silo = silosWithLevels.find(s => s.id === parseInt(selectedSilo));
+      if (silo && silo.availableItems) {
+        setAvailableLots(silo.availableItems);
+      } else {
+        setAvailableLots([]);
+      }
+      setSelectedLots([]); // Clear selected lots when silo changes
+    } else {
+      setAvailableLots([]);
+      setSelectedLots([]);
+    }
+  }, [selectedSilo, silosWithLevels]);
+
   // Use centralized mutation hooks
   const createMutation = useCreateOutbound();
   const updateMutation = useUpdateOutbound();
 
-  // Handle form submission with FIFO logic
-  const handleSubmit = async (formData) => {
-    const { silo_id, quantity_kg, operator_name } = formData;
-    
-    // Convert string values back to correct types for database
-    const siloId = parseInt(silo_id);
-    
-    // Check if silosWithLevels data is available
-    if (!silosWithLevels || silosWithLevels.length === 0) {
-      throw new Error('Dati silos non disponibili. Riprova tra qualche secondo.');
+  // Handle form submission with manual lot selection
+  const handleSubmit = async () => {
+    if (!selectedSilo || !operatorName || selectedLots.length === 0) {
+      throw new Error('Seleziona silos, operatore e almeno un lotto');
     }
-    
-    // Get available items for the selected silo
-    const silo = silosWithLevels.find(s => s.id === siloId);
-    if (!silo) throw new Error('Silos non trovato');
-    
-    if (silo.currentLevel < quantity_kg) {
-      throw new Error(`Quantità insufficiente nel silos. Disponibile: ${silo.currentLevel} kg`);
+
+    // Validate quantities
+    for (const lot of selectedLots) {
+      if (!lot.withdrawQuantity || lot.withdrawQuantity <= 0) {
+        throw new Error(`Inserisci una quantità valida per il lotto ${lot.product}`);
+      }
+      if (lot.withdrawQuantity > lot.available_quantity) {
+        throw new Error(`Quantità troppo alta per il lotto ${lot.product}. Disponibile: ${lot.available_quantity} kg`);
+      }
     }
+
+    const totalQuantity = selectedLots.reduce((sum, lot) => sum + parseFloat(lot.withdrawQuantity), 0);
     
-    // Calculate FIFO items to withdraw
-    let remainingQuantity = quantity_kg;
-    const itemsToWithdraw = [];
-    
-    for (const item of silo.availableItems) {
-      if (remainingQuantity <= 0) break;
-      
-      const withdrawFromThisItem = Math.min(remainingQuantity, item.available_quantity);
-      itemsToWithdraw.push({
-        inbound_id: item.id,
-        quantity_kg: withdrawFromThisItem,
-        material_name: item.product,
-        supplier_lot: item.lot_supplier,
-        tf_lot: item.lot_tf,
-        protein_content: item.proteins,
-        moisture_content: item.humidity,
-        cleaning_status: item.cleaned,
-        entry_date: item.created_at.split('T')[0]
-      });
-      
-      remainingQuantity -= withdrawFromThisItem;
-    }
-    
-    if (remainingQuantity > 0) {
-      throw new Error('Errore nel calcolo FIFO: quantità rimanente non gestita');
-    }
-    
+    const itemsToWithdraw = selectedLots.map(lot => ({
+      inbound_id: lot.id,
+      quantity_kg: parseFloat(lot.withdrawQuantity),
+      material_name: lot.product,
+      supplier_lot: lot.lot_supplier,
+      tf_lot: lot.lot_tf,
+      protein_content: lot.proteins,
+      moisture_content: lot.humidity,
+      cleaning_status: lot.cleaned,
+      entry_date: lot.created_at.split('T')[0]
+    }));
+
     const dataToSave = {
-      silo_id: siloId,
-      quantity_kg: parseFloat(quantity_kg),
-      operator_name: operator_name,
+      silo_id: parseInt(selectedSilo),
+      quantity_kg: totalQuantity,
+      operator_name: operatorName,
       items: itemsToWithdraw,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -117,59 +122,32 @@ function MerceOutPage() {
     navigate('/merce-out/list');
   };
 
-  const handleFormSubmit = (data) => {
-    handleSubmit(data);
+  // Helper functions for lot management
+  const addLotToSelection = (lot) => {
+    if (selectedLots.find(selected => selected.id === lot.id)) {
+      return; // Already selected
+    }
+    setSelectedLots(prev => [...prev, { ...lot, withdrawQuantity: '' }]);
+  };
+
+  const removeLotFromSelection = (lotId) => {
+    setSelectedLots(prev => prev.filter(lot => lot.id !== lotId));
+  };
+
+  const updateLotQuantity = (lotId, quantity) => {
+    setSelectedLots(prev => prev.map(lot => 
+      lot.id === lotId ? { ...lot, withdrawQuantity: quantity } : lot
+    ));
+  };
+
+  const getTotalSelectedQuantity = () => {
+    return selectedLots.reduce((sum, lot) => sum + (parseFloat(lot.withdrawQuantity) || 0), 0);
   };
 
   const handleCancel = () => {
     navigate('/merce-out/list');
   };
 
-  // Form configuration
-  const formConfig = {
-    sections: [
-      {
-        title: 'Informazioni Prelievo',
-        fields: [
-          {
-            name: 'silo_id',
-            label: 'Silos di Prelievo',
-            type: 'select',
-            required: true,
-            options: silosData?.map(s => ({ 
-              value: String(s.id), 
-              label: s.name
-            })) || []
-          },
-          {
-            name: 'quantity_kg',
-            label: 'Quantità da Prelevare (Kg)',
-            type: 'number',
-            required: true,
-            placeholder: 'Inserisci quantità da prelevare'
-          },
-          {
-            name: 'operator_name',
-            label: 'Operatore',
-            type: 'select',
-            required: true,
-            options: operatorsData?.map(o => ({ 
-              value: o.name, 
-              label: `${o.name}${o.code ? ` (${o.code})` : ''}` 
-            })) || []
-          }
-        ]
-      }
-    ],
-    addButtonText: 'Registra Prelievo',
-    editButtonText: 'Aggiorna Prelievo',
-    addLoadingText: 'Registrando...',
-    editLoadingText: 'Aggiornando...',
-    addContext: 'Registrazione prelievo merce',
-    editContext: 'Aggiornamento prelievo merce',
-    addErrorMessage: 'Errore durante la registrazione del prelievo',
-    editErrorMessage: 'Errore durante l\'aggiornamento del prelievo'
-  };
 
 
   if (isLoading) {
@@ -194,25 +172,178 @@ function MerceOutPage() {
         </Button>
       </div>
 
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        {!silosWithLevels || silosWithLevels.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
-            Caricamento dati silos...
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1">
+        {/* Left Column - Form */}
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold mb-4">Informazioni Prelievo</h2>
+          <div className="space-y-4">
+            {/* Silo Selection */}
+            <div>
+              <Label htmlFor="silo_id">Silos di Prelievo</Label>
+              <select
+                id="silo_id"
+                value={selectedSilo}
+                onChange={(e) => setSelectedSilo(e.target.value)}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+              >
+                <option value="">Seleziona silos</option>
+                {silosData?.map(silo => (
+                  <option key={silo.id} value={silo.id}>
+                    {silo.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Operator Selection */}
+            <div>
+              <Label htmlFor="operator_name">Operatore</Label>
+              <select
+                id="operator_name"
+                value={operatorName}
+                onChange={(e) => setOperatorName(e.target.value)}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+              >
+                <option value="">Seleziona operatore</option>
+                {operatorsData?.map(operator => (
+                  <option key={operator.id} value={operator.name}>
+                    {operator.name}{operator.code ? ` (${operator.code})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Total Quantity Display */}
+            {selectedLots.length > 0 && (
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <Label>Quantità Totale Selezionata</Label>
+                <p className="text-lg font-semibold text-foreground">
+                  {getTotalSelectedQuantity().toFixed(2)} kg
+                </p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <Button
+              onClick={handleSubmit}
+              disabled={!selectedSilo || !operatorName || selectedLots.length === 0 || createMutation.isPending || updateMutation.isPending}
+              className="w-full"
+            >
+              {createMutation.isPending || updateMutation.isPending ? 'Registrando...' : 'Registra Prelievo'}
+            </Button>
           </div>
-        ) : (
-          <GenericForm
-            config={formConfig}
-            initialData={editingItem ? {
-              ...editingItem,
-              // Convert database values to strings for Select components
-              silo_id: String(editingItem.silo_id)
-            } : {}}
-            onSubmit={handleFormSubmit}
-            isEditMode={!!editingItem}
-            isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
-          />
-        )}
-      </Card>
+        </Card>
+
+        {/* Right Column - Lot Selection */}
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold mb-4">Selezione Lotti</h2>
+          {!selectedSilo ? (
+            <p className="text-muted-foreground">Seleziona un silos per vedere i lotti disponibili</p>
+          ) : availableLots.length === 0 ? (
+            <p className="text-muted-foreground">Nessun lotto disponibile in questo silos</p>
+          ) : (
+            <div className="space-y-4">
+              {/* Available Lots */}
+              <div>
+                <h3 className="font-medium mb-2">Lotti Disponibili</h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {availableLots.map(lot => (
+                    <div
+                      key={lot.id}
+                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                        selectedLots.find(selected => selected.id === lot.id)
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => addLotToSelection(lot)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-medium text-foreground">{lot.product}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {lot.lot_supplier && `Lotto Fornitore: ${lot.lot_supplier}`}
+                            {lot.lot_supplier && lot.lot_tf && ' • '}
+                            {lot.lot_tf && `Lotto TF: ${lot.lot_tf}`}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Disponibile: <span className="font-medium">{lot.available_quantity} kg</span>
+                          </div>
+                          {(lot.proteins || lot.humidity) && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {lot.proteins && `Proteine: ${lot.proteins}%`}
+                              {lot.proteins && lot.humidity && ' • '}
+                              {lot.humidity && `Umidità: ${lot.humidity}%`}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={selectedLots.find(selected => selected.id === lot.id) ? "default" : "outline"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addLotToSelection(lot);
+                          }}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Selected Lots */}
+              {selectedLots.length > 0 && (
+                <div>
+                  <h3 className="font-medium mb-2">Lotti Selezionati</h3>
+                  <div className="space-y-2">
+                    {selectedLots.map(lot => (
+                      <div key={lot.id} className="p-3 border border-primary bg-primary/5 rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <div className="font-medium text-foreground">{lot.product}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {lot.lot_supplier && `${lot.lot_supplier}`}
+                              {lot.lot_supplier && lot.lot_tf && ' • '}
+                              {lot.lot_tf && `${lot.lot_tf}`}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => removeLotFromSelection(lot.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`quantity-${lot.id}`} className="text-sm">
+                            Quantità da prelevare:
+                          </Label>
+                          <Input
+                            id={`quantity-${lot.id}`}
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max={lot.available_quantity}
+                            value={lot.withdrawQuantity}
+                            onChange={(e) => updateLotQuantity(lot.id, e.target.value)}
+                            placeholder="0"
+                            className="w-24"
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            / {lot.available_quantity} kg
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }

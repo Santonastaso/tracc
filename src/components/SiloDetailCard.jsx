@@ -11,7 +11,7 @@ import { Badge } from '@santonastaso/shared';
 import { ArrowLeft, Edit, Save, X, Trash2, Warehouse, Package, Calendar } from 'lucide-react';
 import { confirmAction } from '@santonastaso/shared';
 
-export function SiloDetailCard({ silo, onClose, onEdit }) {
+export function SiloDetailCard({ silo, onClose, onEdit, isSnapshot = false, snapshotDateTime = null }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: silo.name || '',
@@ -123,56 +123,70 @@ export function SiloDetailCard({ silo, onClose, onEdit }) {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">
-                  {isEditing ? 'Edit Silo' : 'Silo Details'}
+                  {isSnapshot ? 'Snapshot Silos' : (isEditing ? 'Edit Silo' : 'Silo Details')}
                 </h1>
                 <p className="text-muted-foreground">
-                  {isEditing ? 'Modify silo information' : silo.name}
+                  {isSnapshot && snapshotDateTime ? 
+                    `Silos ${silo.name} - Snapshot al ${new Date(snapshotDateTime).toLocaleString('it-IT', { 
+                      timeZone: 'UTC',
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}` :
+                    (isEditing ? 'Modify silo information' : silo.name)
+                  }
                 </p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!isEditing ? (
+            {!isSnapshot && (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleDelete}
-                  className="flex items-center gap-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCancel}
-                  className="flex items-center gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={updateMutation.isPending}
-                  className="flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  {updateMutation.isPending ? 'Saving...' : 'Save'}
-                </Button>
+                {!isEditing ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDelete}
+                      className="flex items-center gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancel}
+                      className="flex items-center gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={updateMutation.isPending}
+                      className="flex items-center gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      {updateMutation.isPending ? 'Saving...' : 'Save'}
+                    </Button>
+                  </>
+                )}
               </>
             )}
           </div>
