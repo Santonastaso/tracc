@@ -93,6 +93,37 @@ function MerceOutListPage() {
     {
       accessorKey: 'operator_name',
       header: 'Operatore'
+    },
+    {
+      accessorKey: 'items',
+      header: 'Lotti',
+      cell: ({ getValue }) => {
+        const items = getValue();
+        if (!items || items.length === 0) {
+          return <span className="text-muted-foreground">N/A</span>;
+        }
+        
+        if (items.length === 1) {
+          const item = items[0];
+          return (
+            <div className="text-sm">
+              <div className="font-medium">{item.material_name}</div>
+              <div className="text-muted-foreground">
+                {item.supplier_lot || item.tf_lot || 'Senza lotto'}
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <div className="text-sm">
+            <div className="font-medium">{items.length} lotti</div>
+            <div className="text-muted-foreground">
+              {items.map(item => item.material_name).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
+            </div>
+          </div>
+        );
+      }
     }
   ];
 

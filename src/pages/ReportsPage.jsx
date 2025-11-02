@@ -5,6 +5,7 @@ import { useSilos } from '../hooks';
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
 import { Input } from '@santonastaso/shared';
+import { SiloDetailCard } from '../components/SiloDetailCard';
 // Using native HTML select instead of complex Select component
 
 function ReportsPage() {
@@ -16,6 +17,9 @@ function ReportsPage() {
     snapshotDate: '',
     snapshotTime: ''
   });
+
+  // State for selected silo in snapshot view
+  const [selectedSnapshotSilo, setSelectedSnapshotSilo] = useState(null);
 
   // Fetch silos for filter
   const { data: silosData } = useSilos();
@@ -293,11 +297,104 @@ function ReportsPage() {
     enabled: filters.reportType === 'snapshot' && !!filters.snapshotDate && !!filters.snapshotTime
   });
 
+  // Fetch detailed silo data with lots for snapshot detail view
+  const { data: snapshotSiloDetail, isLoading: snapshotSiloDetailLoading } = useQuery({
+    queryKey: ['snapshot-silo-detail', selectedSnapshotSilo?.id, filters.snapshotDate, filters.snapshotTime],
+    queryFn: async () => {
+      if (!selectedSnapshotSilo || !filters.snapshotDate || !filters.snapshotTime) {
+        return null;
+      }
+
+      const snapshotDateTime = `${filters.snapshotDate}T${filters.snapshotTime}:59.999Z`;
+      
+      // Get inbound data for this silo up to snapshot time
+      const { data: inboundData, error: inboundError } = await supabase
+        .from('inbound')
+        .select(`
+          id,
+          silo_id,
+          quantity_kg,
+          created_at,
+          product,
+          lot_supplier,
+          lot_tf,
+          proteins,
+          humidity,
+          cleaned
+        `)
+        .eq('silo_id', selectedSnapshotSilo.id)
+        .lte('created_at', snapshotDateTime)
+        .order('created_at', { ascending: true });
+
+      if (inboundError) throw inboundError;
+
+      // Get outbound data for this silo up to snapshot time
+      const { data: outboundData, error: outboundError } = await supabase
+        .from('outbound')
+        .select('silo_id, quantity_kg, items, created_at')
+        .eq('silo_id', selectedSnapshotSilo.id)
+        .lte('created_at', snapshotDateTime)
+        .order('created_at', { ascending: true });
+
+      if (outboundError) throw outboundError;
+
+      // Calculate available items using FIFO logic at snapshot time
+      let remainingOutbound = outboundData.reduce((sum, out) => sum + out.quantity_kg, 0);
+      const availableItems = [];
+      
+      for (const inbound of inboundData) {
+        if (remainingOutbound <= 0) {
+          // This entire inbound lot is available
+          availableItems.push({
+            ...inbound,
+            available_quantity: inbound.quantity_kg
+          });
+        } else if (remainingOutbound < inbound.quantity_kg) {
+          // Part of this inbound lot is available
+          const available = inbound.quantity_kg - remainingOutbound;
+          if (available > 0) {
+            availableItems.push({
+              ...inbound,
+              available_quantity: available
+            });
+          }
+          remainingOutbound = 0;
+        } else {
+          // This entire inbound lot has been consumed
+          remainingOutbound -= inbound.quantity_kg;
+        }
+      }
+      
+      const totalInbound = inboundData.reduce((sum, inb) => sum + inb.quantity_kg, 0);
+      const totalOutbound = outboundData.reduce((sum, out) => sum + out.quantity_kg, 0);
+      const currentLevel = totalInbound - totalOutbound;
+      
+      return {
+        ...selectedSnapshotSilo,
+        availableItems,
+        currentLevel,
+        totalInbound,
+        totalOutbound,
+        utilizationPercentage: selectedSnapshotSilo.capacity_kg > 0 ? (currentLevel / selectedSnapshotSilo.capacity_kg) * 100 : 0,
+        snapshotDateTime
+      };
+    },
+    enabled: !!selectedSnapshotSilo && !!filters.snapshotDate && !!filters.snapshotTime
+  });
+
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleSnapshotSiloClick = (silo) => {
+    setSelectedSnapshotSilo(silo);
+  };
+
+  const handleCloseSnapshotDetail = () => {
+    setSelectedSnapshotSilo(null);
   };
 
   const exportToCSV = (data, filename) => {
@@ -598,15 +695,20 @@ function ReportsPage() {
 
     return (
       <div className="space-y-4">
-        <div className="text-sm text-gray-600 mb-4">
-          <strong>Snapshot al:</strong> {new Date(snapshotData[0]?.snapshotDateTime).toLocaleString('it-IT', { 
-            timeZone: 'UTC',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-sm text-gray-600">
+            <strong>Snapshot al:</strong> {new Date(snapshotData[0]?.snapshotDateTime).toLocaleString('it-IT', { 
+              timeZone: 'UTC',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            💡 Clicca su una riga per vedere i dettagli dei lotti
+          </div>
         </div>
         
         <div className="overflow-x-auto">
@@ -623,12 +725,17 @@ function ReportsPage() {
             </thead>
             <tbody>
               {snapshotData.map((silo) => (
-                <tr key={silo.id} className="border-b">
-                  <td className="p-2">{silo.name}</td>
+                <tr 
+                  key={silo.id} 
+                  className="border-b hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => handleSnapshotSiloClick(silo)}
+                  title="Clicca per vedere i dettagli dei lotti"
+                >
+                  <td className="p-2 font-medium">{silo.name}</td>
                   <td className="p-2">{silo.capacity_kg.toLocaleString()} kg</td>
                   <td className="p-2">{silo.totalInbound.toLocaleString()} kg</td>
                   <td className="p-2">{silo.totalOutbound.toLocaleString()} kg</td>
-                  <td className="p-2">{silo.currentStock.toLocaleString()} kg</td>
+                  <td className="p-2 font-medium">{silo.currentStock.toLocaleString()} kg</td>
                   <td className="p-2">
                     <div className="flex items-center gap-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
@@ -641,7 +748,7 @@ function ReportsPage() {
                           style={{ width: `${Math.min(silo.utilizationPercentage, 100)}%` }}
                         />
                       </div>
-                      <span>{Math.round(silo.utilizationPercentage)}%</span>
+                      <span className="font-medium">{Math.round(silo.utilizationPercentage)}%</span>
                     </div>
                   </td>
                 </tr>
@@ -793,6 +900,18 @@ function ReportsPage() {
           </>
         )}
       </Card>
+
+      {/* Snapshot Silo Detail Card */}
+      {selectedSnapshotSilo && snapshotSiloDetail && (
+        <SiloDetailCard
+          silo={snapshotSiloDetail}
+          onClose={handleCloseSnapshotDetail}
+          isSnapshot={true}
+          snapshotDateTime={filters.snapshotDate && filters.snapshotTime ? 
+            `${filters.snapshotDate}T${filters.snapshotTime}:59.999Z` : null
+          }
+        />
+      )}
     </div>
   );
 }

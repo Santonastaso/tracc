@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
-import { useDeleteOutbound, useSilos } from '../hooks';
+import { useDeleteOutbound, useSilos, useSilosWithLevels } from '../hooks';
 import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
 import { Input } from '@santonastaso/shared';
@@ -21,6 +21,7 @@ export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
   });
 
   const { data: silosData } = useSilos();
+  const { data: silosWithLevels } = useSilosWithLevels();
   const deleteMutation = useDeleteOutbound();
   const queryClient = useQueryClient();
 
@@ -66,6 +67,10 @@ export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
   const getSiloName = (siloId) => {
     const silo = silosData?.find(s => s.id === siloId);
     return silo ? silo.name : 'N/A';
+  };
+
+  const getSiloWithLevels = (siloId) => {
+    return silosWithLevels?.find(s => s.id === siloId);
   };
 
   const addItem = () => {
@@ -335,28 +340,151 @@ export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
                 ) : (
                   <div className="space-y-3">
                     {outbound.items && outbound.items.length > 0 ? (
-                      outbound.items.map((item, index) => (
-                        <div key={index} className="p-3 bg-muted/50 rounded-lg">
-                          <div className="font-medium text-foreground">{item.material_name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {item.quantity_kg}kg
-                            {item.supplier_lot && ` • Lotto: ${item.supplier_lot}`}
-                            {item.tf_lot && ` • TF: ${item.tf_lot}`}
+                      <>
+                        {/* Summary */}
+                        <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-foreground">Totale Prelevato:</span>
+                            <span className="text-lg font-bold text-primary">
+                              {outbound.items.reduce((sum, item) => sum + (item.quantity_kg || 0), 0).toFixed(2)} kg
+                            </span>
                           </div>
-                          {(item.protein_content || item.moisture_content) && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {item.protein_content && `Proteine: ${item.protein_content}%`}
-                              {item.protein_content && item.moisture_content && ' • '}
-                              {item.moisture_content && `Umidità: ${item.moisture_content}%`}
-                            </div>
-                          )}
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {outbound.items.length} lotto{outbound.items.length !== 1 ? 'i' : ''} utilizzato{outbound.items.length !== 1 ? 'i' : ''}
+                          </div>
                         </div>
-                      ))
+
+                        {/* Individual Lots */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-foreground">Dettaglio Lotti:</h4>
+                          {outbound.items.map((item, index) => (
+                            <div key={index} className="p-3 bg-muted/50 rounded-lg border border-border">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                  <div className="font-medium text-foreground">{item.material_name}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Quantità prelevata: <span className="font-medium text-foreground">{item.quantity_kg} kg</span>
+                                  </div>
+                                </div>
+                                {item.entry_date && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Entrata: {new Date(item.entry_date).toLocaleDateString('it-IT')}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Lot Information */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                {item.supplier_lot && (
+                                  <div>
+                                    <span className="text-muted-foreground">Lotto Fornitore:</span>
+                                    <span className="ml-1 font-medium text-foreground">{item.supplier_lot}</span>
+                                  </div>
+                                )}
+                                {item.tf_lot && (
+                                  <div>
+                                    <span className="text-muted-foreground">Lotto TF:</span>
+                                    <span className="ml-1 font-medium text-foreground">{item.tf_lot}</span>
+                                  </div>
+                                )}
+                                {item.protein_content && (
+                                  <div>
+                                    <span className="text-muted-foreground">Proteine:</span>
+                                    <span className="ml-1 font-medium text-foreground">{item.protein_content}%</span>
+                                  </div>
+                                )}
+                                {item.moisture_content && (
+                                  <div>
+                                    <span className="text-muted-foreground">Umidità:</span>
+                                    <span className="ml-1 font-medium text-foreground">{item.moisture_content}%</span>
+                                  </div>
+                                )}
+                                {item.cleaning_status !== undefined && (
+                                  <div>
+                                    <span className="text-muted-foreground">Pulito:</span>
+                                    <span className={`ml-1 font-medium ${item.cleaning_status ? 'text-green-600' : 'text-orange-600'}`}>
+                                      {item.cleaning_status ? 'Sì' : 'No'}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
                     ) : (
                       <p className="text-muted-foreground">Nessun dettaglio disponibile</p>
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* Current Silo Balance */}
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Stato Silos Attuale</h3>
+                {(() => {
+                  const siloWithLevels = getSiloWithLevels(outbound.silo_id);
+                  if (!siloWithLevels) {
+                    return <p className="text-muted-foreground">Dati silos non disponibili</p>;
+                  }
+                  
+                  return (
+                    <div className="space-y-3">
+                      {/* Current Level */}
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Livello Attuale:</span>
+                          <span className="font-semibold text-foreground">
+                            {siloWithLevels.currentLevel?.toFixed(2) || 0} kg
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-muted-foreground">Capacità:</span>
+                          <span className="text-foreground">
+                            {siloWithLevels.capacity_kg} kg
+                          </span>
+                        </div>
+                        <div className="mt-2">
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-primary h-2 rounded-full transition-all duration-300"
+                              style={{ 
+                                width: `${Math.min(100, (siloWithLevels.currentLevel / siloWithLevels.capacity_kg) * 100)}%` 
+                              }}
+                            />
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1 text-center">
+                            {((siloWithLevels.currentLevel / siloWithLevels.capacity_kg) * 100).toFixed(1)}% utilizzato
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Available Lots */}
+                      {siloWithLevels.availableItems && siloWithLevels.availableItems.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-foreground mb-2">Lotti Disponibili:</h4>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {siloWithLevels.availableItems.map((item, index) => (
+                              <div key={index} className="p-2 bg-muted/20 rounded text-sm">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium text-foreground">{item.product}</span>
+                                  <span className="text-muted-foreground">{item.available_quantity} kg</span>
+                                </div>
+                                {(item.lot_supplier || item.lot_tf) && (
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {item.lot_supplier && `${item.lot_supplier}`}
+                                    {item.lot_supplier && item.lot_tf && ' • '}
+                                    {item.lot_tf && `${item.lot_tf}`}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div>
