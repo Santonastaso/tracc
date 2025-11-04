@@ -5,11 +5,9 @@ import {
   useDeleteOutbound,
   queryKeys
 } from '../hooks';
-import { DataTable } from '@santonastaso/shared';
+import { ListPageLayout } from '@santonastaso/shared';
 import { MerceOutDetailCard } from '../components/MerceOutDetailCard';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function MerceOutListPage() {
   const navigate = useNavigate();
@@ -57,6 +55,10 @@ function MerceOutListPage() {
 
   const handleEditRow = (item) => {
     navigate(`/merce-out/edit/${item.id}`);
+  };
+
+  const handleDeleteRow = (item) => {
+    deleteMutation.mutate(item.id);
   };
 
   // Table columns - only essential info
@@ -139,35 +141,26 @@ function MerceOutListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-foreground">Lista Movimenti OUT</h1>
-        <Link to="/merce-out/new">
-          <Button variant="outline">
-            Nuovo Prelievo
-          </Button>
-        </Link>
-      </div>
-      
-      <DataTable
-        data={outboundData || []}
-        columns={columns}
-        onRowClick={handleRowClick}
-        onEditRow={handleEditRow}
-        enableFiltering={true}
-        filterableColumns={['silos.name', 'operator_name']}
-        enableGlobalSearch={false}
-        onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-      />
-
-      {/* Detail Card */}
-      {selectedOutbound && (
+        <ListPageLayout
+          title="Lista Movimenti OUT"
+          createButtonText="+ New Withdrawal"
+          createButtonHref="/merce-out/new"
+      data={outboundData || []}
+      columns={columns}
+      onRowClick={handleRowClick}
+      onEditRow={handleEditRow}
+      onDeleteRow={handleDeleteRow}
+      enableFiltering={true}
+      filterableColumns={['silos.name', 'operator_name']}
+      enableGlobalSearch={false}
+      onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+      detailComponent={selectedOutbound && (
         <MerceOutDetailCard
           outbound={selectedOutbound}
           onClose={handleCloseDetail}
         />
       )}
-    </div>
+    />
   );
 }
 

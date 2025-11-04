@@ -350,9 +350,6 @@ function MerceInPage() {
         <h1 className="text-2xl font-semibold text-foreground">
           {editingItem ? 'Modifica Movimento Merce IN' : 'Nuovo Movimento Merce IN'}
         </h1>
-        <Button variant="outline" onClick={handleCancel}>
-          Annulla
-        </Button>
       </div>
       
       <GenericForm
@@ -364,6 +361,7 @@ function MerceInPage() {
           cleaned: String(editingItem.cleaned)
         } : {}}
         onSubmit={handleFormSubmit}
+        onCancel={handleCancel}
         isEditMode={!!editingItem}
         isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
         customFieldRenderers={customFieldRenderers}

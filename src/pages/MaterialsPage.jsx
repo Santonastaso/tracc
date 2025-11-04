@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
 import { useCreateMaterial, useUpdateMaterial } from '../hooks';
-import { GenericForm } from "@santonastaso/shared";
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
+import { FormPageLayout } from "@santonastaso/shared";
 
 function MaterialsPage() {
   const { id } = useParams();
@@ -145,28 +143,20 @@ function MaterialsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-foreground">
-          {editingItem ? 'Modifica Materiale' : 'Nuovo Materiale'}
-        </h1>
-        <Button variant="outline" onClick={handleCancel}>
-          Annulla
-        </Button>
-      </div>
-      
-      <GenericForm
-        config={formConfig}
-        initialData={editingItem ? {
-          ...editingItem,
-          // Convert boolean values to strings for Select components
-          active: String(editingItem.active)
-        } : {}}
-        onSubmit={handleFormSubmit}
-        isEditMode={!!editingItem}
-        isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
-      />
-    </div>
+    <FormPageLayout
+      title="Nuovo Materiale"
+      editTitle="Modifica Materiale"
+      isEditMode={!!editingItem}
+      formConfig={formConfig}
+      initialData={editingItem ? {
+        ...editingItem,
+        // Convert boolean values to strings for Select components
+        active: String(editingItem.active)
+      } : {}}
+      onSubmit={handleFormSubmit}
+      onCancel={handleCancel}
+      isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
+    />
   );
 }
 

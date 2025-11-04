@@ -173,9 +173,6 @@ function OperatorsPage() {
         <h1 className="text-2xl font-semibold text-foreground">
           {editingItem ? 'Modifica Operatore' : 'Nuovo Operatore'}
         </h1>
-        <Button variant="outline" onClick={handleCancel}>
-          Annulla
-        </Button>
       </div>
 
       
@@ -187,6 +184,7 @@ function OperatorsPage() {
           active: String(editingItem.active)
         } : {}}
         onSubmit={handleFormSubmit}
+        onCancel={handleCancel}
         isEditMode={!!editingItem}
         isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
       />
