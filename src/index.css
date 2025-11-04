@@ -1,9 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Only app-specific styles - NO color palettes, NO fonts */
-/* All colors and fonts come from @santonastaso/shared/styles.css */
+@layer base {
+  :root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: oklch(0.08 0 0);
+    --foreground: oklch(0.98 0 0);
+    --card: oklch(0.12 0 0);
+    --card-foreground: oklch(0.98 0 0);
+    --popover: oklch(0.12 0 0);
+    --popover-foreground: oklch(0.98 0 0);
+    --primary: oklch(0.9 0 0);
+    --primary-foreground: oklch(0.08 0 0);
+    --secondary: oklch(0.18 0 0);
+    --secondary-foreground: oklch(0.98 0 0);
+    --muted: oklch(0.15 0 0);
+    --muted-foreground: oklch(0.65 0 0);
+    --accent: oklch(0.18 0 0);
+    --accent-foreground: oklch(0.98 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(0.25 0 0);
+    --input: oklch(0.18 0 0);
+    --ring: oklch(0.556 0 0);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+a,
+button {
+  cursor: pointer;
+}
+
+input {
+  cursor: text;
+}
+
+a[aria-disabled="true"],
+button[aria-disabled="true"],
+button:disabled,
+input[aria-disabled="true"],
+input:disabled {
+  cursor: not-allowed;
+}
+
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="time"] {
+  position: relative;
+}
+
+.dark ::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  position: absolute;
+  right: 0.75rem;
+}
+
+/* Custom styles for the mill tracing system - using design system colors */
 
 /* Error Boundary Styles */
 .error-boundary {
@@ -129,6 +216,101 @@
   font-family: monospace;
 }
 
+/* Table styles for better dark mode support */
+@layer components {
+  /* DataTable overrides for dark mode */
+  .dark table {
+    background-color: var(--card);
+    color: var(--card-foreground);
+  }
+  
+  .dark table thead {
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+  }
+  
+  .dark table thead th {
+    background-color: var(--muted);
+    color: var(--foreground);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  
+  .dark table tbody tr {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .dark table tbody tr:nth-child(even) {
+    background-color: var(--muted);
+  }
+  
+  .dark table tbody tr:hover {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+  }
+  
+  .dark table tbody td {
+    color: var(--foreground);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  /* Ensure proper contrast for table cells */
+  .dark [role="table"] {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+  }
+  
+  .dark [role="columnheader"] {
+    background-color: var(--muted);
+    color: var(--foreground);
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+  }
+  
+  .dark [role="row"] {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .dark [role="row"]:nth-child(even) {
+    background-color: var(--muted);
+  }
+  
+  .dark [role="row"]:hover {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+  }
+  
+  .dark [role="gridcell"],
+  .dark [role="cell"] {
+    color: var(--foreground);
+    border-right: 1px solid var(--border);
+  }
+  
+  /* Additional table styling for better readability */
+  .dark .table-container {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) - 2px);
+  }
+  
+  /* Override any inline styles that might be causing issues */
+  .dark table * {
+    color: inherit !important;
+  }
+  
+  .dark table thead th * {
+    color: var(--foreground) !important;
+  }
+  
+  .dark table tbody td * {
+    color: var(--foreground) !important;
+  }
+}
+
 /* Print styles */
 @media print {
   .no-print {
@@ -143,3 +325,4 @@
     page-break-before: always;
   }
 }
+

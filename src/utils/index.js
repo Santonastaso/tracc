@@ -6,6 +6,9 @@ export {
   showInfo, 
   showValidationError,
   formatUtcDate,
-  formatUtcDateTime,
-  confirmAction  // Use shared version instead of local
+  formatUtcDateTime
 } from '@santonastaso/shared';
+// Unified confirmation (sync wrapper for now)
+export const confirmAction = (message) => {
+  return window.confirm(message);
+};
