@@ -40,8 +40,8 @@ const AppLayout = () => {
       <SideNav />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <main className="flex-1 overflow-auto bg-background min-w-0">
-          <div className="p-4">
+        <main className="flex-1 overflow-auto bg-background min-w-0 p-4" id="main-content">
+          <div className="max-w-full">
             <Outlet />
           </div>
         </main>

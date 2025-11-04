@@ -118,18 +118,17 @@ function SilosListPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-end items-center mb-2 flex-shrink-0">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-foreground">Lista Silos</h1>
         <Link to="/silos/new">
-          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
+          <Button variant="outline">
             Nuovo Silos
           </Button>
         </Link>
       </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0">
-          <DataTable
+      
+      <DataTable
             data={silosData || []}
             columns={columns}
             onRowClick={handleRowClick}
@@ -139,9 +138,7 @@ function SilosListPage() {
             enableGlobalSearch={false}
             onBulkDelete={(ids) => bulkDelete.mutate(ids)}
             onBulkExport={handleBulkExport}
-          />
-        </div>
-      </Card>
+      />
 
       {/* Detail Card */}
       {selectedSilo && (

@@ -139,29 +139,26 @@ function MerceOutListPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-end items-center mb-2 flex-shrink-0">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-foreground">Lista Movimenti OUT</h1>
         <Link to="/merce-out/new">
-          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
+          <Button variant="outline">
             Nuovo Prelievo
           </Button>
         </Link>
       </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0">
-          <DataTable
-            data={outboundData || []}
-            columns={columns}
-            onRowClick={handleRowClick}
-            onEditRow={handleEditRow}
-            enableFiltering={true}
-            filterableColumns={['silos.name', 'operator_name']}
-            enableGlobalSearch={false}
-            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-          />
-        </div>
-      </Card>
+      
+      <DataTable
+        data={outboundData || []}
+        columns={columns}
+        onRowClick={handleRowClick}
+        onEditRow={handleEditRow}
+        enableFiltering={true}
+        filterableColumns={['silos.name', 'operator_name']}
+        enableGlobalSearch={false}
+        onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+      />
 
       {/* Detail Card */}
       {selectedOutbound && (

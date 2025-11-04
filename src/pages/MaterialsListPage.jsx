@@ -99,7 +99,7 @@ function MaterialsListPage() {
     <div className="h-full flex flex-col p-2">
       <div className="flex justify-end items-center mb-2 flex-shrink-0">
         <Link to="/materials/new">
-          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
+          <Button variant="outline">
             Nuovo Materiale
           </Button>
         </Link>

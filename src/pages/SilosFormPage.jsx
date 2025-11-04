@@ -175,30 +175,28 @@ function SilosFormPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-foreground">
           {editingItem ? 'Modifica Silos' : 'Nuovo Silos'}
         </h1>
         <Button variant="outline" onClick={handleCancel}>
           Annulla
         </Button>
       </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <GenericForm
-          config={formConfig}
-          initialData={editingItem ? {
-            ...editingItem,
-            // Keep allowed_material_ids as array for checkbox selection
-            allowed_material_ids: editingItem.allowed_material_ids || []
-          } : {}}
-          onSubmit={handleFormSubmit}
-          isEditMode={!!editingItem}
-          isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
-          customFieldRenderers={customFieldRenderers}
-        />
-      </Card>
+      
+      <GenericForm
+        config={formConfig}
+        initialData={editingItem ? {
+          ...editingItem,
+          // Keep allowed_material_ids as array for checkbox selection
+          allowed_material_ids: editingItem.allowed_material_ids || []
+        } : {}}
+        onSubmit={handleFormSubmit}
+        isEditMode={!!editingItem}
+        isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
+        customFieldRenderers={customFieldRenderers}
+      />
     </div>
   );
 }
