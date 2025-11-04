@@ -5,23 +5,23 @@ import { LoginPage as SharedLoginPage, showError } from '@santonastaso/shared';
 
 function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (data) => {
     setIsLoading(true);
+    setError('');
 
     try {
       await signIn(data.email, data.password);
       navigate('/');
-    } catch (error) {
-      showError('Errore durante il login: ' + error.message);
+    } catch (err) {
+      setError('Errore durante il login: ' + err.message);
     } finally {
       setIsLoading(false);
     }
   };
-
-  console.log('🔍 TRACC LoginPage: Using SharedLoginPage component', { SharedLoginPage });
 
   return (
     <SharedLoginPage
@@ -38,10 +38,12 @@ function LoginPage() {
       }}
       demoCredentials={{ email: 'admin@tracc.com', password: 'admin123' }}
       isLoading={isLoading}
+      error={error}
       onSubmit={handleSubmit}
+      forgotPasswordUrl="/forgot-password"
       signUpUrl="/signup"
-      backgroundImage="/trace-bg.jpg" // Optional background
-      backgroundColor="#18181b" // Match CRM_demo's bg-zinc-900
+      showForgotPassword={true}
+      showSignUp={true}
     />
   );
 }
