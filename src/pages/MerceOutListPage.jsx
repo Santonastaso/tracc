@@ -5,11 +5,9 @@ import {
   useDeleteOutbound,
   queryKeys
 } from '../hooks';
-import { DataTable } from '@santonastaso/shared';
+import { ListPageLayout } from '@santonastaso/shared';
 import { MerceOutDetailCard } from '../components/MerceOutDetailCard';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function MerceOutListPage() {
   const navigate = useNavigate();
@@ -59,6 +57,10 @@ function MerceOutListPage() {
     navigate(`/merce-out/edit/${item.id}`);
   };
 
+  const handleDeleteRow = (item) => {
+    deleteMutation.mutate(item.id);
+  };
+
   // Table columns - only essential info
   const columns = [
     {
@@ -93,6 +95,37 @@ function MerceOutListPage() {
     {
       accessorKey: 'operator_name',
       header: 'Operatore'
+    },
+    {
+      accessorKey: 'items',
+      header: 'Lotti',
+      cell: ({ getValue }) => {
+        const items = getValue();
+        if (!items || items.length === 0) {
+          return <span className="text-muted-foreground">N/A</span>;
+        }
+        
+        if (items.length === 1) {
+          const item = items[0];
+          return (
+            <div className="text-sm">
+              <div className="font-medium">{item.material_name}</div>
+              <div className="text-muted-foreground">
+                {item.supplier_lot || item.tf_lot || 'Senza lotto'}
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <div className="text-sm">
+            <div className="font-medium">{items.length} lotti</div>
+            <div className="text-muted-foreground">
+              {items.map(item => item.material_name).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
+            </div>
+          </div>
+        );
+      }
     }
   ];
 
@@ -108,38 +141,26 @@ function MerceOutListPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-end items-center mb-2 flex-shrink-0">
-        <Link to="/merce-out/new">
-          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
-            Nuovo Prelievo
-          </Button>
-        </Link>
-      </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0">
-          <DataTable
-            data={outboundData || []}
-            columns={columns}
-            onRowClick={handleRowClick}
-            onEditRow={handleEditRow}
-            enableFiltering={true}
-            filterableColumns={['silos.name', 'operator_name']}
-            enableGlobalSearch={false}
-            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-          />
-        </div>
-      </Card>
-
-      {/* Detail Card */}
-      {selectedOutbound && (
+        <ListPageLayout
+          title="Lista Movimenti OUT"
+          createButtonText="+ New Withdrawal"
+          createButtonHref="/merce-out/new"
+      data={outboundData || []}
+      columns={columns}
+      onRowClick={handleRowClick}
+      onEditRow={handleEditRow}
+      onDeleteRow={handleDeleteRow}
+      enableFiltering={true}
+      filterableColumns={['silos.name', 'operator_name']}
+      enableGlobalSearch={false}
+      onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+      detailComponent={selectedOutbound && (
         <MerceOutDetailCard
           outbound={selectedOutbound}
           onClose={handleCloseDetail}
         />
       )}
-    </div>
+    />
   );
 }
 

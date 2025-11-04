@@ -30,7 +30,44 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
 
       - name: Install dependencies
-        run: npm install --prefer-offline --no-audit --no-fund --legacy-peer-deps
+        run: |
+          # Configure npm to use GitHub Packages for @santonastaso scope
+          echo "@santonastaso:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          # Update package.json to use published version
+          npm pkg set dependencies.@santonastaso/shared="1.3.3"
+          # Clean install to avoid conflicts
+          rm -rf node_modules package-lock.json
+          # Install all dependencies including the shared package from GitHub Packages
+          echo "Installing all dependencies including @santonastaso/shared@1.3.3..."
+          npm install --prefer-offline --no-audit --no-fund --legacy-peer-deps
+          # Verify the shared package is properly installed
+          echo "Verifying shared package installation..."
+          ls -la node_modules/@santonastaso/ || echo "No @santonastaso directory found"
+          if [ -d "node_modules/@santonastaso/shared" ]; then
+            ls -la node_modules/@santonastaso/shared/
+            ls -la node_modules/@santonastaso/shared/dist/ || echo "No dist directory found"
+            echo "Checking for ListPageLayout in installed package..."
+            if [ -f "node_modules/@santonastaso/shared/dist/index.js" ]; then
+              grep -q "ListPageLayout" node_modules/@santonastaso/shared/dist/index.js && echo "✓ ListPageLayout available in installed package" || echo "✗ ListPageLayout NOT available in installed package"
+            else
+              echo "✗ dist/index.js not found in installed package"
+              exit 1
+            fi
+          else
+            echo "✗ @santonastaso/shared package not found"
+            echo "Checking what packages were installed:"
+            ls -la node_modules/ | grep santonastaso || echo "No santonastaso packages found"
+            # Try to install it explicitly as fallback
+            echo "Attempting explicit installation as fallback..."
+            npm install @santonastaso/shared@1.3.3 --registry=https://npm.pkg.github.com --legacy-peer-deps --force
+            if [ -d "node_modules/@santonastaso/shared" ]; then
+              echo "✓ Fallback installation succeeded"
+            else
+              echo "✗ Fallback installation failed"
+              exit 1
+            fi
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

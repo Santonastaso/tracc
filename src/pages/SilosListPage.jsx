@@ -3,11 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useMaterials, useDeleteSilo } from '../hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { DataTable } from '@santonastaso/shared';
+import { ListPageLayout } from '@santonastaso/shared';
 import { SiloDetailCard } from '../components/SiloDetailCard';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function SilosListPage() {
   const navigate = useNavigate();
@@ -44,38 +42,6 @@ function SilosListPage() {
     onSuccess: () => queryClient.invalidateQueries(['silos'])
   });
 
-  const handleBulkExport = (ids) => {
-    const selectedSilos = silosData?.filter(silo => ids.includes(silo.id)) || [];
-    
-    // Create CSV content
-    const headers = ['ID', 'Nome Silos', 'Capacità (Kg)', 'Materiali Consentiti', 'Data Creazione', 'Ultima Modifica'];
-    const csvContent = [
-      headers.join(','),
-      ...selectedSilos.map(silo => [
-        silo.id,
-        `"${silo.name}"`,
-        silo.capacity_kg,
-        `"${silo.allowed_material_ids?.length > 0 ? silo.allowed_material_ids.map(id => {
-          const material = materialsData?.find(m => m.id === id);
-          return material ? material.name : `ID: ${id}`;
-        }).join(', ') : 'Tutti i materiali'}"`,
-        new Date(silo.created_at).toLocaleDateString('it-IT', { timeZone: 'UTC' }),
-        new Date(silo.updated_at).toLocaleDateString('it-IT', { timeZone: 'UTC' })
-      ].join(','))
-    ].join('\n');
-
-    // Create and download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `silos_export_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const handleRowClick = (item) => {
     setSelectedSilo(item);
   };
@@ -86,6 +52,10 @@ function SilosListPage() {
 
   const handleEditRow = (item) => {
     navigate(`/silos/edit/${item.id}`);
+  };
+
+  const handleDeleteRow = (item) => {
+    deleteMutation.mutate(item.id);
   };
 
   // Table columns - only essential info
@@ -118,39 +88,26 @@ function SilosListPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-end items-center mb-2 flex-shrink-0">
-        <Link to="/silos/new">
-          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
-            Nuovo Silos
-          </Button>
-        </Link>
-      </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0">
-          <DataTable
-            data={silosData || []}
-            columns={columns}
-            onRowClick={handleRowClick}
-            onEditRow={handleEditRow}
-            enableFiltering={true}
-            filterableColumns={['name']}
-            enableGlobalSearch={false}
-            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-            onBulkExport={handleBulkExport}
-          />
-        </div>
-      </Card>
-
-      {/* Detail Card */}
-      {selectedSilo && (
+        <ListPageLayout
+          title="Lista Silos"
+          entityName="Silo"
+          createButtonHref="/silos/new"
+      data={silosData || []}
+      columns={columns}
+      onRowClick={handleRowClick}
+      onEditRow={handleEditRow}
+      onDeleteRow={handleDeleteRow}
+      enableFiltering={true}
+      filterableColumns={['name']}
+      enableGlobalSearch={false}
+      onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+      detailComponent={selectedSilo && (
         <SiloDetailCard
           silo={selectedSilo}
           onClose={handleCloseDetail}
         />
       )}
-    </div>
+    />
   );
 }
 

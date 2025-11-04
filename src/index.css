@@ -1,65 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --radius: 0.625rem;
-  }
-
-  .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(1 0 0 / 15%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-  }
-}
-
+/* Enhanced base layer for better integration with @santonastaso/shared styles */
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
+    outline-color: var(--ring);
+    outline-offset: 2px;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
 
+/* Professional interaction states */
 a,
 button {
   cursor: pointer;
@@ -90,144 +46,49 @@ input[type="time"] {
   right: 0.75rem;
 }
 
-/* Custom styles for the mill tracing system - using design system colors */
-
-/* Error Boundary Styles */
-.error-boundary {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--background);
-  padding: 2rem;
-}
-
-.error-boundary__container {
-  max-width: 600px;
-  text-align: center;
-  background: var(--card);
-  color: var(--card-foreground);
-  padding: 3rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border);
-}
-
-.error-boundary__icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.error-boundary__title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--foreground);
-  margin-bottom: 1rem;
-}
-
-.error-boundary__message {
-  color: var(--muted-foreground);
-  margin-bottom: 2rem;
-  line-height: 1.6;
-}
-
-.error-boundary__details {
-  text-align: left;
-  margin: 2rem 0;
-  padding: 1rem;
-  background: var(--muted);
-  border-radius: 0.25rem;
-}
-
-.error-boundary__error-info {
-  margin-top: 1rem;
-}
-
-.error-boundary__stack-trace {
-  background: var(--muted);
-  color: var(--muted-foreground);
-  padding: 1rem;
-  border-radius: 0.25rem;
-  overflow-x: auto;
+/* Enhanced support for file input styling (used by ThemeSwitch) */
+input[type="file"]::file-selector-button {
+  display: inline-flex;
+  height: 1.75rem;
+  border: 0;
+  background: transparent;
   font-size: 0.875rem;
-  margin-top: 0.5rem;
-}
-
-.error-boundary__actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-}
-
-.error-boundary__button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.25rem;
-  border: 1px solid var(--border);
-  background: var(--background);
+  font-weight: 500;
   color: var(--foreground);
-  cursor: pointer;
-  transition: all 0.2s;
 }
 
-.error-boundary__button:hover {
-  background: var(--muted);
+/* Support for focus-visible states */
+.focus-visible\:border-ring:focus-visible {
+  border-color: var(--ring);
 }
 
-.error-boundary__button--secondary {
-  background: var(--secondary);
-  color: var(--secondary-foreground);
-  border-color: var(--border);
+.focus-visible\:ring-ring\/50:focus-visible {
+  --tw-ring-color: var(--ring);
+  --tw-ring-opacity: 0.5;
+  box-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
 }
 
-.error-boundary__button--secondary:hover {
-  background: var(--secondary);
-  opacity: 0.8;
+/* Support for dark mode background opacity */
+.dark .dark\:bg-input\/30 {
+  background-color: rgb(from var(--input) r g b / 0.3);
 }
 
-.error-boundary__recommendations {
-  margin: 2rem 0;
-  padding: 1rem;
-  background: var(--accent);
-  border-radius: 0.25rem;
-  border-left: 4px solid var(--primary);
-}
-
-.error-boundary__recommendation {
-  text-align: left;
-}
-
-.error-boundary__footer {
-  border-top: 1px solid var(--border);
-  padding-top: 1rem;
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-}
-
-.error-boundary__error-id {
-  margin-bottom: 0.5rem;
-}
-
-.error-boundary__error-id code {
-  background: var(--muted);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-family: monospace;
-}
-
-/* Print styles */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  body {
-    font-size: 12px;
-  }
-  
-  .page-break {
-    page-break-before: always;
+/* Fallback for browsers that don't support rgb(from) syntax */
+@supports not (background-color: rgb(from var(--input) r g b / 0.3)) {
+  .dark .dark\:bg-input\/30 {
+    background-color: var(--input);
+    opacity: 0.3;
   }
 }
 
+/* Ensure ThemeSwitch select styling matches crm_demo */
+select[aria-label="Theme"] {
+  background-color: transparent;
+  border-color: var(--input);
+  color: var(--foreground);
+}
+
+.dark select[aria-label="Theme"] {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}

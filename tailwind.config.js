@@ -4,6 +4,7 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    "./node_modules/@santonastaso/shared/dist/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     container: {
@@ -78,6 +79,12 @@ export default {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+      },
+      ringWidth: {
+        DEFAULT: '3px',
+      },
+      ringOpacity: {
+        DEFAULT: '0.5',
       },
       keyframes: {
         "accordion-down": {

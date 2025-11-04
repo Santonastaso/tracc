@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
 import { useCreateSupplier, useUpdateSupplier } from '../hooks';
-import { GenericForm } from "@santonastaso/shared";
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
+import { FormPageLayout } from "@santonastaso/shared";
 
 function SuppliersPage() {
   const { id } = useParams();
@@ -169,30 +167,20 @@ function SuppliersPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">
-          {editingItem ? 'Modifica Fornitore' : 'Nuovo Fornitore'}
-        </h1>
-        <Button variant="outline" onClick={handleCancel}>
-          Annulla
-        </Button>
-      </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <GenericForm
-          config={formConfig}
-          initialData={editingItem ? {
-            ...editingItem,
-            // Convert boolean values to strings for Select components
-            active: String(editingItem.active)
-          } : {}}
-          onSubmit={handleFormSubmit}
-          isEditMode={!!editingItem}
-          isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
-        />
-      </Card>
-    </div>
+    <FormPageLayout
+      title="Nuovo Fornitore"
+      editTitle="Modifica Fornitore"
+      isEditMode={!!editingItem}
+      formConfig={formConfig}
+      initialData={editingItem ? {
+        ...editingItem,
+        // Convert boolean values to strings for Select components
+        active: String(editingItem.active)
+      } : {}}
+      onSubmit={handleFormSubmit}
+      onCancel={handleCancel}
+      isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
+    />
   );
 }
 

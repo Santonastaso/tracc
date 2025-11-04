@@ -136,8 +136,6 @@ function MerceInPage() {
       cleaned: formData.cleaned === 'true',
       updated_at: new Date().toISOString()
     };
-    
-    console.log('dataToSave:', dataToSave);
 
     if (editingItem) {
       await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
@@ -350,31 +348,27 @@ function MerceInPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-foreground">
           {editingItem ? 'Modifica Movimento Merce IN' : 'Nuovo Movimento Merce IN'}
         </h1>
-        <Button variant="outline" onClick={handleCancel}>
-          Annulla
-        </Button>
       </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <GenericForm
-          config={formConfig}
-          initialData={editingItem ? {
-            ...editingItem,
-            // Convert database values to strings for Select components
-            silo_id: String(editingItem.silo_id),
-            cleaned: String(editingItem.cleaned)
-          } : {}}
-          onSubmit={handleFormSubmit}
-          isEditMode={!!editingItem}
-          isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
-          customFieldRenderers={customFieldRenderers}
-        />
-      </Card>
+      
+      <GenericForm
+        config={formConfig}
+        initialData={editingItem ? {
+          ...editingItem,
+          // Convert database values to strings for Select components
+          silo_id: String(editingItem.silo_id),
+          cleaned: String(editingItem.cleaned)
+        } : {}}
+        onSubmit={handleFormSubmit}
+        onCancel={handleCancel}
+        isEditMode={!!editingItem}
+        isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
+        customFieldRenderers={customFieldRenderers}
+      />
     </div>
   );
 }

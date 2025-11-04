@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase/client';
 import { useMaterials, useCreateSilo, useUpdateSilo } from '../hooks';
-import { GenericForm } from "@santonastaso/shared";
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
+import { FormPageLayout } from "@santonastaso/shared";
 
 function SilosFormPage() {
   const { id } = useParams();
@@ -175,31 +173,21 @@ function SilosFormPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">
-          {editingItem ? 'Modifica Silos' : 'Nuovo Silos'}
-        </h1>
-        <Button variant="outline" onClick={handleCancel}>
-          Annulla
-        </Button>
-      </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <GenericForm
-          config={formConfig}
-          initialData={editingItem ? {
-            ...editingItem,
-            // Keep allowed_material_ids as array for checkbox selection
-            allowed_material_ids: editingItem.allowed_material_ids || []
-          } : {}}
-          onSubmit={handleFormSubmit}
-          isEditMode={!!editingItem}
-          isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
-          customFieldRenderers={customFieldRenderers}
-        />
-      </Card>
-    </div>
+    <FormPageLayout
+      title="Nuovo Silos"
+      editTitle="Modifica Silos"
+      isEditMode={!!editingItem}
+      formConfig={formConfig}
+      initialData={editingItem ? {
+        ...editingItem,
+        // Keep allowed_material_ids as array for checkbox selection
+        allowed_material_ids: editingItem.allowed_material_ids || []
+      } : {}}
+      onSubmit={handleFormSubmit}
+      onCancel={handleCancel}
+      isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
+      customFieldRenderers={customFieldRenderers}
+    />
   );
 }
 

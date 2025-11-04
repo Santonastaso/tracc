@@ -381,14 +381,12 @@ function ArchivePage() {
             <h2 className="text-lg font-semibold">
               {editingItem ? 'Modifica Analisi' : 'Nuova Analisi'}
             </h2>
-            <Button variant="outline" onClick={handleCancel}>
-              Annulla
-            </Button>
           </div>
           <GenericForm
             config={formConfig}
             initialData={editingItem || {}}
             onSubmit={handleFormSubmit}
+            onCancel={handleCancel}
             isEditMode={!!editingItem}
             isLoading={mutation.isPending}
           />

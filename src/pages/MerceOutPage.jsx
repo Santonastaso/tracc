@@ -8,10 +8,11 @@ import {
   useCreateOutbound,
   useUpdateOutbound
 } from '../hooks';
+import { GenericForm } from "@santonastaso/shared";
 import { Button, Input, Label } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Trash2 } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
 
 function MerceOutPage() {
   const { id } = useParams();
@@ -19,7 +20,7 @@ function MerceOutPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  // New state for manual lot selection
+  // Form state for manual lot selection
   const [selectedSilo, setSelectedSilo] = useState('');
   const [operatorName, setOperatorName] = useState('');
   const [selectedLots, setSelectedLots] = useState([]);
@@ -53,7 +54,7 @@ function MerceOutPage() {
   const { data: silosWithLevels } = useSilosWithLevels();
   const { data: operatorsData } = useOperators();
 
-  // Update available lots when silo changes
+  // Update available lots when silo is selected
   useEffect(() => {
     if (selectedSilo && silosWithLevels) {
       const silo = silosWithLevels.find(s => s.id === parseInt(selectedSilo));
@@ -62,10 +63,7 @@ function MerceOutPage() {
       } else {
         setAvailableLots([]);
       }
-      setSelectedLots([]); // Clear selected lots when silo changes
-    } else {
-      setAvailableLots([]);
-      setSelectedLots([]);
+      setSelectedLots([]); // Reset selected lots when silo changes
     }
   }, [selectedSilo, silosWithLevels]);
 
@@ -75,54 +73,72 @@ function MerceOutPage() {
 
   // Handle form submission with manual lot selection
   const handleSubmit = async () => {
-    if (!selectedSilo || !operatorName || selectedLots.length === 0) {
-      throw new Error('Seleziona silos, operatore e almeno un lotto');
-    }
-
-    // Validate quantities
-    for (const lot of selectedLots) {
-      if (!lot.withdrawQuantity || lot.withdrawQuantity <= 0) {
-        throw new Error(`Inserisci una quantità valida per il lotto ${lot.product}`);
+    try {
+      // Validation
+      if (!selectedSilo) {
+        throw new Error('Seleziona un silos');
       }
-      if (lot.withdrawQuantity > lot.available_quantity) {
-        throw new Error(`Quantità troppo alta per il lotto ${lot.product}. Disponibile: ${lot.available_quantity} kg`);
+      if (!operatorName) {
+        throw new Error('Seleziona un operatore');
       }
+      if (selectedLots.length === 0) {
+        throw new Error('Seleziona almeno un lotto da prelevare');
+      }
+
+      // Check if all selected lots have valid quantities
+      for (const lot of selectedLots) {
+        if (!lot.withdrawQuantity || lot.withdrawQuantity <= 0) {
+          throw new Error(`Inserisci una quantità valida per il lotto ${lot.lot_supplier || lot.lot_tf || 'senza nome'}`);
+        }
+        if (lot.withdrawQuantity > lot.available_quantity) {
+          throw new Error(`Quantità richiesta (${lot.withdrawQuantity}kg) supera quella disponibile (${lot.available_quantity}kg) per il lotto ${lot.lot_supplier || lot.lot_tf || 'senza nome'}`);
+        }
+      }
+
+      // Calculate total quantity
+      const totalQuantity = selectedLots.reduce((sum, lot) => sum + parseFloat(lot.withdrawQuantity), 0);
+
+      // Prepare items to withdraw
+      const itemsToWithdraw = selectedLots.map(lot => ({
+        inbound_id: lot.id,
+        quantity_kg: parseFloat(lot.withdrawQuantity),
+        material_name: lot.product,
+        supplier_lot: lot.lot_supplier,
+        tf_lot: lot.lot_tf,
+        protein_content: lot.proteins,
+        moisture_content: lot.humidity,
+        cleaning_status: lot.cleaned,
+        entry_date: lot.created_at.split('T')[0]
+      }));
+
+      const dataToSave = {
+        silo_id: parseInt(selectedSilo),
+        quantity_kg: totalQuantity,
+        operator_name: operatorName,
+        items: itemsToWithdraw,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      if (editingItem) {
+        await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
+      } else {
+        await createMutation.mutateAsync(dataToSave);
+      }
+      
+      // Navigate back to list after successful submission
+      navigate('/merce-out/list');
+    } catch (error) {
+      console.error('Error submitting outbound:', error);
+      throw error;
     }
+  };
 
-    const totalQuantity = selectedLots.reduce((sum, lot) => sum + parseFloat(lot.withdrawQuantity), 0);
-    
-    const itemsToWithdraw = selectedLots.map(lot => ({
-      inbound_id: lot.id,
-      quantity_kg: parseFloat(lot.withdrawQuantity),
-      material_name: lot.product,
-      supplier_lot: lot.lot_supplier,
-      tf_lot: lot.lot_tf,
-      protein_content: lot.proteins,
-      moisture_content: lot.humidity,
-      cleaning_status: lot.cleaned,
-      entry_date: lot.created_at.split('T')[0]
-    }));
-
-    const dataToSave = {
-      silo_id: parseInt(selectedSilo),
-      quantity_kg: totalQuantity,
-      operator_name: operatorName,
-      items: itemsToWithdraw,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    if (editingItem) {
-      await updateMutation.mutateAsync({ id: editingItem.id, updates: dataToSave });
-    } else {
-      await createMutation.mutateAsync(dataToSave);
-    }
-    
-    // Navigate back to list after successful submission
+  const handleCancel = () => {
     navigate('/merce-out/list');
   };
 
-  // Helper functions for lot management
+  // Lot management functions
   const addLotToSelection = (lot) => {
     if (selectedLots.find(selected => selected.id === lot.id)) {
       return; // Already selected
@@ -135,20 +151,19 @@ function MerceOutPage() {
   };
 
   const updateLotQuantity = (lotId, quantity) => {
-    setSelectedLots(prev => prev.map(lot => 
-      lot.id === lotId ? { ...lot, withdrawQuantity: quantity } : lot
-    ));
+    setSelectedLots(prev => 
+      prev.map(lot => 
+        lot.id === lotId ? { ...lot, withdrawQuantity: quantity } : lot
+      )
+    );
   };
 
   const getTotalSelectedQuantity = () => {
-    return selectedLots.reduce((sum, lot) => sum + (parseFloat(lot.withdrawQuantity) || 0), 0);
+    return selectedLots.reduce((sum, lot) => {
+      const qty = parseFloat(lot.withdrawQuantity) || 0;
+      return sum + qty;
+    }, 0);
   };
-
-  const handleCancel = () => {
-    navigate('/merce-out/list');
-  };
-
-
 
   if (isLoading) {
     return (
@@ -176,6 +191,7 @@ function MerceOutPage() {
         {/* Left Column - Form */}
         <Card className="p-4">
           <h2 className="text-lg font-semibold mb-4">Informazioni Prelievo</h2>
+          
           <div className="space-y-4">
             {/* Silo Selection */}
             <div>
@@ -237,6 +253,7 @@ function MerceOutPage() {
         {/* Right Column - Lot Selection */}
         <Card className="p-4">
           <h2 className="text-lg font-semibold mb-4">Selezione Lotti</h2>
+          
           {!selectedSilo ? (
             <p className="text-muted-foreground">Seleziona un silos per vedere i lotti disponibili</p>
           ) : availableLots.length === 0 ? (

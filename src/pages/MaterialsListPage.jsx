@@ -3,11 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDeleteMaterial } from '../hooks';
-import { DataTable } from '@santonastaso/shared';
+import { ListPageLayout } from '@santonastaso/shared';
 import { MaterialDetailCard } from '../components/MaterialDetailCard';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function MaterialsListPage() {
   const navigate = useNavigate();
@@ -56,6 +54,10 @@ function MaterialsListPage() {
     navigate(`/materials/edit/${item.id}`);
   };
 
+  const handleDeleteRow = (item) => {
+    deleteMutation.mutate(item.id);
+  };
+
   // Table columns - only essential info
   const columns = [
     {
@@ -95,39 +97,27 @@ function MaterialsListPage() {
     );
   }
 
-  return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-end items-center mb-2 flex-shrink-0">
-        <Link to="/materials/new">
-          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
-            Nuovo Materiale
-          </Button>
-        </Link>
-      </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0">
-          <DataTable
-            data={materialsData || []}
-            columns={columns}
-            onRowClick={handleRowClick}
-            onEditRow={handleEditRow}
-            enableFiltering={true}
-            filterableColumns={['name', 'unit']}
-            enableGlobalSearch={false}
-            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-          />
-        </div>
-      </Card>
-
-      {/* Detail Card */}
-      {selectedMaterial && (
+      return (
+        <ListPageLayout
+          title="Lista Materiali"
+          entityName="Material"
+          createButtonHref="/materials/new"
+      data={materialsData || []}
+      columns={columns}
+      onRowClick={handleRowClick}
+      onEditRow={handleEditRow}
+      onDeleteRow={handleDeleteRow}
+      enableFiltering={true}
+      filterableColumns={['name', 'unit']}
+      enableGlobalSearch={false}
+      onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+      detailComponent={selectedMaterial && (
         <MaterialDetailCard
           material={selectedMaterial}
           onClose={handleCloseDetail}
         />
       )}
-    </div>
+    />
   );
 }
 

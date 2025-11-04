@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Button } from '@santonastaso/shared';
 import { useErrorHandler } from '../hooks';
 import { ERROR_TYPES } from '../services/errorHandling';
 
@@ -141,12 +142,12 @@ const ErrorMonitor = ({ isOpen, onClose }) => {
               </select>
             </div>
             <div className="flex items-end">
-              <button
+              <Button
                 onClick={clearErrors}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                variant="destructive"
               >
                 Clear All
-              </button>
+              </Button>
             </div>
           </div>
         </div>

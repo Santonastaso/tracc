@@ -7,11 +7,9 @@ import {
   useDeleteInbound,
   queryKeys
 } from '../hooks';
-import { DataTable } from '@santonastaso/shared';
+import { ListPageLayout } from '@santonastaso/shared';
 import { MerceInDetailCard } from '../components/MerceInDetailCard';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function MerceInListPage() {
   const navigate = useNavigate();
@@ -59,6 +57,10 @@ function MerceInListPage() {
 
   const handleEditRow = (item) => {
     navigate(`/merce-in/edit/${item.id}`);
+  };
+
+  const handleDeleteRow = (item) => {
+    deleteMutation.mutate(item.id);
   };
 
   // Table columns - only essential info
@@ -119,38 +121,26 @@ function MerceInListPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-2">
-      <div className="flex justify-end items-center mb-2 flex-shrink-0">
-        <Link to="/merce-in/new">
-          <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300 border-gray-300">
-            Nuovo Movimento
-          </Button>
-        </Link>
-      </div>
-
-      <Card className="p-4 flex-1 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0">
-          <DataTable
-            data={inboundData || []}
-            columns={columns}
-            onRowClick={handleRowClick}
-            onEditRow={handleEditRow}
-            enableFiltering={true}
-            filterableColumns={['product', 'operator_name']}
-            enableGlobalSearch={false}
-            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-          />
-        </div>
-      </Card>
-
-      {/* Detail Card */}
-      {selectedInbound && (
+        <ListPageLayout
+          title="Lista Movimenti IN"
+          entityName="Movement"
+          createButtonHref="/merce-in/new"
+      data={inboundData || []}
+      columns={columns}
+      onRowClick={handleRowClick}
+      onEditRow={handleEditRow}
+      onDeleteRow={handleDeleteRow}
+      enableFiltering={true}
+      filterableColumns={['product', 'operator_name', 'lot_supplier']}
+      enableGlobalSearch={false}
+      onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+      detailComponent={selectedInbound && (
         <MerceInDetailCard
           inbound={selectedInbound}
           onClose={handleCloseDetail}
         />
       )}
-    </div>
+    />
   );
 }
 

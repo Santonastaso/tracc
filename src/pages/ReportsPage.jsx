@@ -18,7 +18,7 @@ function ReportsPage() {
     snapshotTime: ''
   });
 
-  // State for snapshot silo detail view
+  // State for selected silo in snapshot view
   const [selectedSnapshotSilo, setSelectedSnapshotSilo] = useState(null);
 
   // Fetch silos for filter
@@ -307,20 +307,31 @@ function ReportsPage() {
 
       const snapshotDateTime = `${filters.snapshotDate}T${filters.snapshotTime}:59.999Z`;
       
-      // Fetch all inbound items for this silo up to snapshot time
-      const { data: inboundItems, error: inboundError } = await supabase
+      // Get inbound data for this silo up to snapshot time
+      const { data: inboundData, error: inboundError } = await supabase
         .from('inbound')
-        .select('*')
+        .select(`
+          id,
+          silo_id,
+          quantity_kg,
+          created_at,
+          product,
+          lot_supplier,
+          lot_tf,
+          proteins,
+          humidity,
+          cleaned
+        `)
         .eq('silo_id', selectedSnapshotSilo.id)
         .lte('created_at', snapshotDateTime)
         .order('created_at', { ascending: true });
 
       if (inboundError) throw inboundError;
 
-      // Fetch all outbound items for this silo up to snapshot time
-      const { data: outboundItems, error: outboundError } = await supabase
+      // Get outbound data for this silo up to snapshot time
+      const { data: outboundData, error: outboundError } = await supabase
         .from('outbound')
-        .select('*')
+        .select('silo_id, quantity_kg, items, created_at')
         .eq('silo_id', selectedSnapshotSilo.id)
         .lte('created_at', snapshotDateTime)
         .order('created_at', { ascending: true });
@@ -328,57 +339,39 @@ function ReportsPage() {
       if (outboundError) throw outboundError;
 
       // Calculate available items using FIFO logic at snapshot time
+      let remainingOutbound = outboundData.reduce((sum, out) => sum + out.quantity_kg, 0);
       const availableItems = [];
-      let totalInbound = 0;
-      let totalOutbound = 0;
-
-      // Process inbound items
-      for (const inbound of inboundItems) {
-        availableItems.push({
-          id: inbound.id,
-          product: inbound.product,
-          lot_supplier: inbound.lot_supplier,
-          lot_tf: inbound.lot_tf,
-          proteins: inbound.proteins,
-          humidity: inbound.humidity,
-          cleaned: inbound.cleaned,
-          available_quantity: inbound.quantity_kg,
-          created_at: inbound.created_at
-        });
-        totalInbound += inbound.quantity_kg;
-      }
-
-      // Process outbound items and reduce available quantities using FIFO
-      for (const outbound of outboundItems) {
-        totalOutbound += outbound.quantity_kg;
-        if (outbound.items && outbound.items.length > 0) {
-          // Use detailed item information from outbound
-          for (const item of outbound.items) {
-            const availableItem = availableItems.find(ai => ai.id === item.inbound_id);
-            if (availableItem) {
-              availableItem.available_quantity -= item.quantity_kg;
-            }
+      
+      for (const inbound of inboundData) {
+        if (remainingOutbound <= 0) {
+          // This entire inbound lot is available
+          availableItems.push({
+            ...inbound,
+            available_quantity: inbound.quantity_kg
+          });
+        } else if (remainingOutbound < inbound.quantity_kg) {
+          // Part of this inbound lot is available
+          const available = inbound.quantity_kg - remainingOutbound;
+          if (available > 0) {
+            availableItems.push({
+              ...inbound,
+              available_quantity: available
+            });
           }
+          remainingOutbound = 0;
         } else {
-          // Fallback to FIFO if no detailed items
-          let remainingToWithdraw = outbound.quantity_kg;
-          for (const item of availableItems) {
-            if (remainingToWithdraw <= 0) break;
-            const withdrawFromThis = Math.min(remainingToWithdraw, item.available_quantity);
-            item.available_quantity -= withdrawFromThis;
-            remainingToWithdraw -= withdrawFromThis;
-          }
+          // This entire inbound lot has been consumed
+          remainingOutbound -= inbound.quantity_kg;
         }
       }
-
-      // Filter out items with zero or negative quantities
-      const filteredAvailableItems = availableItems.filter(item => item.available_quantity > 0);
-
+      
+      const totalInbound = inboundData.reduce((sum, inb) => sum + inb.quantity_kg, 0);
+      const totalOutbound = outboundData.reduce((sum, out) => sum + out.quantity_kg, 0);
       const currentLevel = totalInbound - totalOutbound;
-
+      
       return {
         ...selectedSnapshotSilo,
-        availableItems: filteredAvailableItems,
+        availableItems,
         currentLevel,
         totalInbound,
         totalOutbound,
@@ -396,7 +389,6 @@ function ReportsPage() {
     }));
   };
 
-  // Handlers for snapshot silo detail view
   const handleSnapshotSiloClick = (silo) => {
     setSelectedSnapshotSilo(silo);
   };
@@ -739,11 +731,11 @@ function ReportsPage() {
                   onClick={() => handleSnapshotSiloClick(silo)}
                   title="Clicca per vedere i dettagli dei lotti"
                 >
-                  <td className="p-2">{silo.name}</td>
+                  <td className="p-2 font-medium">{silo.name}</td>
                   <td className="p-2">{silo.capacity_kg.toLocaleString()} kg</td>
                   <td className="p-2">{silo.totalInbound.toLocaleString()} kg</td>
                   <td className="p-2">{silo.totalOutbound.toLocaleString()} kg</td>
-                  <td className="p-2">{silo.currentStock.toLocaleString()} kg</td>
+                  <td className="p-2 font-medium">{silo.currentStock.toLocaleString()} kg</td>
                   <td className="p-2">
                     <div className="flex items-center gap-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
@@ -756,7 +748,7 @@ function ReportsPage() {
                           style={{ width: `${Math.min(silo.utilizationPercentage, 100)}%` }}
                         />
                       </div>
-                      <span>{Math.round(silo.utilizationPercentage)}%</span>
+                      <span className="font-medium">{Math.round(silo.utilizationPercentage)}%</span>
                     </div>
                   </td>
                 </tr>
