@@ -55,8 +55,14 @@ export class MaterialsService extends BaseService {
       validateRequiredFields(materialData, ['name']);
 
       // Check for duplicate name
-      const existingMaterial = await this.getByField('name', materialData.name);
-      if (existingMaterial.length > 0) {
+      const { data: existingMaterial, error: nameError } = await supabase
+        .from('materials')
+        .select('id, name')
+        .eq('name', materialData.name);
+      
+      if (nameError) throw nameError;
+      
+      if (existingMaterial && existingMaterial.length > 0) {
         throw createServiceError(
           `Material with name '${materialData.name}' already exists`,
           ERROR_TYPES.DUPLICATE_ERROR,
@@ -89,15 +95,30 @@ export class MaterialsService extends BaseService {
   async updateMaterial(id, updates) {
     return safeAsync(async () => {
       // Check if material exists
-      const exists = await this.exists(id);
-      if (!exists) {
+      const { data: existingMaterial, error: existsError } = await supabase
+        .from('materials')
+        .select('id')
+        .eq('id', id)
+        .single();
+      
+      if (existsError && existsError.code !== 'PGRST116') {
+        throw existsError;
+      }
+      
+      if (!existingMaterial) {
         throwNotFoundError('Material', id);
       }
 
       // Check for duplicate name if name is being updated
       if (updates.name) {
-        const existingMaterials = await this.getByField('name', updates.name);
-        const duplicateMaterial = existingMaterials.find(material => material.id !== id);
+        const { data: existingMaterials, error: nameError } = await supabase
+          .from('materials')
+          .select('id, name')
+          .eq('name', updates.name);
+        
+        if (nameError) throw nameError;
+        
+        const duplicateMaterial = existingMaterials?.find(material => material.id !== parseInt(id));
         if (duplicateMaterial) {
           throw createServiceError(
             `Material with name '${updates.name}' already exists`,
@@ -110,7 +131,14 @@ export class MaterialsService extends BaseService {
       }
 
       // Update the material
-      const updatedMaterial = await this.update(id, updates);
+      const { data: updatedMaterial, error: updateError } = await supabase
+        .from('materials')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
       
       return updatedMaterial;
     }, 'updateMaterial');
@@ -124,8 +152,17 @@ export class MaterialsService extends BaseService {
   async deactivateMaterial(id) {
     return safeAsync(async () => {
       // Check if material exists
-      const exists = await this.exists(id);
-      if (!exists) {
+      const { data: existingMaterial, error: existsError } = await supabase
+        .from('materials')
+        .select('id')
+        .eq('id', id)
+        .single();
+      
+      if (existsError && existsError.code !== 'PGRST116') {
+        throw existsError;
+      }
+      
+      if (!existingMaterial) {
         throwNotFoundError('Material', id);
       }
 
@@ -149,7 +186,14 @@ export class MaterialsService extends BaseService {
       }
 
       // Deactivate the material
-      const updatedMaterial = await this.update(id, { active: false });
+      const { data: updatedMaterial, error: updateError } = await supabase
+        .from('materials')
+        .update({ active: false })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
       
       return updatedMaterial;
     }, 'deactivateMaterial');

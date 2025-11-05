@@ -143,8 +143,14 @@ export class SilosService extends BaseService {
       });
 
       // Check for duplicate name
-      const existingSilo = await this.getByField('name', siloData.name);
-      if (existingSilo.length > 0) {
+      const { data: existingSilo, error: nameError } = await supabase
+        .from('silos')
+        .select('id, name')
+        .eq('name', siloData.name);
+      
+      if (nameError) throw nameError;
+      
+      if (existingSilo && existingSilo.length > 0) {
         throw createServiceError(
           `Silo with name '${siloData.name}' already exists`,
           ERROR_TYPES.DUPLICATE_ERROR,
@@ -170,8 +176,17 @@ export class SilosService extends BaseService {
   async updateSilo(id, updates) {
     return safeAsync(async () => {
       // Check if silo exists
-      const exists = await this.exists(id);
-      if (!exists) {
+      const { data: existingSilo, error: existsError } = await supabase
+        .from('silos')
+        .select('id')
+        .eq('id', id)
+        .single();
+      
+      if (existsError && existsError.code !== 'PGRST116') {
+        throw existsError;
+      }
+      
+      if (!existingSilo) {
         throwNotFoundError('Silo', id);
       }
 
@@ -184,8 +199,14 @@ export class SilosService extends BaseService {
 
       // Check for duplicate name if name is being updated
       if (updates.name) {
-        const existingSilos = await this.getByField('name', updates.name);
-        const duplicateSilo = existingSilos.find(silo => silo.id !== id);
+        const { data: existingSilos, error: nameError } = await supabase
+          .from('silos')
+          .select('id, name')
+          .eq('name', updates.name);
+        
+        if (nameError) throw nameError;
+        
+        const duplicateSilo = existingSilos?.find(silo => silo.id !== parseInt(id));
         if (duplicateSilo) {
           throw createServiceError(
             `Silo with name '${updates.name}' already exists`,
@@ -198,7 +219,14 @@ export class SilosService extends BaseService {
       }
 
       // Update the silo
-      const updatedSilo = await this.update(id, updates);
+      const { data: updatedSilo, error: updateError } = await supabase
+        .from('silos')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
       
       return updatedSilo;
     }, 'updateSilo');

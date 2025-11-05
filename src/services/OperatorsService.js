@@ -55,8 +55,14 @@ export class OperatorsService extends BaseService {
       validateRequiredFields(operatorData, ['name']);
 
       // Check for duplicate name
-      const existingOperator = await this.getByField('name', operatorData.name);
-      if (existingOperator.length > 0) {
+      const { data: existingOperator, error: nameError } = await supabase
+        .from('operators')
+        .select('id, name')
+        .eq('name', operatorData.name);
+      
+      if (nameError) throw nameError;
+      
+      if (existingOperator && existingOperator.length > 0) {
         throw createServiceError(
           `Operator with name '${operatorData.name}' already exists`,
           ERROR_TYPES.DUPLICATE_ERROR,
@@ -89,15 +95,30 @@ export class OperatorsService extends BaseService {
   async updateOperator(id, updates) {
     return safeAsync(async () => {
       // Check if operator exists
-      const exists = await this.exists(id);
-      if (!exists) {
+      const { data: existingOperator, error: existsError } = await supabase
+        .from('operators')
+        .select('id')
+        .eq('id', id)
+        .single();
+      
+      if (existsError && existsError.code !== 'PGRST116') {
+        throw existsError;
+      }
+      
+      if (!existingOperator) {
         throwNotFoundError('Operator', id);
       }
 
       // Check for duplicate name if name is being updated
       if (updates.name) {
-        const existingOperators = await this.getByField('name', updates.name);
-        const duplicateOperator = existingOperators.find(operator => operator.id !== id);
+        const { data: existingOperators, error: nameError } = await supabase
+          .from('operators')
+          .select('id, name')
+          .eq('name', updates.name);
+        
+        if (nameError) throw nameError;
+        
+        const duplicateOperator = existingOperators?.find(operator => operator.id !== parseInt(id));
         if (duplicateOperator) {
           throw createServiceError(
             `Operator with name '${updates.name}' already exists`,
@@ -110,7 +131,14 @@ export class OperatorsService extends BaseService {
       }
 
       // Update the operator
-      const updatedOperator = await this.update(id, updates);
+      const { data: updatedOperator, error: updateError } = await supabase
+        .from('operators')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
       
       return updatedOperator;
     }, 'updateOperator');
@@ -124,8 +152,17 @@ export class OperatorsService extends BaseService {
   async deactivateOperator(id) {
     return safeAsync(async () => {
       // Check if operator exists
-      const exists = await this.exists(id);
-      if (!exists) {
+      const { data: existingOperator, error: existsError } = await supabase
+        .from('operators')
+        .select('id')
+        .eq('id', id)
+        .single();
+      
+      if (existsError && existsError.code !== 'PGRST116') {
+        throw existsError;
+      }
+      
+      if (!existingOperator) {
         throwNotFoundError('Operator', id);
       }
 
@@ -150,7 +187,14 @@ export class OperatorsService extends BaseService {
       }
 
       // Deactivate the operator
-      const updatedOperator = await this.update(id, { active: false });
+      const { data: updatedOperator, error: updateError } = await supabase
+        .from('operators')
+        .update({ active: false })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
       
       return updatedOperator;
     }, 'deactivateOperator');
