@@ -20,8 +20,7 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
     cleaned: inbound.cleaned !== undefined ? inbound.cleaned : false,
     proteins: inbound.proteins || '',
     humidity: inbound.humidity || '',
-    operator_name: inbound.operator_name || '',
-    notes: inbound.notes || ''
+    operator_name: inbound.operator_name || ''
   });
 
   const { data: materialsData } = useMaterials();
@@ -48,20 +47,28 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
   const updateMutation = useMutation({
     mutationFn: async (data) => {
       console.log('About to update with data:', data);
-      const { error } = await supabase
+      const { data: updatedData, error } = await supabase
         .from('inbound')
         .update(data)
-        .eq('id', inbound.id);
+        .eq('id', inbound.id)
+        .select('*, silos(name)')
+        .single();
       if (error) {
         console.error('Update error:', error);
         throw error;
       }
       console.log('Update successful');
+      return updatedData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inbound'] });
       queryClient.invalidateQueries({ queryKey: ['inbound', 'with-silos'] });
+      queryClient.invalidateQueries({ queryKey: ['silos', 'withLevels'] });
       setIsEditing(false);
+      // Close the detail card to force parent to re-render with fresh data
+      if (onClose) {
+        onClose();
+      }
     }
   });
 
@@ -70,12 +77,18 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
     console.log('lot_supplier value:', formData.lot_supplier);
     console.log('Original inbound lot_supplier:', inbound.lot_supplier);
     
-    // Prepare data with proper type conversions
+    // Prepare data with proper type conversions and null handling
     const dataToSave = {
-      ...formData,
-      silo_id: parseInt(formData.silo_id), // Convert to integer
-      quantity_kg: parseFloat(formData.quantity_kg), // Convert to number
-      // lot_supplier stays as string - no conversion needed
+      ddt_number: formData.ddt_number || null,
+      product: formData.product || null,
+      quantity_kg: formData.quantity_kg ? parseFloat(formData.quantity_kg) : null,
+      silo_id: formData.silo_id ? parseInt(formData.silo_id) : null,
+      lot_supplier: formData.lot_supplier || null,
+      lot_tf: formData.lot_tf || null,
+      cleaned: formData.cleaned,
+      proteins: formData.proteins ? parseFloat(formData.proteins) : null,
+      humidity: formData.humidity ? parseFloat(formData.humidity) : null,
+      operator_name: formData.operator_name || null
     };
     
     console.log('Processed dataToSave:', dataToSave);
@@ -93,8 +106,7 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
       cleaned: inbound.cleaned !== undefined ? inbound.cleaned : false,
       proteins: inbound.proteins || '',
       humidity: inbound.humidity || '',
-      operator_name: inbound.operator_name || '',
-      notes: inbound.notes || ''
+      operator_name: inbound.operator_name || ''
     });
     setIsEditing(false);
   };
@@ -425,20 +437,6 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                     </p>
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-4">Notes</h3>
-                {isEditing ? (
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Inserisci note aggiuntive"
-                    rows={4}
-                  />
-                ) : (
-                  <p className="text-foreground">{inbound.notes || 'Nessuna nota'}</p>
-                )}
               </div>
             </div>
           </div>
