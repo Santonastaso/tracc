@@ -25,7 +25,7 @@ const safeAsync = async (asyncFn) => {
  */
 export class SilosService extends BaseService {
   constructor() {
-    super('silos');
+    super(supabase, 'silos');
   }
 
   /**
@@ -151,12 +151,8 @@ export class SilosService extends BaseService {
       if (nameError) throw nameError;
       
       if (existingSilo && existingSilo.length > 0) {
-        throw createServiceError(
-          `Silo with name '${siloData.name}' already exists`,
-          ERROR_TYPES.DUPLICATE_ERROR,
-          409,
-          null,
-          'createSilo'
+        throwBusinessError(
+          `Silo with name '${siloData.name}' already exists`
         );
       }
 
@@ -208,12 +204,8 @@ export class SilosService extends BaseService {
         
         const duplicateSilo = existingSilos?.find(silo => silo.id !== parseInt(id));
         if (duplicateSilo) {
-          throw createServiceError(
-            `Silo with name '${updates.name}' already exists`,
-            ERROR_TYPES.DUPLICATE_ERROR,
-            409,
-            null,
-            'updateSilo'
+          throwBusinessError(
+            `Silo with name '${updates.name}' already exists`
           );
         }
       }

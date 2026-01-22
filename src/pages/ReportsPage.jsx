@@ -6,6 +6,7 @@ import { Button } from '@santonastaso/shared';
 import { Card } from '@santonastaso/shared';
 import { Input } from '@santonastaso/shared';
 import { SiloDetailCard } from '../components/SiloDetailCard';
+import * as XLSX from 'xlsx';
 // Using native HTML select instead of complex Select component
 
 function ReportsPage() {
@@ -397,35 +398,146 @@ function ReportsPage() {
     setSelectedSnapshotSilo(null);
   };
 
-  const exportToCSV = (data, filename) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('it-IT', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'UTC'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatValue = (value) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') {
+      // Handle nested objects like silos: { name: 'Silo 1' }
+      if (value.name) return value.name;
+      if (Array.isArray(value)) {
+        return value.map(item => 
+          typeof item === 'object' && item.snapshot 
+            ? `${item.snapshot.product || 'N/A'}: ${item.quantity_kg}kg${item.snapshot.lot_supplier ? ` (${item.snapshot.lot_supplier})` : ''}`
+            : String(item)
+        ).join('; ');
+      }
+      return JSON.stringify(value);
+    }
+    return value;
+  };
+
+  const transformDataForExport = (data, reportType) => {
+    if (!data || data.length === 0) return [];
+
+    switch (reportType) {
+      case 'movements':
+        return data.map(item => ({
+          'Data/Ora': formatDate(item.created_at),
+          'DDT': item.ddt_number || '',
+          'Silos': item.silos?.name || '',
+          'Prodotto': item.product || '',
+          'Quantità (kg)': item.quantity_kg || 0,
+          'Lotto Fornitore': item.lot_supplier || '',
+          'Lotto TF': item.lot_tf || '',
+          'Pulizia': item.cleaned ? 'Accettata' : 'Non Accettata',
+          'Proteine (%)': item.proteins || '',
+          'Umidità (%)': item.humidity || '',
+          'Operatore': item.operator_name || ''
+        }));
+
+      case 'outbound':
+        return data.map(item => ({
+          'Data/Ora': formatDate(item.created_at),
+          'Silos': item.silos?.name || '',
+          'Quantità (kg)': item.quantity_kg || 0,
+          'Operatore': item.operator_name || '',
+          'Dettagli Prelievo': item.items ? formatValue(item.items) : ''
+        }));
+
+      case 'combined':
+        return data.map(item => ({
+          'Data/Ora': formatDate(item.created_at),
+          'Tipo': item.movement_type || '',
+          'DDT': item.ddt_number || '-',
+          'Silos': item.silos?.name || '',
+          'Prodotto': item.product || '-',
+          'Quantità (kg)': item.quantity_kg || 0,
+          'Lotto Fornitore': item.lot_supplier || '-',
+          'Lotto TF': item.lot_tf || '-',
+          'Pulizia': item.movement_type === 'IN' ? (item.cleaned ? 'Accettata' : 'Non Accettata') : '-',
+          'Proteine (%)': item.proteins ? `${item.proteins}%` : '-',
+          'Umidità (%)': item.humidity ? `${item.humidity}%` : '-',
+          'Operatore': item.operator_name || '-'
+        }));
+
+      case 'stock':
+        return data.map(item => ({
+          'Silos': item.name || '',
+          'Capacità (kg)': item.capacity_kg || 0,
+          'Totale Entrate (kg)': item.totalInbound || 0,
+          'Totale Uscite (kg)': item.totalOutbound || 0,
+          'Giacenza Attuale (kg)': item.currentStock || 0,
+          'Utilizzo (%)': Math.round(item.utilizationPercentage || 0)
+        }));
+
+      case 'snapshot':
+        return data.map(item => ({
+          'Silos': item.name || '',
+          'Capacità (kg)': item.capacity_kg || 0,
+          'Totale Entrate (kg)': item.totalInbound || 0,
+          'Totale Uscite (kg)': item.totalOutbound || 0,
+          'Giacenza Attuale (kg)': item.currentStock || 0,
+          'Utilizzo (%)': Math.round(item.utilizationPercentage || 0),
+          'Data Snapshot': formatDate(item.snapshotDateTime)
+        }));
+
+      default:
+        return data;
+    }
+  };
+
+  const exportToXLSX = (data, filename, reportType) => {
     if (!data || data.length === 0) {
       alert('Nessun dato da esportare');
       return;
     }
 
-    const headers = Object.keys(data[0]);
-    const csvContent = [
-      headers.join(','),
-      ...data.map(row => 
-        headers.map(header => {
-          const value = row[header];
-          if (typeof value === 'object' && value !== null) {
-            return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-          }
-          return `"${String(value || '').replace(/"/g, '""')}"`;
-        }).join(',')
-      )
-    ].join('\n');
+    // Transform data to clean format
+    const transformedData = transformDataForExport(data, reportType);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Create workbook and worksheet
+    const worksheet = XLSX.utils.json_to_sheet(transformedData);
+
+    // Set column widths for better readability
+    const maxWidth = 50;
+    const minWidth = 10;
+    const colWidths = Object.keys(transformedData[0] || {}).map(key => {
+      const maxLength = Math.max(
+        key.length,
+        ...transformedData.map(row => String(row[key] || '').length)
+      );
+      return {
+        wch: Math.min(Math.max(maxLength + 2, minWidth), maxWidth)
+      };
+    });
+    worksheet['!cols'] = colWidths;
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
+
+    // Generate filename with date
+    const dateStr = new Date().toISOString().split('T')[0];
+    const xlsxFilename = `${filename}_${dateStr}.xlsx`;
+
+    // Write file
+    XLSX.writeFile(workbook, xlsxFilename);
   };
 
   const printReport = () => {
@@ -766,10 +878,10 @@ function ReportsPage() {
         <h1 className="text-2xl font-bold text-foreground">Report e Analisi</h1>
         <div className="flex gap-2">
           <Button 
-            onClick={() => exportToCSV(getCurrentData(), `report_${filters.reportType}`)}
+            onClick={() => exportToXLSX(getCurrentData(), `report_${filters.reportType}`, filters.reportType)}
             variant="outline"
           >
-            Esporta CSV
+            Esporta XLSX
           </Button>
           <Button 
             onClick={printReport}

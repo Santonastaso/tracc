@@ -18,11 +18,12 @@ export default defineConfig(({ command }) => {
     },
     resolve: {
       // Ensure single React instance to prevent hook conflicts
-      dedupe: ['react', 'react-dom'],
+      dedupe: ['react', 'react-dom', 'react-router-dom'],
       alias: {
         // Force all React imports to use the same instance
         'react': path.resolve(__dirname, 'node_modules/react'),
         'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+        'react-router-dom': path.resolve(__dirname, 'node_modules/react-router-dom'),
       }
     },
     build: {
