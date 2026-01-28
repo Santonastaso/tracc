@@ -19,6 +19,7 @@ export const queryKeys = {
   outbound: ['outbound'],
   outboundBySilo: (siloId) => ['outbound', 'silo', siloId],
   outboundByDate: (date) => ['outbound', 'date', date],
+  outboundByBatch: (batchId) => ['outbound', 'batch', batchId],
   
   // Materials
   materials: ['materials'],
@@ -485,6 +486,180 @@ export const useDeleteOutbound = () => {
     },
     onError: (error) => {
       showError(`Errore nell'eliminazione del movimento OUT: ${error.message}`);
+    },
+  });
+};
+
+// ===== OUTBOUND BATCH (Multi-Silo Mixtures) =====
+
+export const useOutboundByBatch = (batchId) => {
+  return useQuery({
+    queryKey: queryKeys.outboundByBatch(batchId),
+    queryFn: async () => {
+      // First try batch_id column
+      let { data, error } = await supabase
+        .from('outbound')
+        .select(`
+          *,
+          silos!inner(name)
+        `)
+        .eq('batch_id', batchId)
+        .order('created_at', { ascending: true });
+      
+      // If column doesn't exist or no data, search in items
+      if (error || !data || data.length === 0) {
+        const { data: allData, error: allError } = await supabase
+          .from('outbound')
+          .select(`
+            *,
+            silos!inner(name)
+          `)
+          .order('created_at', { ascending: true });
+        
+        if (allError) throw allError;
+        
+        // Filter by batch_id in items
+        data = allData?.filter(record => {
+          if (record.items && record.items.length > 0 && record.items[0].batch_id === batchId) {
+            return true;
+          }
+          return false;
+        }) || [];
+      }
+      
+      return data;
+    },
+    enabled: !!batchId,
+    staleTime: 1 * 60 * 1000,
+  });
+};
+
+export const useCreateOutboundBatch = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (batchData) => {
+      const { siloWithdrawals, operatorName, batchId } = batchData;
+      const results = [];
+      const batchTimestamp = new Date().toISOString();
+      
+      for (const withdrawal of siloWithdrawals) {
+        // Add batch_id to each item for grouping (workaround if column doesn't exist)
+        const itemsWithBatch = withdrawal.items.map(item => ({
+          ...item,
+          batch_id: batchId
+        }));
+        
+        const insertData = {
+          silo_id: withdrawal.silo_id,
+          quantity_kg: withdrawal.quantity_kg,
+          operator_name: operatorName,
+          items: itemsWithBatch,
+          created_at: batchTimestamp,
+          updated_at: batchTimestamp
+        };
+        
+        // Try with batch_id column first, fall back to without
+        let data, error;
+        ({ data, error } = await supabase
+          .from('outbound')
+          .insert([{ ...insertData, batch_id: batchId }])
+          .select()
+          .single());
+        
+        // If batch_id column doesn't exist, try without it
+        if (error && error.message.includes('batch_id')) {
+          ({ data, error } = await supabase
+            .from('outbound')
+            .insert([insertData])
+            .select()
+            .single());
+        }
+        
+        if (error) throw error;
+        results.push({ ...data, batch_id: batchId });
+      }
+      
+      return results;
+    },
+    onSuccess: (newOutbounds) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.outbound });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.outbound, 'with-silos'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.silosWithLevels });
+      
+      // Invalidate each affected silo's outbound query
+      newOutbounds.forEach(outbound => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.outboundBySilo(outbound.silo_id) });
+      });
+      
+      const siloCount = newOutbounds.length;
+      const totalQty = newOutbounds.reduce((sum, o) => sum + o.quantity_kg, 0);
+      showSuccess(`Miscela registrata: ${siloCount} silos, ${totalQty.toFixed(2)} kg totali`);
+    },
+    onError: (error) => {
+      showError(`Errore nella registrazione della miscela: ${error.message}`);
+    },
+  });
+};
+
+export const useDeleteOutboundBatch = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (batchId) => {
+      // First try to fetch by batch_id column
+      let { data: batchRecords, error: fetchError } = await supabase
+        .from('outbound')
+        .select('*')
+        .eq('batch_id', batchId);
+      
+      // If column doesn't exist or no records found, search in items
+      if (fetchError || !batchRecords || batchRecords.length === 0) {
+        // Fetch all records and filter by batch_id in items
+        const { data: allRecords, error: allError } = await supabase
+          .from('outbound')
+          .select('*');
+        
+        if (allError) throw allError;
+        
+        batchRecords = allRecords?.filter(record => {
+          if (record.items && record.items.length > 0 && record.items[0].batch_id === batchId) {
+            return true;
+          }
+          return false;
+        }) || [];
+      }
+      
+      if (!batchRecords || batchRecords.length === 0) {
+        throw new Error('Batch non trovato');
+      }
+      
+      // Delete all records by their IDs
+      const recordIds = batchRecords.map(r => r.id);
+      const { error } = await supabase
+        .from('outbound')
+        .delete()
+        .in('id', recordIds);
+      
+      if (error) throw error;
+      return batchRecords;
+    },
+    onSuccess: (deletedRecords) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.outbound });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.outbound, 'with-silos'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.silosWithLevels });
+      
+      // Invalidate each affected silo's outbound query
+      deletedRecords.forEach(outbound => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.outboundBySilo(outbound.silo_id) });
+      });
+      
+      showSuccess(`Miscela eliminata: ${deletedRecords.length} movimenti rimossi`);
+    },
+    onError: (error) => {
+      showError(`Errore nell'eliminazione della miscela: ${error.message}`);
     },
   });
 };

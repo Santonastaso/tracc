@@ -23,9 +23,12 @@ export {
   useOutbound,
   useOutboundBySilo,
   useOutboundByDate,
+  useOutboundByBatch,
   useCreateOutbound,
   useUpdateOutbound,
   useDeleteOutbound,
+  useCreateOutboundBatch,
+  useDeleteOutboundBatch,
   
   // Materials
   useMaterials,
