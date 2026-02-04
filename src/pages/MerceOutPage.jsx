@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { 
@@ -26,6 +26,8 @@ function MerceOutPage() {
   const [selectedLots, setSelectedLots] = useState([]);
   const [expandedSilos, setExpandedSilos] = useState({});
   const [siloDropdownOpen, setSiloDropdownOpen] = useState(false);
+  const siloButtonRef = useRef(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
   // Fetch data for editing if ID is provided (single silo edit mode)
   useEffect(() => {
@@ -96,6 +98,18 @@ function MerceOutPage() {
     });
     setExpandedSilos(newExpanded);
   }, [selectedSiloIds]);
+
+  // Calculate dropdown position when it opens
+  useEffect(() => {
+    if (siloDropdownOpen && siloButtonRef.current) {
+      const rect = siloButtonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [siloDropdownOpen]);
 
   // Use centralized mutation hooks
   const createMutation = useCreateOutbound();
@@ -327,17 +341,18 @@ function MerceOutPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1">
         {/* Left Column - Form */}
         <Card className="p-4 flex flex-col">
           <h2 className="text-lg font-semibold mb-4">Informazioni Prelievo</h2>
           
           <div className="space-y-4 flex-1">
             {/* Multi-Silo Selection */}
-            <div>
+            <div className="relative">
               <Label htmlFor="silo_ids">Silos di Prelievo {!editingItem && '(seleziona multipli per miscela)'}</Label>
               <div className="relative">
                 <button
+                  ref={siloButtonRef}
                   type="button"
                   onClick={() => !editingItem && setSiloDropdownOpen(!siloDropdownOpen)}
                   disabled={editingItem}
@@ -350,38 +365,6 @@ function MerceOutPage() {
                   </span>
                   <ChevronDown className={`h-4 w-4 transition-transform ${siloDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
-                
-                {siloDropdownOpen && !editingItem && (
-                  <div className="absolute z-10 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {silosWithStock.length === 0 ? (
-                      <div className="p-3 text-muted-foreground text-sm">
-                        Nessun silos con stock disponibile
-                      </div>
-                    ) : (
-                      silosWithStock.map(silo => (
-                        <div
-                          key={silo.id}
-                          onClick={() => toggleSiloSelection(silo.id)}
-                          className={`p-3 cursor-pointer hover:bg-muted/50 flex justify-between items-center ${
-                            selectedSiloIds.includes(silo.id) ? 'bg-primary/10' : ''
-                          }`}
-                        >
-                          <div>
-                            <div className="font-medium">{silo.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              Disponibile: {silo.currentLevel?.toFixed(2)} kg
-                            </div>
-                          </div>
-                          {selectedSiloIds.includes(silo.id) && (
-                            <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                              <span className="text-primary-foreground text-xs">✓</span>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
               </div>
               
               {/* Selected silos tags */}
@@ -613,12 +596,54 @@ function MerceOutPage() {
         </Card>
       </div>
 
-      {/* Click outside to close dropdown */}
-      {siloDropdownOpen && (
-        <div 
-          className="fixed inset-0 z-0" 
-          onClick={() => setSiloDropdownOpen(false)}
-        />
+      {/* Dropdown positioned fixed to avoid clipping */}
+      {siloDropdownOpen && !editingItem && (
+        <>
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={() => setSiloDropdownOpen(false)}
+          />
+          <div 
+            className="fixed z-50 bg-background border border-input rounded-md shadow-lg max-h-[60vh] overflow-y-auto overscroll-contain"
+            style={{ 
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              width: `${dropdownPosition.width}px`,
+              maxHeight: '500px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {silosWithStock.length === 0 ? (
+              <div className="p-3 text-muted-foreground text-sm">
+                Nessun silos con stock disponibile
+              </div>
+            ) : (
+              silosWithStock.map(silo => (
+                <div
+                  key={silo.id}
+                  onClick={() => {
+                    toggleSiloSelection(silo.id);
+                  }}
+                  className={`p-3 cursor-pointer hover:bg-muted/50 flex justify-between items-center ${
+                    selectedSiloIds.includes(silo.id) ? 'bg-primary/10' : ''
+                  }`}
+                >
+                  <div>
+                    <div className="font-medium">{silo.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Disponibile: {silo.currentLevel?.toFixed(2)} kg
+                    </div>
+                  </div>
+                  {selectedSiloIds.includes(silo.id) && (
+                    <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                      <span className="text-primary-foreground text-xs">✓</span>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </>
       )}
     </div>
   );
