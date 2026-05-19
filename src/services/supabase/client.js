@@ -1,4 +1,4 @@
-import { createSupabaseClient, handleSupabaseError as sharedHandleSupabaseError, checkSupabaseConnection as sharedCheckSupabaseConnection } from '@santonastaso/shared';
+import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -9,19 +9,28 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   );
 }
 
-export const supabase = createSupabaseClient({
-  url: SUPABASE_URL,
-  anonKey: SUPABASE_ANON_KEY
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
 });
 
-// Re-export shared utilities with local aliases
-export const handleSupabaseError = sharedHandleSupabaseError;
+export function handleSupabaseError(error) {
+  if (error?.code === '23505') return 'This record already exists';
+  if (error?.code === '23503') return 'Cannot perform this operation due to related records';
+  if (error?.code === 'PGRST116') return 'No records found';
+  if (error?.message?.includes('JWT')) return 'Authentication error. Please refresh the page';
+  return error?.message || 'An unexpected error occurred';
+}
 
-/**
- * Check if Supabase connection is working (tracc-specific)
- */
-export const checkSupabaseConnection = async () => {
-  return sharedCheckSupabaseConnection(supabase, 'silos');
-};
+export async function checkSupabaseConnection(testTable = 'silos') {
+  try {
+    const { error } = await supabase.from(testTable).select('count').limit(1);
+    return !error;
+  } catch {
+    return false;
+  }
+}
 
 export default supabase;

@@ -1,10 +1,9 @@
 import React from 'react';
-import { Card } from '@santonastaso/shared';
+import { Card } from '../ui';
 
 const SiloCard = ({ silo, onClick }) => {
-  const { id, name, capacity_kg, currentLevel, availableItems = [] } = silo;
-  
-  // Calculate usage percentage
+  const { name, capacity_kg = 0, currentLevel = 0, availableItems = [] } = silo;
+
   const usagePercentage = capacity_kg > 0 ? (currentLevel / capacity_kg) * 100 : 0;
   
   // Generate colors for different lots
@@ -38,8 +37,8 @@ const SiloCard = ({ silo, onClick }) => {
         <div className="absolute top-0 left-0 right-0 h-px bg-gray-400 opacity-50"></div>
         
         {availableItems.map((item, index) => {
-          // Calculate height based on capacity, not current level
-          const heightPercentage = (item.available_quantity / capacity_kg) * 100;
+          const heightPercentage =
+            capacity_kg > 0 ? (item.available_quantity / capacity_kg) * 100 : 0;
           return (
             <div
               key={index}
@@ -71,7 +70,7 @@ const SiloCard = ({ silo, onClick }) => {
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-600">
-              {currentLevel.toLocaleString()} / {capacity_kg.toLocaleString()} kg
+              {(currentLevel ?? 0).toLocaleString()} / {(capacity_kg ?? 0).toLocaleString()} kg
             </p>
             <p className="text-xs text-gray-500">
               {Math.round(usagePercentage)}% utilizzato

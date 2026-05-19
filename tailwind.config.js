@@ -4,7 +4,6 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "./node_modules/@santonastaso/shared/dist/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     container: {

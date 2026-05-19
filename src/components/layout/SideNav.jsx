@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
-import { useSidebar } from '@santonastaso/shared';
 import { 
   Home, 
   Package, 
@@ -16,8 +15,6 @@ import {
 function SideNav() {
   const { user } = useAuth();
   const location = useLocation();
-  const { isOpen } = useSidebar();
-
   const navLinks = [
     { href: '/', label: 'Dashboard', icon: Home },
     { href: '/silos/list', label: 'Silos', icon: Package },
@@ -52,33 +49,6 @@ function SideNav() {
         </div>
       </nav>
     );
-  }
-
-  if (!isOpen) {
-    return (
-      <div className="w-16 bg-secondary shadow-sm border-r border-border min-h-screen">
-        <div className="flex flex-col items-center py-4 space-y-4">
-          {navLinks.map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.href
-            return (
-              <Link
-                key={item.href || item.section}
-                to={item.href || '#'}
-                className={`p-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                }`}
-                title={item.label}
-              >
-                <Icon className="h-6 w-6" />
-              </Link>
-            )
-          })}
-        </div>
-      </div>
-    )
   }
 
   return (

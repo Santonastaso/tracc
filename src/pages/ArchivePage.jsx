@@ -1,159 +1,42 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useSilos, useMaterials } from '../hooks';
-import { DataTable } from '@santonastaso/shared';
-import { GenericForm } from "@santonastaso/shared";
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { showSuccess, showError } from '@santonastaso/shared';
+import { confirmDelete } from '../lib/confirm';
+import { useSilos } from '../hooks';
+import {
+  useAnalysisArchive,
+  useArchiveSave,
+  useArchiveDelete,
+  useArchiveBulkDelete,
+} from '../hooks';
+import { DataTable, GenericForm, Button, Card, LoadingSkeleton } from '../ui';
+import { formatDateTime } from '../lib/format';
 
 function ArchivePage() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
-  // Fetch archive data (we'll use a custom table for analysis archive)
-  const { data: archiveData, isLoading } = useQuery({
-    queryKey: ['analysis-archive'],
-    queryFn: async () => {
-      // For now, we'll use the inbound table as our analysis archive
-      // In a real implementation, you might want a separate analysis_archive table
-      const { data, error } = await supabase
-        .from('inbound')
-        .select(`
-          *,
-          silos!inner(name)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Debug: Log the data to see what we're getting
-      console.log('Archive data:', data);
-      console.log('First item:', data?.[0]);
-      
-      return data;
-    }
-  });
-
-  // Fetch data using centralized query hooks
-  const { data: materialsData } = useMaterials();
+  const { data: archiveData, isLoading } = useAnalysisArchive();
   const { data: silosData } = useSilos();
 
-  // Fetch suppliers for dropdown
-  const { data: suppliersData } = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingItem(null);
+  };
 
-  // Fetch operators for dropdown
-  const { data: operatorsData } = useQuery({
-    queryKey: ['operators'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('operators')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Create/Update mutation
-  const mutation = useMutation({
-    mutationFn: async (formData) => {
-      const now = new Date();
-      const dataToSave = {
-        ...formData,
-        // Convert string values to correct types for database
-        silo_id: parseInt(formData.silo_id),
-        cleaned: formData.cleaned === 'true',
-        updated_at: now.toISOString()
-      };
-
-      if (editingItem) {
-        const { error } = await supabase
-          .from('inbound')
-          .update(dataToSave)
-          .eq('id', editingItem.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('inbound')
-          .insert([dataToSave]);
-        
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['analysis-archive']);
-      setShowForm(false);
-      setEditingItem(null);
-      showSuccess(editingItem ? 'Analisi aggiornata con successo' : 'Analisi registrata con successo');
-    },
-    onError: (error) => {
-      showError('Errore durante il salvataggio: ' + error.message);
-    }
-  });
-
-  const queryClient = useQueryClient();
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase
-        .from('inbound')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['analysis-archive']);
-      showSuccess('Analisi eliminata con successo');
-    },
-    onError: (error) => {
-      showError('Errore durante l\'eliminazione: ' + error.message);
-    }
-  });
-
-  // Bulk delete
-  const bulkDelete = useMutation({
-    mutationFn: async (ids) => {
-      const { error } = await supabase
-        .from('inbound')
-        .delete()
-        .in('id', ids);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries(['analysis-archive'])
-  });
+  const mutation = useArchiveSave(editingItem, { onSettled: closeForm });
+  const deleteMutation = useArchiveDelete();
+  const bulkDelete = useArchiveBulkDelete();
 
   const handleEdit = (item) => {
     setEditingItem(item);
     setShowForm(true);
   };
 
-  const handleDelete = (item) => {
-    if (window.confirm('Sei sicuro di voler eliminare questa analisi?')) {
-      deleteMutation.mutate(item.id);
-    }
+  const handleDelete = async (item) => {
+    if (!(await confirmDelete('questa analisi'))) return;
+    deleteMutation.mutate(item.id);
   };
 
-  const handleFormSubmit = (data) => {
-    mutation.mutate(data);
-  };
+  const handleFormSubmit = (data) => mutation.mutateAsync(data);
 
   const handleCancel = () => {
     setShowForm(false);
@@ -274,17 +157,7 @@ function ArchivePage() {
     {
       accessorKey: 'created_at',
       header: 'Data/Ora',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleString('it-IT', { 
-          timeZone: 'UTC',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
+      cell: ({ getValue }) => formatDateTime(getValue())
     },
     {
       accessorKey: 'ddt_number',
@@ -311,20 +184,12 @@ function ArchivePage() {
     {
       accessorKey: 'lot_tf',
       header: 'Lotto TF',
-      cell: ({ getValue }) => {
-        const value = getValue();
-        console.log('Lot TF value:', value);
-        return value || 'N/A';
-      }
+      cell: ({ getValue }) => getValue() || 'N/A'
     },
     {
       accessorKey: 'cleaned',
       header: 'Pulizia',
-      cell: ({ getValue }) => {
-        const value = getValue();
-        console.log('Cleaned value:', value, typeof value);
-        return value ? 'Accettata' : 'Non Accettata';
-      }
+      cell: ({ getValue }) => (getValue() ? 'Accettata' : 'Non Accettata')
     },
     {
       accessorKey: 'proteins',
@@ -339,23 +204,12 @@ function ArchivePage() {
     {
       accessorKey: 'operator_name',
       header: 'Operatore',
-      cell: ({ getValue }) => {
-        const value = getValue();
-        console.log('Operator name value:', value);
-        return value || 'N/A';
-      }
+      cell: ({ getValue }) => getValue() || 'N/A'
     }
   ];
 
   if (isLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   return (
@@ -403,7 +257,11 @@ function ArchivePage() {
             onDeleteRow={handleDelete}
             enableFiltering={true}
             filterableColumns={['product', 'silos.name', 'cleaned', 'operator_name', 'lot_supplier']}
-            onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+            onBulkDelete={async (ids) => {
+              if (!(await confirmDelete(`${ids.length} analisi selezionate`))) return false;
+              bulkDelete.mutate(ids);
+              return true;
+            }}
           />
         </div>
       </Card>

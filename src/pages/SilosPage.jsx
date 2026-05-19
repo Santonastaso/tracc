@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { 
+import {
   useSilosWithLevels, 
   useCreateSilo, 
   useUpdateSilo, 
   useDeleteSilo,
   useMaterials 
 } from '../hooks';
-import { GenericForm } from "@santonastaso/shared";
+import { GenericForm } from '../ui';
 import SiloCard from '../components/SiloCard';
 import { SiloDetailCard } from '../components/SiloDetailCard';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
+import { Button } from '../ui';
+import { Card } from '../ui';
+import { confirmDelete } from '../lib/confirm';
 
 function SilosPage() {
   const [showForm, setShowForm] = useState(false);
@@ -47,19 +46,14 @@ function SilosPage() {
     setEditingItem(null);
   };
 
-  const handleEdit = (item) => {
+  const _handleEdit = (item) => {
     setEditingItem(item);
     setShowForm(true);
   };
 
-  const handleDelete = (item) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo silos?')) {
-      deleteMutation.mutate(item.id);
-    }
-  };
-
-  const handleFormSubmit = (data) => {
-    handleSubmit(data);
+  const _handleDelete = async (item) => {
+    if (!(await confirmDelete(`il silo "${item.name}"`))) return;
+    deleteMutation.mutate(item.id);
   };
 
   const handleCancel = () => {
@@ -163,7 +157,7 @@ function SilosPage() {
           <GenericForm
             config={formConfig}
             initialData={editingItem || {}}
-            onSubmit={handleFormSubmit}
+            onSubmit={handleSubmit}
             onCancel={handleCancel}
             isEditMode={!!editingItem}
             isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}

@@ -1,45 +1,22 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useDeleteOperator } from '../hooks';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ListPageLayout } from '@santonastaso/shared';
+import {
+  useDeleteOperator,
+  useOperatorsList,
+  useBulkDeleteOperators,
+} from '../hooks';
+import { confirmDelete } from '../lib/confirm';
+import { ListPageLayout } from '../ui';
 import { OperatorDetailCard } from '../components/OperatorDetailCard';
-import { Badge } from '@santonastaso/shared';
+import { Badge } from '../ui';
 import { useNavigate } from 'react-router-dom';
 
 function OperatorsListPage() {
   const navigate = useNavigate();
-  const [editingItem, setEditingItem] = useState(null);
   const [selectedOperator, setSelectedOperator] = useState(null);
 
-  // Fetch data using centralized query hooks
-  const { data: operatorsData, isLoading } = useQuery({
-    queryKey: ['operators'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('operators')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Use centralized mutation hooks
+  const { data: operatorsData, isLoading } = useOperatorsList();
   const deleteMutation = useDeleteOperator();
-  const queryClient = useQueryClient();
-  const bulkDelete = useMutation({
-    mutationFn: async (ids) => {
-      const { error } = await supabase
-        .from('operators')
-        .delete()
-        .in('id', ids);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries(['operators'])
-  });
+  const bulkDelete = useBulkDeleteOperators();
 
   const handleRowClick = (item) => {
     setSelectedOperator(item);
@@ -53,80 +30,80 @@ function OperatorsListPage() {
     navigate(`/operators/edit/${item.id}`);
   };
 
-  const handleDeleteRow = (item) => {
+  const handleDeleteRow = async (item) => {
+    if (!(await confirmDelete(`l'operatore "${item.name}"`))) return;
     deleteMutation.mutate(item.id);
   };
 
-  // Table columns - only essential info
   const columns = [
     {
       accessorKey: 'id',
       header: 'ID',
-      cell: ({ getValue }) => `#${getValue()}`
+      cell: ({ getValue }) => `#${getValue()}`,
     },
     {
       accessorKey: 'name',
-      header: 'Nome'
+      header: 'Nome',
     },
     {
       accessorKey: 'code',
-      header: 'Codice'
+      header: 'Codice',
     },
     {
       accessorKey: 'role',
-      header: 'Ruolo'
+      header: 'Ruolo',
     },
     {
       accessorKey: 'status',
       header: 'Stato',
-      cell: ({ getValue }) => {
-        const status = getValue();
-        const statusVariant = status === 'active' ? 'default' : status === 'inactive' ? 'destructive' : status === 'suspended' ? 'secondary' : 'outline';
-        return (
-          <Badge variant={statusVariant}>
-            {status || 'N/A'}
-          </Badge>
-        );
-      }
-    }
+      cell: ({ getValue }) => (
+        <Badge variant={getValue() === 'active' ? 'default' : 'secondary'}>
+          {getValue() === 'active' ? 'Attivo' : 'Inattivo'}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'active',
+      header: 'Attivo',
+      cell: ({ getValue }) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            getValue() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {getValue() ? 'Sì' : 'No'}
+        </span>
+      ),
+    },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-        <ListPageLayout
-          title="Lista Operatori"
-          entityName="Operator"
-          createButtonHref="/operators/new"
+    <ListPageLayout
+      title="Lista Operatori"
+      entityName="Operator"
+      createButtonHref="/operators/new"
       data={operatorsData || []}
       columns={columns}
+      loading={isLoading}
       onRowClick={handleRowClick}
       onEditRow={handleEditRow}
       onDeleteRow={handleDeleteRow}
-      enableFiltering={true}
-      filterableColumns={['name', 'code', 'role', 'status']}
-      enableGlobalSearch={false}
-      onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-      detailComponent={selectedOperator && (
-        <OperatorDetailCard
-          operator={selectedOperator}
-          onClose={handleCloseDetail}
-        />
-      )}
+      onBulkDelete={async (ids) => {
+        if (!(await confirmDelete(`${ids.length} operatori selezionati`))) return false;
+        bulkDelete.mutate(ids);
+        return true;
+      }}
+      detailComponent={
+        selectedOperator && (
+          <OperatorDetailCard
+            operator={selectedOperator}
+            onClose={handleCloseDetail}
+            onEdit={handleEditRow}
+          />
+        )
+      }
     />
   );
 }
 
 export default OperatorsListPage;
-
-
-

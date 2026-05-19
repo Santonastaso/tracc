@@ -1,42 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../services/supabase/client';
-import { useMaterials, useCreateSilo, useUpdateSilo } from '../hooks';
-import { FormPageLayout } from "@santonastaso/shared";
+import { useMaterials, useCreateSilo, useUpdateSilo, useSilo } from '../hooks';
+import {FormPageLayout, LoadingSkeleton} from '../ui';
 
 function SilosFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [editingItem, setEditingItem] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Fetch materials data for the checkbox selection
+  const isEdit = Boolean(id && id !== 'new');
+  const { data: editingItem, isLoading, isError } = useSilo(isEdit ? id : null);
   const { data: materialsData, isLoading: materialsLoading } = useMaterials();
 
-  // Use centralized mutation hooks with cache invalidation
   const createMutation = useCreateSilo();
   const updateMutation = useUpdateSilo();
 
-  // Fetch data for editing if ID is provided
   useEffect(() => {
-    if (id && id !== 'new') {
-      setIsLoading(true);
-      supabase
-        .from('silos')
-        .select('*')
-        .eq('id', id)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error fetching silo data:', error);
-            navigate('/silos/list');
-          } else {
-            setEditingItem(data);
-          }
-          setIsLoading(false);
-        });
-    }
-  }, [id, navigate]);
+    if (isError) navigate('/silos/list');
+  }, [isError, navigate]);
 
   // Handle form submission
   const handleSubmit = async (formData) => {
@@ -67,10 +46,6 @@ function SilosFormPage() {
     
     // Navigate back to list after successful submission
     navigate('/silos/list');
-  };
-
-  const handleFormSubmit = (data) => {
-    handleSubmit(data);
   };
 
   const handleCancel = () => {
@@ -162,14 +137,7 @@ function SilosFormPage() {
   };
 
   if (isLoading || materialsLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   return (
@@ -183,7 +151,7 @@ function SilosFormPage() {
         // Keep allowed_material_ids as array for checkbox selection
         allowed_material_ids: editingItem.allowed_material_ids || []
       } : {}}
-      onSubmit={handleFormSubmit}
+      onSubmit={handleSubmit}
       onCancel={handleCancel}
       isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
       customFieldRenderers={customFieldRenderers}

@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useDeleteOperator } from '../hooks';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { Input } from '@santonastaso/shared';
-import { Label } from '@santonastaso/shared';
+import { useDeleteOperator, useUpdateOperator } from '../hooks';
+import { Button } from '../ui';
+import { Card } from '../ui';
+import { Input } from '../ui';
+import { Label } from '../ui';
 
-import { Badge } from '@santonastaso/shared';
+import { Badge } from '../ui';
 import { ArrowLeft, Edit, Save, X, Trash2, User } from 'lucide-react';
-import { confirmAction } from '@santonastaso/shared';
+import { confirmAction } from '../ui';
 
-export function OperatorDetailCard({ operator, onClose, onEdit }) {
+export function OperatorDetailCard({ operator, onClose, _onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: operator.name || '',
@@ -25,24 +23,13 @@ export function OperatorDetailCard({ operator, onClose, onEdit }) {
   });
 
   const deleteMutation = useDeleteOperator();
-  const queryClient = useQueryClient();
-
-  const updateMutation = useMutation({
-    mutationFn: async (data) => {
-      const { error } = await supabase
-        .from('operators')
-        .update(data)
-        .eq('id', operator.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['operators']);
-      setIsEditing(false);
-    }
-  });
+  const updateMutation = useUpdateOperator({ success: false });
 
   const handleSave = () => {
-    updateMutation.mutate(formData);
+    updateMutation.mutate(
+      { id: operator.id, updates: formData },
+      { onSuccess: () => setIsEditing(false) }
+    );
   };
 
   const handleCancel = () => {
@@ -59,14 +46,17 @@ export function OperatorDetailCard({ operator, onClose, onEdit }) {
     setIsEditing(false);
   };
 
-  const handleDelete = () => {
-    if (confirmAction('Sei sicuro di voler eliminare questo operatore?')) {
-      deleteMutation.mutate(operator.id, {
-        onSuccess: () => {
-          onClose();
-        }
-      });
-    }
+  const handleDelete = async () => {
+    if (!(await confirmAction('Sei sicuro di voler eliminare questo operatore?', {
+      title: 'Conferma eliminazione',
+      confirmLabel: 'Elimina',
+      variant: 'destructive',
+    }))) return;
+    deleteMutation.mutate(operator.id, {
+      onSuccess: () => {
+        onClose();
+      },
+    });
   };
 
   const getStatusVariant = (status) => {

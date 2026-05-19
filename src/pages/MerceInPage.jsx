@@ -1,72 +1,44 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { 
-  useSilosWithLevels, 
-  useMaterials, 
+import {
+  useSilosWithLevels,
+  useMaterials,
   useOperators,
   useCreateInbound,
-  useUpdateInbound
+  useUpdateInbound,
+  useInboundDetail,
+  useSuppliersDropdown,
 } from '../hooks';
-import { GenericForm } from "@santonastaso/shared";
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
+import {GenericForm, LoadingSkeleton} from '../ui';
+import { showError } from '../lib/toast';
 import { useParams, useNavigate } from 'react-router-dom';
 
 function MerceInPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [editingItem, setEditingItem] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [quantity, setQuantity] = useState('');
 
-  // Fetch data for editing if ID is provided
+  const isEdit = Boolean(id && id !== 'new');
+  const {
+    data: editingItem,
+    isLoading,
+    isError: inboundLoadError,
+  } = useInboundDetail(isEdit ? id : null);
+
   useEffect(() => {
-    if (id && id !== 'new') {
-      setIsLoading(true);
-      supabase
-        .from('inbound')
-        .select('*, silos(name)')
-        .eq('id', id)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error fetching inbound data:', error);
-            navigate('/merce-in/list');
-          } else {
-            setEditingItem(data);
-            // Set the selected material and quantity for filtering
-            if (data.product) {
-              setSelectedMaterial(data.product);
-            }
-            if (data.quantity_kg) {
-              setQuantity(String(data.quantity_kg));
-            }
-          }
-          setIsLoading(false);
-        });
-    }
-  }, [id, navigate]);
+    if (inboundLoadError) navigate('/merce-in/list');
+  }, [inboundLoadError, navigate]);
+
+  useEffect(() => {
+    if (!editingItem) return;
+    if (editingItem.product) setSelectedMaterial(editingItem.product);
+    if (editingItem.quantity_kg) setQuantity(String(editingItem.quantity_kg));
+  }, [editingItem]);
 
   const { data: silosData } = useSilosWithLevels();
-  const { data: materialsData, isLoading: materialsLoading, error: materialsError } = useMaterials();
-  const { data: operatorsData, isLoading: operatorsLoading, error: operatorsError } = useOperators();
-  
-  // Fetch suppliers for dropdown
-  const { data: suppliersData } = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('id, name')
-        .eq('active', true)
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  const { data: materialsData, isLoading: materialsLoading } = useMaterials();
+  const { data: operatorsData, isLoading: operatorsLoading } = useOperators();
+  const { data: suppliersData } = useSuppliersDropdown();
 
   // Filter silos based on selected material and capacity
   const filteredSilos = useMemo(() => {
@@ -115,17 +87,14 @@ function MerceInPage() {
 
   // Handle form submission
   const handleSubmit = async (formData) => {
-    console.log('MerceInPage handleSubmit called with:', formData);
-    console.log('lot_supplier value:', formData.lot_supplier);
     
-    // Validate that placeholder values are not selected
     if (formData.silo_id === 'no-silos' || formData.silo_id === 'select-product') {
-      alert('Seleziona un silos valido');
+      showError('Seleziona un silos valido');
       return;
     }
-    
+
     if (formData.operator_name === 'loading') {
-      alert('Seleziona un operatore valido');
+      showError('Seleziona un operatore valido');
       return;
     }
 
@@ -145,10 +114,6 @@ function MerceInPage() {
     
     // Navigate back to list after successful submission
     navigate('/merce-in/list');
-  };
-
-  const handleFormSubmit = (data) => {
-    handleSubmit(data);
   };
 
   const handleCancel = () => {
@@ -337,14 +302,7 @@ function MerceInPage() {
 
 
   if (isLoading || materialsLoading || operatorsLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   return (
@@ -363,7 +321,7 @@ function MerceInPage() {
           silo_id: String(editingItem.silo_id),
           cleaned: String(editingItem.cleaned)
         } : {}}
-        onSubmit={handleFormSubmit}
+        onSubmit={handleSubmit}
         onCancel={handleCancel}
         isEditMode={!!editingItem}
         isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}

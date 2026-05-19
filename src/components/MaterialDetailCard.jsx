@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useDeleteMaterial } from '../hooks';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { Input } from '@santonastaso/shared';
-import { Label } from '@santonastaso/shared';
+import { useDeleteMaterial, useUpdateMaterial } from '../hooks';
+import { Button } from '../ui';
+import { Card } from '../ui';
+import { Input } from '../ui';
+import { Label } from '../ui';
 
 import { ArrowLeft, Edit, Save, X, Trash2, Package } from 'lucide-react';
-import { confirmAction } from '@santonastaso/shared';
+import { confirmAction } from '../ui';
 
-export function MaterialDetailCard({ material, onClose, onEdit }) {
+export function MaterialDetailCard({ material, onClose, _onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: material.name || '',
@@ -21,24 +19,13 @@ export function MaterialDetailCard({ material, onClose, onEdit }) {
   });
 
   const deleteMutation = useDeleteMaterial();
-  const queryClient = useQueryClient();
-
-  const updateMutation = useMutation({
-    mutationFn: async (data) => {
-      const { error } = await supabase
-        .from('materials')
-        .update(data)
-        .eq('id', material.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['materials']);
-      setIsEditing(false);
-    }
-  });
+  const updateMutation = useUpdateMaterial({ success: false });
 
   const handleSave = () => {
-    updateMutation.mutate(formData);
+    updateMutation.mutate(
+      { id: material.id, updates: formData },
+      { onSuccess: () => setIsEditing(false) }
+    );
   };
 
   const handleCancel = () => {
@@ -52,14 +39,17 @@ export function MaterialDetailCard({ material, onClose, onEdit }) {
     setIsEditing(false);
   };
 
-  const handleDelete = () => {
-    if (confirmAction('Sei sicuro di voler eliminare questo materiale?')) {
-      deleteMutation.mutate(material.id, {
-        onSuccess: () => {
-          onClose();
-        }
-      });
-    }
+  const handleDelete = async () => {
+    if (!(await confirmAction('Sei sicuro di voler eliminare questo materiale?', {
+      title: 'Conferma eliminazione',
+      confirmLabel: 'Elimina',
+      variant: 'destructive',
+    }))) return;
+    deleteMutation.mutate(material.id, {
+      onSuccess: () => {
+        onClose();
+      },
+    });
   };
 
   return (

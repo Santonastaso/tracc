@@ -1,46 +1,17 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useDeleteMaterial } from '../hooks';
-import { ListPageLayout } from '@santonastaso/shared';
+import { useDeleteMaterial, useMaterialsList, useBulkDeleteMaterials } from '../hooks';
+import { confirmDelete } from '../lib/confirm';
+import { ListPageLayout } from '../ui';
 import { MaterialDetailCard } from '../components/MaterialDetailCard';
 import { useNavigate } from 'react-router-dom';
 
 function MaterialsListPage() {
   const navigate = useNavigate();
-  const [editingItem, setEditingItem] = useState(null);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
 
-  // Fetch data using centralized query hooks
-  const { data: materialsData, isLoading } = useQuery({
-    queryKey: ['materials'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('materials')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Use centralized mutation hooks
+  const { data: materialsData, isLoading } = useMaterialsList();
   const deleteMutation = useDeleteMaterial();
-  const queryClient = useQueryClient();
-
-  // Bulk delete using Supabase
-  const bulkDelete = useMutation({
-    mutationFn: async (ids) => {
-      const { error } = await supabase
-        .from('materials')
-        .delete()
-        .in('id', ids);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries(['materials'])
-  });
+  const bulkDelete = useBulkDeleteMaterials();
 
   const handleRowClick = (item) => {
     setSelectedMaterial(item);
@@ -54,74 +25,67 @@ function MaterialsListPage() {
     navigate(`/materials/edit/${item.id}`);
   };
 
-  const handleDeleteRow = (item) => {
+  const handleDeleteRow = async (item) => {
+    if (!(await confirmDelete(`il materiale "${item.name}"`))) return;
     deleteMutation.mutate(item.id);
   };
 
-  // Table columns - only essential info
   const columns = [
     {
       accessorKey: 'id',
       header: 'ID',
-      cell: ({ getValue }) => `#${getValue()}`
+      cell: ({ getValue }) => `#${getValue()}`,
     },
     {
       accessorKey: 'name',
-      header: 'Nome Materiale'
+      header: 'Nome Materiale',
     },
     {
       accessorKey: 'unit',
-      header: 'Unità'
+      header: 'Unità',
     },
     {
       accessorKey: 'active',
       header: 'Attivo',
       cell: ({ getValue }) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          getValue() ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
-        }`}>
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            getValue() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}
+        >
           {getValue() ? 'Sì' : 'No'}
         </span>
-      )
-    }
+      ),
+    },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
-      return (
-        <ListPageLayout
-          title="Lista Materiali"
-          entityName="Material"
-          createButtonHref="/materials/new"
+  return (
+    <ListPageLayout
+      title="Lista Materiali"
+      entityName="Material"
+      createButtonHref="/materials/new"
       data={materialsData || []}
       columns={columns}
+      loading={isLoading}
       onRowClick={handleRowClick}
       onEditRow={handleEditRow}
       onDeleteRow={handleDeleteRow}
-      enableFiltering={true}
-      filterableColumns={['name', 'unit']}
-      enableGlobalSearch={false}
-      onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-      detailComponent={selectedMaterial && (
-        <MaterialDetailCard
-          material={selectedMaterial}
-          onClose={handleCloseDetail}
-        />
-      )}
+      onBulkDelete={async (ids) => {
+        if (!(await confirmDelete(`${ids.length} materiali selezionati`))) return false;
+        bulkDelete.mutate(ids);
+        return true;
+      }}
+      detailComponent={
+        selectedMaterial && (
+          <MaterialDetailCard
+            material={selectedMaterial}
+            onClose={handleCloseDetail}
+            onEdit={handleEditRow}
+          />
+        )
+      }
     />
   );
 }
 
 export default MaterialsListPage;
-
-
-

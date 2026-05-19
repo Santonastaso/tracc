@@ -1,51 +1,29 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { 
-  useMaterials, 
+import {
+  useMaterials,
   useOperators,
   useDeleteInbound,
-  queryKeys
+  useInboundWithSilos,
+  useBulkDeleteInbound,
 } from '../hooks';
-import { ListPageLayout } from '@santonastaso/shared';
+import { confirmDelete } from '../lib/confirm';
+import { ListPageLayout, LoadingSkeleton } from '../ui';
+import { formatDateTime } from '../lib/format';
 import { MerceInDetailCard } from '../components/MerceInDetailCard';
 import { useNavigate } from 'react-router-dom';
 
 function MerceInListPage() {
   const navigate = useNavigate();
-  const [editingItem, setEditingItem] = useState(null);
+  const [_editingItem, _setEditingItem] = useState(null);
   const [selectedInbound, setSelectedInbound] = useState(null);
 
   // Fetch data using centralized query hooks
-  const { data: inboundData, isLoading } = useQuery({
-    queryKey: [...queryKeys.inbound, 'with-silos'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inbound')
-        .select('*, silos(name)')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  const { data: inboundData, isLoading } = useInboundWithSilos();
+  const { isLoading: materialsLoading } = useMaterials();
+  const { isLoading: operatorsLoading } = useOperators();
 
-  const { data: materialsData, isLoading: materialsLoading } = useMaterials();
-  const { data: operatorsData, isLoading: operatorsLoading } = useOperators();
-
-  // Use centralized mutation hooks
   const deleteMutation = useDeleteInbound();
-  const queryClient = useQueryClient();
-  const bulkDelete = useMutation({
-    mutationFn: async (ids) => {
-      const { error } = await supabase
-        .from('inbound')
-        .delete()
-        .in('id', ids);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries([...queryKeys.inbound, 'with-silos'])
-  });
+  const bulkDelete = useBulkDeleteInbound();
 
   const handleRowClick = (item) => {
     setSelectedInbound(item);
@@ -59,7 +37,8 @@ function MerceInListPage() {
     navigate(`/merce-in/edit/${item.id}`);
   };
 
-  const handleDeleteRow = (item) => {
+  const handleDeleteRow = async (item) => {
+    if (!(await confirmDelete('questo movimento IN'))) return;
     deleteMutation.mutate(item.id);
   };
 
@@ -73,17 +52,7 @@ function MerceInListPage() {
     {
       accessorKey: 'created_at',
       header: 'Data/Ora',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue());
-        return date.toLocaleString('it-IT', { 
-          timeZone: 'UTC',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
+      cell: ({ getValue }) => formatDateTime(getValue())
     },
     {
       accessorKey: 'product',
@@ -110,14 +79,7 @@ function MerceInListPage() {
   ];
 
   if (isLoading || materialsLoading || operatorsLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   return (
@@ -133,7 +95,11 @@ function MerceInListPage() {
       enableFiltering={true}
       filterableColumns={['product', 'operator_name', 'lot_supplier']}
       enableGlobalSearch={false}
-      onBulkDelete={(ids) => bulkDelete.mutate(ids)}
+      onBulkDelete={async (ids) => {
+        if (!(await confirmDelete(`${ids.length} movimenti selezionati`))) return false;
+        bulkDelete.mutate(ids);
+        return true;
+      }}
       detailComponent={selectedInbound && (
         <MerceInDetailCard
           inbound={selectedInbound}

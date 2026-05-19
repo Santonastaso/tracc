@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { 
+import {
   useDeleteOutbound,
   useDeleteOutboundBatch,
-  queryKeys
+  useOutboundWithSilos,
+  useBulkDeleteOutbound,
 } from '../hooks';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
+import { confirmDelete } from '../lib/confirm';
+import { formatDateTime } from '../lib/format';
+import {Button, LoadingSkeleton} from '../ui';
+import { Card } from '../ui';
 import { MerceOutDetailCard } from '../components/MerceOutDetailCard';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit, ChevronDown, ChevronRight, Layers } from 'lucide-react';
@@ -20,21 +21,7 @@ function MerceOutListPage() {
   const [selectedIds, setSelectedIds] = useState([]);
 
   // Fetch data using centralized query hooks
-  const { data: outboundData, isLoading } = useQuery({
-    queryKey: [...queryKeys.outbound, 'with-silos'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('outbound')
-        .select(`
-          *,
-          silos!inner(name)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  const { data: outboundData, isLoading } = useOutboundWithSilos();
 
   // Helper to extract batch_id from record (column or items)
   const getBatchId = (record) => {
@@ -104,21 +91,7 @@ function MerceOutListPage() {
   // Use centralized mutation hooks
   const deleteMutation = useDeleteOutbound();
   const deleteBatchMutation = useDeleteOutboundBatch();
-  const queryClient = useQueryClient();
-  
-  const bulkDelete = useMutation({
-    mutationFn: async (ids) => {
-      const { error } = await supabase
-        .from('outbound')
-        .delete()
-        .in('id', ids);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries([...queryKeys.outbound, 'with-silos']);
-      setSelectedIds([]);
-    }
-  });
+  const bulkDelete = useBulkDeleteOutbound();
 
   const toggleBatchExpanded = (batchId) => {
     setExpandedBatches(prev => ({
@@ -150,10 +123,12 @@ function MerceOutListPage() {
     navigate(`/merce-out/edit/${item.id}`);
   };
 
-  const handleDeleteRow = (item) => {
+  const handleDeleteRow = async (item) => {
     if (item.isBatch) {
+      if (!(await confirmDelete('questa miscela'))) return;
       deleteBatchMutation.mutate(item.batch_id);
     } else {
+      if (!(await confirmDelete('questo movimento OUT'))) return;
       deleteMutation.mutate(item.id);
     }
   };
@@ -183,27 +158,8 @@ function MerceOutListPage() {
     return selectedIds.includes(item.id);
   };
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString('it-IT', { 
-      timeZone: 'UTC',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   if (isLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   return (
@@ -213,9 +169,12 @@ function MerceOutListPage() {
         <h1 className="text-2xl font-bold text-foreground">Lista Movimenti OUT</h1>
         <div className="flex gap-2">
           {selectedIds.length > 0 && (
-            <Button 
-              variant="destructive" 
-              onClick={() => bulkDelete.mutate(selectedIds)}
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!(await confirmDelete(`${selectedIds.length} movimenti selezionati`))) return;
+                bulkDelete.mutate(selectedIds, { onSuccess: () => setSelectedIds([]) });
+              }}
               disabled={bulkDelete.isPending}
             >
               <Trash2 className="h-4 w-4 mr-2" />
@@ -303,7 +262,7 @@ function MerceOutListPage() {
                           `#${item.id}`
                         )}
                       </td>
-                      <td className="p-3">{formatDate(item.created_at)}</td>
+                      <td className="p-3">{formatDateTime(item.created_at)}</td>
                       <td className="p-3">
                         {item.isBatch ? (
                           <div>
@@ -361,7 +320,10 @@ function MerceOutListPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleDeleteRow(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteRow(item);
+                            }}
                             disabled={deleteMutation.isPending || deleteBatchMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -390,7 +352,7 @@ function MerceOutListPage() {
                         </td>
                         <td className="p-3"></td>
                         <td className="p-3 text-muted-foreground">#{record.id}</td>
-                        <td className="p-3 text-muted-foreground">{formatDate(record.created_at)}</td>
+                        <td className="p-3 text-muted-foreground">{formatDateTime(record.created_at)}</td>
                         <td className="p-3">{record.silos?.name}</td>
                         <td className="p-3">{record.quantity_kg} kg</td>
                         <td className="p-3 text-muted-foreground">{record.operator_name}</td>
@@ -424,7 +386,11 @@ function MerceOutListPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => deleteMutation.mutate(record.id)}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!(await confirmDelete('questo movimento OUT'))) return;
+                                deleteMutation.mutate(record.id);
+                              }}
                               disabled={deleteMutation.isPending}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
@@ -467,18 +433,6 @@ function MerceOutListPage() {
 function BatchDetailCard({ batch, onClose }) {
   const deleteBatchMutation = useDeleteOutboundBatch();
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString('it-IT', { 
-      timeZone: 'UTC',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b flex justify-between items-center">
@@ -494,7 +448,7 @@ function BatchDetailCard({ batch, onClose }) {
         <div className="space-y-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Data/Ora</span>
-            <span className="font-medium">{formatDate(batch.created_at)}</span>
+            <span className="font-medium">{formatDateTime(batch.created_at)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Operatore</span>
@@ -568,7 +522,10 @@ function BatchDetailCard({ batch, onClose }) {
         <Button
           variant="destructive"
           className="w-full"
-          onClick={() => deleteBatchMutation.mutate(batch.batch_id)}
+          onClick={async () => {
+            if (!(await confirmDelete('questa miscela'))) return;
+            deleteBatchMutation.mutate(batch.batch_id, { onSuccess: onClose });
+          }}
           disabled={deleteBatchMutation.isPending}
         >
           <Trash2 className="h-4 w-4 mr-2" />

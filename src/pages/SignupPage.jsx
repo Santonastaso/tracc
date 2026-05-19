@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { Button, Input } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { showError, showSuccess } from '@santonastaso/shared';
+import { Button, Input } from '../ui';
+import { Card } from '../ui';
+import { showError, showSuccess } from '../ui';
 
 function SignupPage() {
   const [email, setEmail] = useState('');
@@ -29,11 +29,15 @@ function SignupPage() {
     setIsLoading(true);
 
     try {
-      await signUp(email, password);
+      const result = await signUp(email, password);
+      if (result?.error) {
+        showError('Errore durante la registrazione: ' + result.error);
+        return;
+      }
       showSuccess('Registrazione completata! Controlla la tua email per confermare l\'account.');
       navigate('/login');
     } catch (error) {
-      showError('Errore durante la registrazione: ' + error.message);
+      showError('Errore durante la registrazione: ' + (error?.message || 'errore sconosciuto'));
     } finally {
       setIsLoading(false);
     }

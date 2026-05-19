@@ -2,30 +2,19 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useSilos, useInbound, useOutbound } from '../hooks';
-import { Card, CardHeader, CardTitle, CardContent } from '@santonastaso/shared';
-import { Button } from '@santonastaso/shared';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui';
+import { Button } from '../ui';
 import { SiloDetailCard } from '../components/SiloDetailCard';
 
 function HomePage() {
-  const { user } = useAuth();
+  useAuth();
   const navigate = useNavigate();
   const [selectedSilo, setSelectedSilo] = useState(null);
 
   // Fetch data using centralized query hooks
-  const { data: silosData, isLoading: silosLoading, error: silosError } = useSilos();
-  const { data: inboundData, isLoading: inboundLoading, error: inboundError } = useInbound();
-  const { data: outboundData, isLoading: outboundLoading, error: outboundError } = useOutbound();
-
-  // Debug logging
-  React.useEffect(() => {
-    console.log('🏠 HomePage data status:', {
-      silosData: silosData?.length || 0,
-      inboundData: inboundData?.length || 0,
-      outboundData: outboundData?.length || 0,
-      loading: { silosLoading, inboundLoading, outboundLoading },
-      errors: { silosError, inboundError, outboundError }
-    });
-  }, [silosData, inboundData, outboundData, silosLoading, inboundLoading, outboundLoading, silosError, inboundError, outboundError]);
+  const { data: silosData, isLoading: silosLoading } = useSilos();
+  const { data: inboundData, isLoading: inboundLoading } = useInbound();
+  const { data: outboundData, isLoading: outboundLoading } = useOutbound();
 
   // Calculate metrics
   const metrics = useMemo(() => {
@@ -34,21 +23,16 @@ function HomePage() {
     // Calculate total capacity
     const totalCapacity = silosData?.reduce((sum, silo) => sum + (silo.capacity_kg || 0), 0) || 0;
 
-    // Calculate current stock levels
-    const silosWithLevels = silosData?.map(silo => {
-      const siloInbound = inboundData?.filter(item => item && item.silo_id === silo.id) || [];
-      const siloOutbound = outboundData?.filter(item => item && item.silo_id === silo.id) || [];
-      
-      const totalInbound = siloInbound.reduce((sum, item) => sum + (item?.quantity_kg || 0), 0);
-      const totalOutbound = siloOutbound.reduce((sum, item) => sum + (item?.quantity_kg || 0), 0);
-      const currentLevel = totalInbound - totalOutbound;
-      
-      return {
+    // useSilos() already returns silos with currentLevel via getSilosWithLevels
+    const silosWithLevels =
+      silosData?.map((silo) => ({
         ...silo,
-        currentLevel: Math.max(0, currentLevel), // Ensure no negative values
-        utilizationPercentage: silo.capacity_kg > 0 ? (Math.max(0, currentLevel) / silo.capacity_kg) * 100 : 0
-      };
-    }) || [];
+        currentLevel: Math.max(0, silo.currentLevel ?? 0),
+        utilizationPercentage:
+          silo.capacity_kg > 0
+            ? (Math.max(0, silo.currentLevel ?? 0) / silo.capacity_kg) * 100
+            : silo.utilizationPercentage ?? 0,
+      })) || [];
 
     const totalCurrentStock = silosWithLevels.reduce((sum, silo) => sum + silo.currentLevel, 0);
     const totalUtilization = totalCapacity > 0 ? (totalCurrentStock / totalCapacity) * 100 : 0;

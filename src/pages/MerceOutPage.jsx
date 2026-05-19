@@ -1,25 +1,21 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { 
-  useSilos, 
-  useSilosWithLevels, 
+import {
+  useSilosWithLevels,
   useOperators,
   useCreateOutbound,
   useCreateOutboundBatch,
-  useUpdateOutbound
+  useUpdateOutbound,
+  useOutboundDetail,
 } from '../hooks';
-import { Button, Input, Label } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
+import {Button, Input, Label, LoadingSkeleton} from '../ui';
+import { Card } from '../ui';
+import { showError } from '../lib/toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 function MerceOutPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [editingItem, setEditingItem] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  
   // Form state for multi-silo selection
   const [selectedSiloIds, setSelectedSiloIds] = useState([]);
   const [operatorName, setOperatorName] = useState('');
@@ -29,34 +25,23 @@ function MerceOutPage() {
   const siloButtonRef = useRef(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
-  // Fetch data for editing if ID is provided (single silo edit mode)
-  useEffect(() => {
-    if (id && id !== 'new') {
-      setIsLoading(true);
-      supabase
-        .from('outbound')
-        .select(`
-          *,
-          silos!inner(name)
-        `)
-        .eq('id', id)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error fetching outbound data:', error);
-            navigate('/merce-out/list');
-          } else {
-            setEditingItem(data);
-            // For editing, set the single silo
-            setSelectedSiloIds([data.silo_id]);
-            setOperatorName(data.operator_name || '');
-          }
-          setIsLoading(false);
-        });
-    }
-  }, [id, navigate]);
+  const isEdit = Boolean(id && id !== 'new');
+  const {
+    data: editingItem,
+    isLoading,
+    isError: outboundLoadError,
+  } = useOutboundDetail(isEdit ? id : null);
 
-  const { data: silosData } = useSilos();
+  useEffect(() => {
+    if (outboundLoadError) navigate('/merce-out/list');
+  }, [outboundLoadError, navigate]);
+
+  useEffect(() => {
+    if (!editingItem) return;
+    setSelectedSiloIds([editingItem.silo_id]);
+    setOperatorName(editingItem.operator_name || '');
+  }, [editingItem]);
+
   const { data: silosWithLevels } = useSilosWithLevels();
   const { data: operatorsData } = useOperators();
 
@@ -239,8 +224,7 @@ function MerceOutPage() {
       // Navigate back to list after successful submission
       navigate('/merce-out/list');
     } catch (error) {
-      console.error('Error submitting outbound:', error);
-      throw error;
+      showError(error?.message || 'Errore durante il salvataggio del prelievo');
     }
   };
 
@@ -320,14 +304,7 @@ function MerceOutPage() {
   const isPending = createMutation.isPending || createBatchMutation.isPending || updateMutation.isPending;
 
   if (isLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   return (

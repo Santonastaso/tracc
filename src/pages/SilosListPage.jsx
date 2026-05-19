@@ -1,46 +1,17 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useMaterials, useDeleteSilo } from '../hooks';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ListPageLayout } from '@santonastaso/shared';
+import { useDeleteSilo, useSilosList, useBulkDeleteSilos } from '../hooks';
+import { confirmDelete } from '../lib/confirm';
+import { ListPageLayout } from '../ui';
 import { SiloDetailCard } from '../components/SiloDetailCard';
 import { useNavigate } from 'react-router-dom';
 
 function SilosListPage() {
   const navigate = useNavigate();
-  const [editingItem, setEditingItem] = useState(null);
   const [selectedSilo, setSelectedSilo] = useState(null);
 
-  // Fetch data using centralized query hooks
-  const { data: silosData, isLoading } = useQuery({
-    queryKey: ['silos'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('silos')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const { data: materialsData, isLoading: materialsLoading } = useMaterials();
-
-  // Use centralized mutation hooks
+  const { data: silosData, isLoading } = useSilosList();
   const deleteMutation = useDeleteSilo();
-  const queryClient = useQueryClient();
-  const bulkDelete = useMutation({
-    mutationFn: async (ids) => {
-      const { error } = await supabase
-        .from('silos')
-        .delete()
-        .in('id', ids);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries(['silos'])
-  });
+  const bulkDelete = useBulkDeleteSilos();
 
   const handleRowClick = (item) => {
     setSelectedSilo(item);
@@ -54,64 +25,63 @@ function SilosListPage() {
     navigate(`/silos/edit/${item.id}`);
   };
 
-  const handleDeleteRow = (item) => {
+  const handleDeleteRow = async (item) => {
+    if (!(await confirmDelete(`il silo "${item.name}"`))) return;
     deleteMutation.mutate(item.id);
   };
 
-  // Table columns - only essential info
   const columns = [
     {
       accessorKey: 'id',
       header: 'ID',
-      cell: ({ getValue }) => `#${getValue()}`
+      cell: ({ getValue }) => `#${getValue()}`,
     },
     {
       accessorKey: 'name',
-      header: 'Nome Silos'
+      header: 'Nome Silo',
     },
     {
       accessorKey: 'capacity_kg',
-      header: 'Capacità (Kg)',
-      cell: ({ getValue }) => `${getValue().toLocaleString()} kg`
-    }
+      header: 'Capacità (kg)',
+    },
+    {
+      accessorKey: 'active',
+      header: 'Attivo',
+      cell: ({ getValue }) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            getValue() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {getValue() ? 'Sì' : 'No'}
+        </span>
+      ),
+    },
   ];
 
-  if (isLoading || materialsLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-        <ListPageLayout
-          title="Lista Silos"
-          entityName="Silo"
-          createButtonHref="/silos/new"
+    <ListPageLayout
+      title="Lista Silos"
+      entityName="Silo"
+      createButtonHref="/silos/new"
       data={silosData || []}
       columns={columns}
+      loading={isLoading}
       onRowClick={handleRowClick}
       onEditRow={handleEditRow}
       onDeleteRow={handleDeleteRow}
-      enableFiltering={true}
-      filterableColumns={['name']}
-      enableGlobalSearch={false}
-      onBulkDelete={(ids) => bulkDelete.mutate(ids)}
-      detailComponent={selectedSilo && (
-        <SiloDetailCard
-          silo={selectedSilo}
-          onClose={handleCloseDetail}
-        />
-      )}
+      onBulkDelete={async (ids) => {
+        if (!(await confirmDelete(`${ids.length} silos selezionati`))) return false;
+        bulkDelete.mutate(ids);
+        return true;
+      }}
+      detailComponent={
+        selectedSilo && (
+          <SiloDetailCard silo={selectedSilo} onClose={handleCloseDetail} onEdit={handleEditRow} />
+        )
+      }
     />
   );
 }
 
 export default SilosListPage;
-
-
-

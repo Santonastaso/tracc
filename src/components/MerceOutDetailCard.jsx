@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useDeleteOutbound, useSilos, useSilosWithLevels, queryKeys } from '../hooks';
-import { Button } from '@santonastaso/shared';
-import { Input } from '@santonastaso/shared';
-import { Label } from '@santonastaso/shared';
-import { ArrowLeft, Edit, Save, X, Trash2, ArrowUp, Layers } from 'lucide-react';
-import { confirmAction } from '@santonastaso/shared';
+import { formatDateTime } from '../lib/format';
+import {
+  useDeleteOutbound,
+  useUpdateOutbound,
+  useOutboundByBatch,
+  useSilos,
+  useSilosWithLevels,
+} from '../hooks';
+import { Button } from '../ui';
+import { Input } from '../ui';
+import { Label } from '../ui';
+import { Edit, Save, X, Trash2, ArrowUp, Layers } from 'lucide-react';
+import { confirmAction } from '../ui';
 
-export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
+export function MerceOutDetailCard({ outbound, onClose, _onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     silo_id: outbound.silo_id || '',
@@ -21,71 +26,16 @@ export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
   const { data: silosData } = useSilos();
   const { data: silosWithLevels } = useSilosWithLevels();
   const deleteMutation = useDeleteOutbound();
-  const queryClient = useQueryClient();
+  const updateMutation = useUpdateOutbound({ silent: true });
 
-  // Get batch_id from column or from items
-  const batchId = outbound.batch_id || (outbound.items?.[0]?.batch_id);
-
-  // Fetch batch siblings if this record is part of a batch
-  const { data: batchSiblings } = useQuery({
-    queryKey: ['outbound', 'batch', batchId],
-    queryFn: async () => {
-      if (!batchId) return null;
-      
-      // First try batch_id column
-      let { data, error } = await supabase
-        .from('outbound')
-        .select(`
-          *,
-          silos!inner(name)
-        `)
-        .eq('batch_id', batchId)
-        .order('created_at', { ascending: true });
-      
-      // If column doesn't exist or no data, search in items
-      if (error || !data || data.length === 0) {
-        const { data: allData, error: allError } = await supabase
-          .from('outbound')
-          .select(`
-            *,
-            silos!inner(name)
-          `)
-          .order('created_at', { ascending: true });
-        
-        if (allError) throw allError;
-        
-        // Filter by batch_id in items
-        data = allData?.filter(record => {
-          if (record.items && record.items.length > 0 && record.items[0].batch_id === batchId) {
-            return true;
-          }
-          return false;
-        }) || [];
-      }
-      
-      return data;
-    },
-    enabled: !!batchId
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async (data) => {
-      const { error } = await supabase
-        .from('outbound')
-        .update(data)
-        .eq('id', outbound.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.outbound });
-      queryClient.invalidateQueries({ queryKey: [...queryKeys.outbound, 'with-silos'] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.silosWithLevels });
-      setIsEditing(false);
-    }
-  });
+  const batchId = outbound.batch_id || outbound.items?.[0]?.batch_id;
+  const { data: batchSiblings } = useOutboundByBatch(batchId);
 
   const handleSave = () => {
-    updateMutation.mutate(formData);
+    updateMutation.mutate(
+      { id: outbound.id, updates: formData },
+      { onSuccess: () => setIsEditing(false) }
+    );
   };
 
   const handleCancel = () => {
@@ -99,14 +49,17 @@ export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
     setIsEditing(false);
   };
 
-  const handleDelete = () => {
-    if (confirmAction('Sei sicuro di voler eliminare questo prelievo?')) {
-      deleteMutation.mutate(outbound.id, {
-        onSuccess: () => {
-          onClose();
-        }
-      });
-    }
+  const handleDelete = async () => {
+    if (!(await confirmAction('Sei sicuro di voler eliminare questo prelievo?', {
+      title: 'Conferma eliminazione',
+      confirmLabel: 'Elimina',
+      variant: 'destructive',
+    }))) return;
+    deleteMutation.mutate(outbound.id, {
+      onSuccess: () => {
+        onClose();
+      },
+    });
   };
 
   const getSiloName = (siloId) => {
@@ -146,17 +99,6 @@ export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
       ...prev,
       items: prev.items.filter((_, i) => i !== index)
     }));
-  };
-
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleString('it-IT', { 
-      timeZone: 'UTC',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   const isPartOfBatch = batchId && batchSiblings && batchSiblings.length > 1;
@@ -200,7 +142,7 @@ export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Data/Ora</span>
-              <span className="font-medium">{formatDate(outbound.created_at)}</span>
+              <span className="font-medium">{formatDateTime(outbound.created_at)}</span>
             </div>
             
             <div className="flex justify-between">
@@ -419,9 +361,9 @@ export function MerceOutDetailCard({ outbound, onClose, onEdit }) {
         {/* Timestamps */}
         {!isEditing && (
           <div className="text-xs text-muted-foreground pt-2 border-t space-y-1">
-            <div>Creato: {formatDate(outbound.created_at)}</div>
+            <div>Creato: {formatDateTime(outbound.created_at)}</div>
             {outbound.updated_at !== outbound.created_at && (
-              <div>Modificato: {formatDate(outbound.updated_at)}</div>
+              <div>Modificato: {formatDateTime(outbound.updated_at)}</div>
             )}
           </div>
         )}

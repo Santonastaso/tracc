@@ -1,23 +1,22 @@
-import { BaseService } from '@santonastaso/shared';
-import { 
-  validateRequiredFields, 
-  validateNumericRanges,
-  throwNotFoundError,
-  throwBusinessError,
-  ServiceError
-} from '@santonastaso/shared';
-import { supabase } from './supabase/client';
+import { BaseService } from './base-service.js';
+import { supabase } from './supabase/client.js';
+import { computeSiloLevels } from '../lib/silo-levels.js';
 
-/**
- * Simple safeAsync replacement - wraps async operations with error handling
- */
-const safeAsync = async (asyncFn) => {
-  try {
-    return await asyncFn();
-  } catch (error) {
-    throw error;
+function requireFields(data, fields) {
+  for (const field of fields) {
+    if (data[field] === undefined || data[field] === null || data[field] === '') {
+      throw new Error(`${field} is required`);
+    }
   }
-};
+}
+
+function requireRange(data, field, min, max) {
+  const value = data[field];
+  if (value === undefined || value === null) return;
+  if (value < min || value > max) {
+    throw new Error(`${field} must be between ${min} and ${max}`);
+  }
+}
 
 /**
  * Silos Service
@@ -34,8 +33,7 @@ export class SilosService extends BaseService {
    * @returns {Promise<Array>} Array of silos with calculated levels and items
    */
   async getSilosWithLevels(includeMaterials = false) {
-    return safeAsync(async () => {
-      // Get silos
+    // Get silos
       const { data: silos, error: silosError } = await supabase
         .from('silos')
         .select('*')
@@ -69,62 +67,7 @@ export class SilosService extends BaseService {
       
       if (outboundError) throw outboundError;
 
-      // Calculate current levels and available items for each silo
-      const silosWithData = silos.map(silo => {
-        const siloInbound = inboundData.filter(item => item.silo_id === silo.id);
-        const siloOutbound = outboundData.filter(item => item.silo_id === silo.id);
-        
-        // Calculate total outbound quantity
-        const totalOutbound = siloOutbound.reduce((sum, out) => sum + out.quantity_kg, 0);
-        
-        // Calculate available items using FIFO logic
-        let remainingOutbound = totalOutbound;
-        const availableItems = [];
-        
-        for (const inbound of siloInbound) {
-          if (remainingOutbound <= 0) {
-            // All outbound has been accounted for, this item is available
-            const item = {
-              ...inbound,
-              available_quantity: inbound.quantity_kg
-            };
-            if (includeMaterials) {
-              item.materials = { name: inbound.product };
-            }
-            availableItems.push(item);
-          } else if (remainingOutbound < inbound.quantity_kg) {
-            // Partial outbound, some of this item is available
-            const available = inbound.quantity_kg - remainingOutbound;
-            const item = {
-              ...inbound,
-              available_quantity: available
-            };
-            if (includeMaterials) {
-              item.materials = { name: inbound.product };
-            }
-            availableItems.push(item);
-            remainingOutbound = 0;
-          } else {
-            // This item is completely outbound
-            remainingOutbound -= inbound.quantity_kg;
-          }
-        }
-        
-        const totalInbound = siloInbound.reduce((sum, inb) => sum + inb.quantity_kg, 0);
-        const currentLevel = totalInbound - totalOutbound;
-        
-        return {
-          ...silo,
-          currentLevel,
-          availableItems,
-          totalInbound,
-          totalOutbound,
-          utilizationPercentage: silo.capacity_kg > 0 ? (currentLevel / silo.capacity_kg) * 100 : 0
-        };
-      });
-
-      return silosWithData;
-    }, 'getSilosWithLevels');
+      return computeSiloLevels(silos, inboundData, outboundData, { includeMaterials });
   }
 
   /**
@@ -133,34 +76,20 @@ export class SilosService extends BaseService {
    * @returns {Promise<Object>} Created silo
    */
   async createSilo(siloData) {
-    return safeAsync(async () => {
-      // Validate required fields
-      validateRequiredFields(siloData, ['name', 'capacity_kg']);
+    requireFields(siloData, ['name', 'capacity_kg']);
+    requireRange(siloData, 'capacity_kg', 1, 500000);
 
-      // Validate numeric ranges
-      validateNumericRanges(siloData, {
-        capacity_kg: { min: 1, max: 500000 }
-      });
+    const { data: existingSilo, error: nameError } = await supabase
+      .from('silos')
+      .select('id, name')
+      .eq('name', siloData.name);
 
-      // Check for duplicate name
-      const { data: existingSilo, error: nameError } = await supabase
-        .from('silos')
-        .select('id, name')
-        .eq('name', siloData.name);
-      
-      if (nameError) throw nameError;
-      
-      if (existingSilo && existingSilo.length > 0) {
-        throwBusinessError(
-          `Silo with name '${siloData.name}' already exists`
-        );
-      }
+    if (nameError) throw nameError;
+    if (existingSilo?.length > 0) {
+      throw new Error(`Silo with name '${siloData.name}' already exists`);
+    }
 
-      // Create the silo
-      const silo = await this.create(siloData);
-      
-      return silo;
-    }, 'createSilo');
+    return this.create(siloData);
   }
 
   /**
@@ -170,58 +99,29 @@ export class SilosService extends BaseService {
    * @returns {Promise<Object>} Updated silo
    */
   async updateSilo(id, updates) {
-    return safeAsync(async () => {
-      // Check if silo exists
-      const { data: existingSilo, error: existsError } = await supabase
+    const existingSilo = await this.getById(id).catch(() => null);
+    if (!existingSilo) {
+      throw new Error(`Silo ${id} not found`);
+    }
+
+    if (updates.capacity_kg !== undefined) {
+      requireRange(updates, 'capacity_kg', 1, 500000);
+    }
+
+    if (updates.name) {
+      const { data: existingSilos, error: nameError } = await supabase
         .from('silos')
-        .select('id')
-        .eq('id', id)
-        .single();
-      
-      if (existsError && existsError.code !== 'PGRST116') {
-        throw existsError;
-      }
-      
-      if (!existingSilo) {
-        throwNotFoundError('Silo', id);
-      }
+        .select('id, name')
+        .eq('name', updates.name);
 
-      // Validate numeric ranges if capacity is being updated
-      if (updates.capacity_kg !== undefined) {
-        validateNumericRanges(updates, {
-          capacity_kg: { min: 1, max: 500000 }
-        });
+      if (nameError) throw nameError;
+      const duplicate = existingSilos?.find((s) => String(s.id) !== String(id));
+      if (duplicate) {
+        throw new Error(`Silo with name '${updates.name}' already exists`);
       }
+    }
 
-      // Check for duplicate name if name is being updated
-      if (updates.name) {
-        const { data: existingSilos, error: nameError } = await supabase
-          .from('silos')
-          .select('id, name')
-          .eq('name', updates.name);
-        
-        if (nameError) throw nameError;
-        
-        const duplicateSilo = existingSilos?.find(silo => silo.id !== parseInt(id));
-        if (duplicateSilo) {
-          throwBusinessError(
-            `Silo with name '${updates.name}' already exists`
-          );
-        }
-      }
-
-      // Update the silo
-      const { data: updatedSilo, error: updateError } = await supabase
-        .from('silos')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      return updatedSilo;
-    }, 'updateSilo');
+    return this.update(id, updates);
   }
 
   /**
@@ -230,127 +130,34 @@ export class SilosService extends BaseService {
    * @returns {Promise<boolean>} Success status
    */
   async deleteSilo(id) {
-    return safeAsync(async () => {
-      // Check if silo exists
-      const silo = await this.getById(id);
-      if (!silo) {
-        throwNotFoundError('Silo', id);
-      }
+    const silo = await this.getByIdOptional(id);
+    if (!silo) return null;
 
-      // Check if silo has current stock
-      const silosWithLevels = await this.getSilosWithLevels();
-      const siloWithLevels = silosWithLevels.find(s => s.id === id);
-      
-      if (siloWithLevels && siloWithLevels.currentLevel > 0) {
-        throwBusinessError(
-          `Cannot delete silo '${silo.name}' because it contains ${siloWithLevels.currentLevel} kg of material. Please empty the silo first.`
-        );
-      }
+    const silosWithLevels = await this.getSilosWithLevels();
+    const siloWithLevels = silosWithLevels.find((s) => s.id === id);
 
-      // Check if silo has recent movements
-      const { data: recentMovements, error } = await supabase
-        .from('inbound')
-        .select('id')
-        .eq('silo_id', id)
-        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Last 30 days
-        .limit(1);
+    if (siloWithLevels?.currentLevel > 0) {
+      throw new Error(
+        `Cannot delete silo '${silo.name}' because it contains ${siloWithLevels.currentLevel} kg of material. Please empty the silo first.`
+      );
+    }
 
-      if (error) throw error;
+    const { data: recentMovements, error } = await supabase
+      .from('inbound')
+      .select('id')
+      .eq('silo_id', id)
+      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .limit(1);
 
-      if (recentMovements && recentMovements.length > 0) {
-        throwBusinessError(
-          `Cannot delete silo '${silo.name}' because it has recent movements. Please wait 30 days or contact an administrator.`
-        );
-      }
+    if (error) throw error;
+    if (recentMovements?.length > 0) {
+      throw new Error(
+        `Cannot delete silo '${silo.name}' because it has recent movements. Please wait 30 days or contact an administrator.`
+      );
+    }
 
-      // Delete the silo
-      const success = await this.delete(id);
-      
-      return success;
-    }, 'deleteSilo');
-  }
-
-  /**
-   * Get silos by material compatibility
-   * @param {string|number} materialId - Material ID
-   * @returns {Promise<Array>} Array of compatible silos
-   */
-  async getSilosByMaterial(materialId) {
-    return safeAsync(async () => {
-      const { data, error } = await supabase
-        .from('silos')
-        .select('*')
-        .contains('allowed_material_ids', [materialId])
-        .order('name');
-      
-      if (error) throw error;
-      return data || [];
-    }, 'getSilosByMaterial');
-  }
-
-  /**
-   * Get silos by capacity range
-   * @param {number} minCapacity - Minimum capacity
-   * @param {number} maxCapacity - Maximum capacity (optional)
-   * @returns {Promise<Array>} Array of silos in capacity range
-   */
-  async getSilosByCapacity(minCapacity, maxCapacity = null) {
-    return safeAsync(async () => {
-      let query = supabase
-        .from('silos')
-        .select('*')
-        .gte('capacity_kg', minCapacity)
-        .order('capacity_kg');
-
-      if (maxCapacity !== null) {
-        query = query.lte('capacity_kg', maxCapacity);
-      }
-
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data || [];
-    }, 'getSilosByCapacity');
-  }
-
-  /**
-   * Get silos utilization statistics
-   * @returns {Promise<Object>} Utilization statistics
-   */
-  async getUtilizationStats() {
-    return safeAsync(async () => {
-      const silosWithLevels = await this.getSilosWithLevels();
-      
-      const stats = {
-        totalSilos: silosWithLevels.length,
-        totalCapacity: silosWithLevels.reduce((sum, silo) => sum + silo.capacity_kg, 0),
-        totalCurrentStock: silosWithLevels.reduce((sum, silo) => sum + silo.currentLevel, 0),
-        averageUtilization: 0,
-        silosByUtilization: {
-          empty: 0,
-          low: 0,
-          medium: 0,
-          high: 0,
-          full: 0
-        }
-      };
-
-      if (stats.totalSilos > 0) {
-        stats.averageUtilization = silosWithLevels.reduce((sum, silo) => sum + silo.utilizationPercentage, 0) / stats.totalSilos;
-        
-        silosWithLevels.forEach(silo => {
-          if (!silo || silo.utilizationPercentage === null || silo.utilizationPercentage === undefined) return;
-          const utilization = silo.utilizationPercentage;
-          if (utilization === 0) stats.silosByUtilization.empty++;
-          else if (utilization < 25) stats.silosByUtilization.low++;
-          else if (utilization < 50) stats.silosByUtilization.medium++;
-          else if (utilization < 90) stats.silosByUtilization.high++;
-          else stats.silosByUtilization.full++;
-        });
-      }
-
-      return stats;
-    }, 'getUtilizationStats');
+    await this.delete(id);
+    return silo;
   }
 }
 

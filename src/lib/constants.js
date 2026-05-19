@@ -1,0 +1,5 @@
+export const DATA_TABLE_DEFAULTS = {
+  PAGE_SIZE: 10,
+  PAGE_SIZE_OPTIONS: [10, 25, 50, 100],
+  MAX_VISIBLE_PAGES: 5,
+};

@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
+
+const DevtoolsLazy = lazy(() =>
+  import('@tanstack/react-query-devtools').then((m) => ({
+    default: () => <m.ReactQueryDevtools initialIsOpen={false} />,
+  }))
+);
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import '@santonastaso/shared/styles.css';
 import App from './App';
 import { AuthProvider } from './auth/AuthContext';
+import { ConfirmProvider } from './ui/confirm-provider';
 import './index.css';
 
 // Create a client
@@ -29,8 +34,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         }}
       >
         <AuthProvider>
-          <App />
-          <ReactQueryDevtools initialIsOpen={false} />
+          <ConfirmProvider>
+            <App />
+            {import.meta.env.DEV && (
+              <Suspense fallback={null}>
+                <DevtoolsLazy />
+              </Suspense>
+            )}
+          </ConfirmProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

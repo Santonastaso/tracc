@@ -1,14 +1,20 @@
+import { formatDateLong } from '../lib/format';
 import React, { useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useDeleteInbound, useMaterials, useOperators, useSilos } from '../hooks';
-import { Button, Input, Label } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
+import {
+  useDeleteInbound,
+  useUpdateInbound,
+  useMaterials,
+  useOperators,
+  useSilos,
+  useActiveSuppliers,
+} from '../hooks';
+import { Button, Input, Label } from '../ui';
+import { Card } from '../ui';
 
 import { ArrowLeft, Edit, Save, X, Trash2, ArrowDown } from 'lucide-react';
-import { confirmAction } from '@santonastaso/shared';
+import { confirmAction } from '../ui';
 
-export function MerceInDetailCard({ inbound, onClose, onEdit }) {
+export function MerceInDetailCard({ inbound, onClose, _onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     ddt_number: inbound.ddt_number || '',
@@ -23,61 +29,14 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
     operator_name: inbound.operator_name || ''
   });
 
-  const { data: materialsData } = useMaterials();
-  const { data: operatorsData } = useOperators();
+  const { data: _materialsData } = useMaterials();
+  const { data: _operatorsData } = useOperators();
   const { data: silosData } = useSilos();
-  
-  // Fetch suppliers for dropdown
-  const { data: suppliersData } = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('id, name')
-        .eq('active', true)
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  const { data: suppliersData } = useActiveSuppliers();
   const deleteMutation = useDeleteInbound();
-  const queryClient = useQueryClient();
-
-  const updateMutation = useMutation({
-    mutationFn: async (data) => {
-      console.log('About to update with data:', data);
-      const { data: updatedData, error } = await supabase
-        .from('inbound')
-        .update(data)
-        .eq('id', inbound.id)
-        .select('*, silos(name)')
-        .single();
-      if (error) {
-        console.error('Update error:', error);
-        throw error;
-      }
-      console.log('Update successful');
-      return updatedData;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inbound'] });
-      queryClient.invalidateQueries({ queryKey: ['inbound', 'with-silos'] });
-      queryClient.invalidateQueries({ queryKey: ['silos', 'withLevels'] });
-      setIsEditing(false);
-      // Close the detail card to force parent to re-render with fresh data
-      if (onClose) {
-        onClose();
-      }
-    }
-  });
+  const updateMutation = useUpdateInbound({ silent: true });
 
   const handleSave = () => {
-    console.log('Saving formData:', formData);
-    console.log('lot_supplier value:', formData.lot_supplier);
-    console.log('Original inbound lot_supplier:', inbound.lot_supplier);
-    
-    // Prepare data with proper type conversions and null handling
     const dataToSave = {
       ddt_number: formData.ddt_number || null,
       product: formData.product || null,
@@ -90,9 +49,16 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
       humidity: formData.humidity ? parseFloat(formData.humidity) : null,
       operator_name: formData.operator_name || null
     };
-    
-    console.log('Processed dataToSave:', dataToSave);
-    updateMutation.mutate(dataToSave);
+
+    updateMutation.mutate(
+      { id: inbound.id, updates: dataToSave },
+      {
+        onSuccess: () => {
+          setIsEditing(false);
+          if (onClose) onClose();
+        },
+      }
+    );
   };
 
   const handleCancel = () => {
@@ -111,14 +77,17 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
     setIsEditing(false);
   };
 
-  const handleDelete = () => {
-    if (confirmAction('Sei sicuro di voler eliminare questo movimento?')) {
-      deleteMutation.mutate(inbound.id, {
-        onSuccess: () => {
-          onClose();
-        }
-      });
-    }
+  const handleDelete = async () => {
+    if (!(await confirmAction('Sei sicuro di voler eliminare questo movimento?', {
+      title: 'Conferma eliminazione',
+      confirmLabel: 'Elimina',
+      variant: 'destructive',
+    }))) return;
+    deleteMutation.mutate(inbound.id, {
+      onSuccess: () => {
+        onClose();
+      },
+    });
   };
 
   const getSiloName = (siloId) => {
@@ -162,7 +131,6 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    console.log('Edit button clicked');
                     setIsEditing(true);
                   }}
                   className="flex items-center gap-2"
@@ -194,7 +162,6 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                 <Button
                   size="sm"
                   onClick={() => {
-                    console.log('Save button clicked');
                     handleSave();
                   }}
                   disabled={updateMutation.isPending}
@@ -287,10 +254,7 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                         id="fornitore"
                         value={formData.lot_supplier}
                         onChange={(e) => {
-                          console.log('Fornitore changed to:', e.target.value);
-                          console.log('Previous formData:', formData);
                           const newFormData = { ...formData, lot_supplier: e.target.value };
-                          console.log('New formData:', newFormData);
                           setFormData(newFormData);
                         }}
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
@@ -412,14 +376,7 @@ export function MerceInDetailCard({ inbound, onClose, onEdit }) {
                   <div>
                     <Label>Data/Ora Movimento</Label>
                     <p className="text-foreground font-medium">
-                      {new Date(inbound.created_at).toLocaleString('it-IT', { 
-                        timeZone: 'UTC',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {formatDateLong(inbound.created_at)}
                     </p>
                   </div>
 

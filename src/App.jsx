@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import SideNav from './components/layout/SideNav';
@@ -19,22 +19,14 @@ import MerceOutListPage from './pages/MerceOutListPage';
 import MerceOutPage from './pages/MerceOutPage';
 import ReportsPage from './pages/ReportsPage';
 import ArchivePage from './pages/ArchivePage';
-import ModernSilosPage from './pages/ModernSilosPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import { ErrorBoundary } from '@santonastaso/shared';
+import { ErrorBoundary } from './ui';
 import ProtectedRoute from './auth/ProtectedRoute';
-import { useAuth } from './auth/AuthContext';
-import { useStoreSync } from './hooks';
-import { ThemeProvider } from '@santonastaso/shared';
+import { ThemeProvider } from './ui';
 
 // This component creates the main layout with the sidebar
 const AppLayout = () => {
-  const { user, signOut } = useAuth();
-  
-  // Sync React Query data with Zustand stores
-  useStoreSync();
-  
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <SideNav />
@@ -75,7 +67,6 @@ function App() {
             {/* Silos routes */}
             <Route path="silos" element={<SilosPage />} />
             <Route path="silos/list" element={<SilosListPage />} />
-            <Route path="silos/modern" element={<ModernSilosPage />} />
             <Route path="silos/new" element={<SilosFormPage />} />
             <Route path="silos/edit/:id" element={<SilosFormPage />} />
             

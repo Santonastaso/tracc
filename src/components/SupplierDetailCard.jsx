@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useDeleteSupplier } from '../hooks';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { Input } from '@santonastaso/shared';
-import { Label } from '@santonastaso/shared';
+import { useDeleteSupplier, useUpdateSupplier } from '../hooks';
+import { Button } from '../ui';
+import { Card } from '../ui';
+import { Input } from '../ui';
+import { Label } from '../ui';
 
-import { Badge } from '@santonastaso/shared';
+import { Badge } from '../ui';
 import { ArrowLeft, Edit, Save, X, Trash2, Building2 } from 'lucide-react';
-import { confirmAction } from '@santonastaso/shared';
+import { confirmAction } from '../ui';
 
-export function SupplierDetailCard({ supplier, onClose, onEdit }) {
+export function SupplierDetailCard({ supplier, onClose, _onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: supplier.name || '',
@@ -26,24 +24,13 @@ export function SupplierDetailCard({ supplier, onClose, onEdit }) {
   });
 
   const deleteMutation = useDeleteSupplier();
-  const queryClient = useQueryClient();
-
-  const updateMutation = useMutation({
-    mutationFn: async (data) => {
-      const { error } = await supabase
-        .from('suppliers')
-        .update(data)
-        .eq('id', supplier.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['suppliers']);
-      setIsEditing(false);
-    }
-  });
+  const updateMutation = useUpdateSupplier({ success: false });
 
   const handleSave = () => {
-    updateMutation.mutate(formData);
+    updateMutation.mutate(
+      { id: supplier.id, updates: formData },
+      { onSuccess: () => setIsEditing(false) }
+    );
   };
 
   const handleCancel = () => {
@@ -61,14 +48,17 @@ export function SupplierDetailCard({ supplier, onClose, onEdit }) {
     setIsEditing(false);
   };
 
-  const handleDelete = () => {
-    if (confirmAction('Sei sicuro di voler eliminare questo fornitore?')) {
-      deleteMutation.mutate(supplier.id, {
-        onSuccess: () => {
-          onClose();
-        }
-      });
-    }
+  const handleDelete = async () => {
+    if (!(await confirmAction('Sei sicuro di voler eliminare questo fornitore?', {
+      title: 'Conferma eliminazione',
+      confirmLabel: 'Elimina',
+      variant: 'destructive',
+    }))) return;
+    deleteMutation.mutate(supplier.id, {
+      onSuccess: () => {
+        onClose();
+      },
+    });
   };
 
   const getStatusVariant = (status) => {

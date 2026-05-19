@@ -13,7 +13,7 @@ import {
   Avatar,
   AvatarImage,
   AvatarFallback
-} from '@santonastaso/shared';
+} from '../../ui';
 import { RotateCw, LogOut, LoaderCircle } from 'lucide-react';
 
 // RefreshButton Component - EXACT copy from scheduler_demo
@@ -101,7 +101,7 @@ export function Header() {
             to="/"
             className="flex items-center gap-2 text-secondary-foreground no-underline"
           >
-            <img className="h-6" src="/trace.svg" alt="TRACC" />
+            <img className="h-6" src={`${import.meta.env.BASE_URL}trace.svg`} alt="TRACC" />
             <h1 className="text-xl font-semibold">TRACC</h1>
           </Link>
 

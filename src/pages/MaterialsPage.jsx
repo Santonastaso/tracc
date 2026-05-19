@@ -1,35 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../services/supabase/client';
-import { useCreateMaterial, useUpdateMaterial } from '../hooks';
-import { FormPageLayout } from "@santonastaso/shared";
+import { useCreateMaterial, useUpdateMaterial, useMaterial } from '../hooks';
+import {FormPageLayout, LoadingSkeleton} from '../ui';
 
 function MaterialsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [editingItem, setEditingItem] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const isEdit = Boolean(id && id !== 'new');
+  const { data: editingItem, isLoading, isError } = useMaterial(isEdit ? id : null);
 
-  // Fetch data for editing if ID is provided
   useEffect(() => {
-    if (id && id !== 'new') {
-      setIsLoading(true);
-      supabase
-        .from('materials')
-        .select('*')
-        .eq('id', id)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error fetching material data:', error);
-            navigate('/materials/list');
-          } else {
-            setEditingItem(data);
-          }
-          setIsLoading(false);
-        });
-    }
-  }, [id, navigate]);
+    if (isError) navigate('/materials/list');
+  }, [isError, navigate]);
 
   // Use centralized mutation hooks
   const createMutation = useCreateMaterial();
@@ -50,10 +32,6 @@ function MaterialsPage() {
     
     // Navigate back to list after successful submission
     navigate('/materials/list');
-  };
-
-  const handleFormSubmit = (data) => {
-    handleSubmit(data);
   };
 
   const handleCancel = () => {
@@ -132,14 +110,7 @@ function MaterialsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   return (
@@ -153,7 +124,7 @@ function MaterialsPage() {
         // Convert boolean values to strings for Select components
         active: String(editingItem.active)
       } : {}}
-      onSubmit={handleFormSubmit}
+      onSubmit={handleSubmit}
       onCancel={handleCancel}
       isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
     />

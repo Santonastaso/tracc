@@ -1,37 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../services/supabase/client';
-import { useCreateOperator, useUpdateOperator } from '../hooks';
-import { GenericForm } from "@santonastaso/shared";
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
+import { useCreateOperator, useUpdateOperator, useOperator } from '../hooks';
+import {GenericForm, LoadingSkeleton} from '../ui';
 
 function OperatorsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [editingItem, setEditingItem] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const isEdit = Boolean(id && id !== 'new');
+  const { data: editingItem, isLoading, isError } = useOperator(isEdit ? id : null);
 
-  // Fetch data for editing if ID is provided
   useEffect(() => {
-    if (id && id !== 'new') {
-      setIsLoading(true);
-      supabase
-        .from('operators')
-        .select('*')
-        .eq('id', id)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error fetching operator data:', error);
-            navigate('/operators/list');
-          } else {
-            setEditingItem(data);
-          }
-          setIsLoading(false);
-        });
-    }
-  }, [id, navigate]);
+    if (isError) navigate('/operators/list');
+  }, [isError, navigate]);
 
   // Use centralized mutation hooks
   const createMutation = useCreateOperator();
@@ -52,10 +32,6 @@ function OperatorsPage() {
     
     // Navigate back to list after successful submission
     navigate('/operators/list');
-  };
-
-  const handleFormSubmit = (data) => {
-    handleSubmit(data);
   };
 
   const handleCancel = () => {
@@ -93,6 +69,7 @@ function OperatorsPage() {
               { value: 'Amministratore', label: 'Amministratore' }
             ]
           },
+          // TODO: reconcile `status` (string enum) with boolean `active` — out of scope for cleanup
           {
             name: 'status',
             label: 'Stato',
@@ -157,14 +134,7 @@ function OperatorsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-2">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   return (
@@ -183,7 +153,7 @@ function OperatorsPage() {
           // Convert boolean values to strings for Select components
           active: String(editingItem.active)
         } : {}}
-        onSubmit={handleFormSubmit}
+        onSubmit={handleSubmit}
         onCancel={handleCancel}
         isEditMode={!!editingItem}
         isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}

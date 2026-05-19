@@ -1,17 +1,16 @@
+import { formatDateTime } from '../lib/format';
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { useMaterials, useDeleteSilo, useSilosWithLevels } from '../hooks';
-import { Button } from '@santonastaso/shared';
-import { Card } from '@santonastaso/shared';
-import { Input } from '@santonastaso/shared';
-import { Label } from '@santonastaso/shared';
+import { useMaterials, useDeleteSilo, useSilosWithLevels, useUpdateSilo } from '../hooks';
+import { Button } from '../ui';
+import { Card } from '../ui';
+import { Input } from '../ui';
+import { Label } from '../ui';
 
-import { Badge } from '@santonastaso/shared';
+import { Badge } from '../ui';
 import { ArrowLeft, Edit, Save, X, Trash2, Warehouse, Package, Calendar } from 'lucide-react';
-import { confirmAction } from '@santonastaso/shared';
+import { confirmAction } from '../ui';
 
-export function SiloDetailCard({ silo, onClose, onEdit, isSnapshot = false, snapshotDateTime = null }) {
+export function SiloDetailCard({ silo, onClose, _onEdit, isSnapshot = false, snapshotDateTime = null }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: silo.name || '',
@@ -22,28 +21,15 @@ export function SiloDetailCard({ silo, onClose, onEdit, isSnapshot = false, snap
   const { data: materialsData } = useMaterials();
   const { data: silosWithLevels } = useSilosWithLevels(true);
   const deleteMutation = useDeleteSilo();
-  const queryClient = useQueryClient();
+  const updateMutation = useUpdateSilo({ silent: true });
 
-  // Get current silo data with levels and inventory
-  // In snapshot mode, use the passed silo data which already contains snapshot calculations
   const currentSiloData = isSnapshot ? silo : (silosWithLevels?.find(s => s.id === silo.id) || silo);
 
-  const updateMutation = useMutation({
-    mutationFn: async (data) => {
-      const { error } = await supabase
-        .from('silos')
-        .update(data)
-        .eq('id', silo.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['silos']);
-      setIsEditing(false);
-    }
-  });
-
   const handleSave = () => {
-    updateMutation.mutate(formData);
+    updateMutation.mutate(
+      { id: silo.id, updates: formData },
+      { onSuccess: () => setIsEditing(false) }
+    );
   };
 
   const handleCancel = () => {
@@ -55,14 +41,17 @@ export function SiloDetailCard({ silo, onClose, onEdit, isSnapshot = false, snap
     setIsEditing(false);
   };
 
-  const handleDelete = () => {
-    if (confirmAction('Sei sicuro di voler eliminare questo silos?')) {
-      deleteMutation.mutate(silo.id, {
-        onSuccess: () => {
-          onClose();
-        }
-      });
-    }
+  const handleDelete = async () => {
+    if (!(await confirmAction('Sei sicuro di voler eliminare questo silos?', {
+      title: 'Conferma eliminazione',
+      confirmLabel: 'Elimina',
+      variant: 'destructive',
+    }))) return;
+    deleteMutation.mutate(silo.id, {
+      onSuccess: () => {
+        onClose();
+      },
+    });
   };
 
   const handleMaterialToggle = (materialId) => {
@@ -90,7 +79,7 @@ export function SiloDetailCard({ silo, onClose, onEdit, isSnapshot = false, snap
       .join(', ');
   };
 
-  const getFormMaterialNames = () => {
+  const _getFormMaterialNames = () => {
     if (!formData.allowed_material_ids || formData.allowed_material_ids.length === 0) {
       return 'Tutti i materiali';
     }
@@ -128,14 +117,7 @@ export function SiloDetailCard({ silo, onClose, onEdit, isSnapshot = false, snap
                 </h1>
                 <p className="text-muted-foreground">
                   {isSnapshot && snapshotDateTime ? 
-                    `Silos ${silo.name} - Snapshot al ${new Date(snapshotDateTime).toLocaleString('it-IT', { 
-                      timeZone: 'UTC',
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}` :
+                    `Silos ${silo.name} - Snapshot al ${formatDateTime(snapshotDateTime)}` :
                     (isEditing ? 'Modify silo information' : silo.name)
                   }
                 </p>

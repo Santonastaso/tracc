@@ -1,62 +1,68 @@
-// Export all query hooks for centralized access
 export {
-  // Query keys
   queryKeys,
-  
-  // Silos
+  inboundWithSilosKey,
+  outboundWithSilosKey,
   useSilos,
   useSilo,
+  useSilosList,
   useSilosWithLevels,
   useCreateSilo,
   useUpdateSilo,
   useDeleteSilo,
-  
-  // Inbound
+  useBulkDeleteSilos,
   useInbound,
-  useInboundBySilo,
-  useInboundByDate,
+  useInboundDetail,
+  useSuppliersDropdown,
+  useInboundWithSilos,
   useCreateInbound,
   useUpdateInbound,
   useDeleteInbound,
-  
-  // Outbound
+  useBulkDeleteInbound,
   useOutbound,
-  useOutboundBySilo,
-  useOutboundByDate,
+  useOutboundDetail,
+  useOutboundWithSilos,
   useOutboundByBatch,
   useCreateOutbound,
   useUpdateOutbound,
   useDeleteOutbound,
   useCreateOutboundBatch,
   useDeleteOutboundBatch,
-  
-  // Materials
+  useBulkDeleteOutbound,
   useMaterials,
+  useMaterialsList,
   useMaterial,
   useCreateMaterial,
   useUpdateMaterial,
   useDeleteMaterial,
-  
-  // Operators
+  useBulkDeleteMaterials,
   useOperators,
+  useOperatorsList,
   useOperator,
   useCreateOperator,
   useUpdateOperator,
   useDeleteOperator,
-  
-  // Suppliers
+  useBulkDeleteOperators,
+  useSuppliers,
+  useActiveSuppliers,
+  useSupplier,
   useCreateSupplier,
   useUpdateSupplier,
   useDeleteSupplier,
+  useBulkDeleteSuppliers,
 } from './useQueries';
 
-// Export utility hooks from shared package
-export { 
-  useErrorHandler, 
-  useValidationErrorHandler,
-  useTheme
-} from '@santonastaso/shared';
+export {
+  useAnalysisArchive,
+  useArchiveSave,
+  useArchiveDelete,
+  useArchiveBulkDelete,
+} from './archive-queries';
 
-// Export local utility hooks
-export { useValidation } from './useValidation';
-export { useStoreSync } from './useStoreSync';
+export {
+  useMovementsReport,
+  useOutboundReport,
+  useCombinedMovementsReport,
+  useStockReport,
+  useSnapshotReport,
+  useSnapshotSiloDetail,
+} from './report-queries';

@@ -1,30 +1,15 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ command }) => {
-  const isDev = command === 'serve'
-  
+  const isDev = command === 'serve';
+
   return {
     plugins: [react()],
-    base: isDev ? '/' : '/tracc/', // Use root for dev, /tracc/ for production
+    base: isDev ? '/' : '/tracc/',
     server: {
-      // Ensure dev server works correctly
       port: 5173,
       host: true,
-    },
-    resolve: {
-      // Ensure single React instance to prevent hook conflicts
-      dedupe: ['react', 'react-dom', 'react-router-dom'],
-      alias: {
-        // Force all React imports to use the same instance
-        'react': path.resolve(__dirname, 'node_modules/react'),
-        'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
-        'react-router-dom': path.resolve(__dirname, 'node_modules/react-router-dom'),
-      }
     },
     build: {
       outDir: 'dist',
@@ -35,9 +20,9 @@ export default defineConfig(({ command }) => {
           manualChunks: undefined,
           chunkFileNames: 'assets/[name]-[hash].js',
           entryFileNames: 'assets/[name]-[hash].js',
-          assetFileNames: 'assets/[name]-[hash].[ext]'
-        }
-      }
-    }
-  }
-})
+          assetFileNames: 'assets/[name]-[hash].[ext]',
+        },
+      },
+    },
+  };
+});
