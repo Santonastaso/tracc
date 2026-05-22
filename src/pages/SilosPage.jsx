@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import {
-  useSilosWithLevels, 
-  useCreateSilo, 
-  useUpdateSilo, 
-  useDeleteSilo,
-  useMaterials 
+  useSilosWithLevels,
+  useCreateSilo,
+  useUpdateSilo,
+  useMaterials,
 } from '../hooks';
 import { GenericForm } from '../ui';
 import SiloCard from '../components/SiloCard';
 import { SiloDetailCard } from '../components/SiloDetailCard';
 import { Button } from '../ui';
 import { Card } from '../ui';
-import { confirmDelete } from '../lib/confirm';
 
 function SilosPage() {
   const [showForm, setShowForm] = useState(false);
@@ -22,12 +20,9 @@ function SilosPage() {
   const { data: silosData, isLoading } = useSilosWithLevels(true); // Include materials object for SilosPage
   const { data: materialsData } = useMaterials();
 
-  // Use centralized mutation hooks
   const createMutation = useCreateSilo();
   const updateMutation = useUpdateSilo();
-  const deleteMutation = useDeleteSilo();
 
-  // Handle form submission
   const handleSubmit = async (formData) => {
     const dataToSave = {
       ...formData,
@@ -44,16 +39,6 @@ function SilosPage() {
     
     setShowForm(false);
     setEditingItem(null);
-  };
-
-  const _handleEdit = (item) => {
-    setEditingItem(item);
-    setShowForm(true);
-  };
-
-  const _handleDelete = async (item) => {
-    if (!(await confirmDelete(`il silo "${item.name}"`))) return;
-    deleteMutation.mutate(item.id);
   };
 
   const handleCancel = () => {

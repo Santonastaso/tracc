@@ -24,13 +24,4 @@ export function handleSupabaseError(error) {
   return error?.message || 'An unexpected error occurred';
 }
 
-export async function checkSupabaseConnection(testTable = 'silos') {
-  try {
-    const { error } = await supabase.from(testTable).select('count').limit(1);
-    return !error;
-  } catch {
-    return false;
-  }
-}
-
 export default supabase;

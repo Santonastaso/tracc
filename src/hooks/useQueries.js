@@ -32,8 +32,8 @@ export const queryKeys = {
   supplier: (id) => ['suppliers', id],
 };
 
-export const inboundWithSilosKey = ['inbound', 'with-silos'];
-export const outboundWithSilosKey = ['outbound', 'with-silos'];
+const inboundWithSilosKey = ['inbound', 'with-silos'];
+const outboundWithSilosKey = ['outbound', 'with-silos'];
 
 const invalidateSilos = (queryClient) => {
   queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'silos' });
@@ -737,9 +737,6 @@ export const useActiveSuppliers = () =>
     queryKey: ['suppliers', 'active'],
     staleTime: 5 * 60 * 1000,
   });
-
-/** MerceIn form supplier dropdown — delegates to useActiveSuppliers (correct cache key). */
-export const useSuppliersDropdown = () => useActiveSuppliers();
 
 export const useSupplier = (id) => suppliersEntity.useDetail(id);
 

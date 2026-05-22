@@ -6,7 +6,7 @@ import {
   useCreateInbound,
   useUpdateInbound,
   useInboundDetail,
-  useSuppliersDropdown,
+  useActiveSuppliers,
 } from '../hooks';
 import {GenericForm, LoadingSkeleton} from '../ui';
 import { showError } from '../lib/toast';
@@ -38,7 +38,7 @@ function MerceInPage() {
   const { data: silosData } = useSilosWithLevels();
   const { data: materialsData, isLoading: materialsLoading } = useMaterials();
   const { data: operatorsData, isLoading: operatorsLoading } = useOperators();
-  const { data: suppliersData } = useSuppliersDropdown();
+  const { data: suppliersData } = useActiveSuppliers();
 
   // Filter silos based on selected material and capacity
   const filteredSilos = useMemo(() => {

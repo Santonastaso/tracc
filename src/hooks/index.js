@@ -1,7 +1,5 @@
 export {
   queryKeys,
-  inboundWithSilosKey,
-  outboundWithSilosKey,
   useSilos,
   useSilo,
   useSilosList,
@@ -12,7 +10,6 @@ export {
   useBulkDeleteSilos,
   useInbound,
   useInboundDetail,
-  useSuppliersDropdown,
   useInboundWithSilos,
   useCreateInbound,
   useUpdateInbound,
