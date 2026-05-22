@@ -12,7 +12,7 @@ import {GenericForm, LoadingSkeleton} from '../ui';
 import { showError } from '../lib/toast';
 import { useParams, useNavigate } from 'react-router-dom';
 
-function MerceInPage() {
+function MerceInFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedMaterial, setSelectedMaterial] = useState(null);
@@ -331,4 +331,4 @@ function MerceInPage() {
   );
 }
 
-export default MerceInPage;
+export default MerceInFormPage;

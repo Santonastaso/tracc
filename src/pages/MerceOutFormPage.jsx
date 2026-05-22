@@ -13,7 +13,7 @@ import { showError } from '../lib/toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 
-function MerceOutPage() {
+function MerceOutFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   // Form state for multi-silo selection
@@ -626,4 +626,4 @@ function MerceOutPage() {
   );
 }
 
-export default MerceOutPage;
+export default MerceOutFormPage;
