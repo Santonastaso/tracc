@@ -1,21 +1,21 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useCreateOperator, useUpdateOperator, useOperator } from '../hooks';
-import {GenericForm, LoadingSkeleton} from '../ui';
+import { useCreateSupplier, useUpdateSupplier, useSupplier } from '../hooks';
+import {FormPageLayout, LoadingSkeleton} from '../ui';
 
-function OperatorsPage() {
+function SuppliersFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id && id !== 'new');
-  const { data: editingItem, isLoading, isError } = useOperator(isEdit ? id : null);
+  const { data: editingItem, isLoading, isError } = useSupplier(isEdit ? id : null);
 
   useEffect(() => {
-    if (isError) navigate('/operators/list');
+    if (isError) navigate('/suppliers/list');
   }, [isError, navigate]);
 
   // Use centralized mutation hooks
-  const createMutation = useCreateOperator();
-  const updateMutation = useUpdateOperator();
+  const createMutation = useCreateSupplier();
+  const updateMutation = useUpdateSupplier();
 
   // Handle form submission
   const handleSubmit = async (formData) => {
@@ -31,11 +31,11 @@ function OperatorsPage() {
     }
     
     // Navigate back to list after successful submission
-    navigate('/operators/list');
+    navigate('/suppliers/list');
   };
 
   const handleCancel = () => {
-    navigate('/operators/list');
+    navigate('/suppliers/list');
   };
 
   // Form configuration
@@ -46,28 +46,22 @@ function OperatorsPage() {
         fields: [
           {
             name: 'name',
-            label: 'Nome Operatore',
+            label: 'Nome Fornitore',
             type: 'text',
             required: true,
-            placeholder: 'Inserisci nome operatore'
+            placeholder: 'Inserisci nome fornitore'
           },
           {
             name: 'code',
-            label: 'Codice Operatore',
+            label: 'Codice Fornitore',
             type: 'text',
-            placeholder: 'Inserisci codice operatore'
+            placeholder: 'Inserisci codice fornitore'
           },
           {
-            name: 'role',
-            label: 'Ruolo',
-            type: 'select',
-            required: true,
-            options: [
-              { value: 'Operatore', label: 'Operatore' },
-              { value: 'Supervisore', label: 'Supervisore' },
-              { value: 'Manager', label: 'Manager' },
-              { value: 'Amministratore', label: 'Amministratore' }
-            ]
+            name: 'contact_person',
+            label: 'Persona di Contatto',
+            type: 'text',
+            placeholder: 'Inserisci nome persona di contatto'
           },
           // TODO: reconcile `status` (string enum) with boolean `active` — out of scope for cleanup
           {
@@ -86,6 +80,13 @@ function OperatorsPage() {
       {
         title: 'Contatti',
         fields: [
+          {
+            name: 'address',
+            label: 'Indirizzo',
+            type: 'textarea',
+            rows: 3,
+            placeholder: 'Inserisci indirizzo completo'
+          },
           {
             name: 'phone',
             label: 'Telefono',
@@ -123,14 +124,14 @@ function OperatorsPage() {
         ]
       }
     ],
-    addButtonText: 'Aggiungi Operatore',
-    editButtonText: 'Aggiorna Operatore',
+    addButtonText: 'Aggiungi Fornitore',
+    editButtonText: 'Aggiorna Fornitore',
     addLoadingText: 'Aggiungendo...',
     editLoadingText: 'Aggiornando...',
-    addContext: 'Creazione operatore',
-    editContext: 'Aggiornamento operatore',
-    addErrorMessage: 'Errore durante la creazione dell\'operatore',
-    editErrorMessage: 'Errore durante l\'aggiornamento dell\'operatore'
+    addContext: 'Creazione fornitore',
+    editContext: 'Aggiornamento fornitore',
+    addErrorMessage: 'Errore durante la creazione del fornitore',
+    editErrorMessage: 'Errore durante l\'aggiornamento del fornitore'
   };
 
   if (isLoading) {
@@ -138,31 +139,24 @@ function OperatorsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-foreground">
-          {editingItem ? 'Modifica Operatore' : 'Nuovo Operatore'}
-        </h1>
-      </div>
-
-      
-      <GenericForm
-        config={formConfig}
-        initialData={editingItem ? {
-          ...editingItem,
-          // Convert boolean values to strings for Select components
-          active: String(editingItem.active)
-        } : {}}
-        onSubmit={handleSubmit}
-        onCancel={handleCancel}
-        isEditMode={!!editingItem}
-        isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
-      />
-    </div>
+    <FormPageLayout
+      title="Nuovo Fornitore"
+      editTitle="Modifica Fornitore"
+      isEditMode={!!editingItem}
+      formConfig={formConfig}
+      initialData={editingItem ? {
+        ...editingItem,
+        // Convert boolean values to strings for Select components
+        active: String(editingItem.active)
+      } : {}}
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+      isLoading={editingItem ? updateMutation.isPending : createMutation.isPending}
+    />
   );
 }
 
-export default OperatorsPage;
+export default SuppliersFormPage;
 
 
 

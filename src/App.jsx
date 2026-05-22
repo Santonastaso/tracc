@@ -8,15 +8,15 @@ import SilosPage from './pages/SilosPage';
 import SilosListPage from './pages/SilosListPage';
 import SilosFormPage from './pages/SilosFormPage';
 import OperatorsListPage from './pages/OperatorsListPage';
-import OperatorsPage from './pages/OperatorsPage';
+import OperatorsFormPage from './pages/OperatorsFormPage';
 import MaterialsListPage from './pages/MaterialsListPage';
-import MaterialsPage from './pages/MaterialsPage';
+import MaterialsFormPage from './pages/MaterialsFormPage';
 import SuppliersListPage from './pages/SuppliersListPage';
-import SuppliersPage from './pages/SuppliersPage';
+import SuppliersFormPage from './pages/SuppliersFormPage';
 import MerceInListPage from './pages/MerceInListPage';
-import MerceInPage from './pages/MerceInPage';
+import MerceInFormPage from './pages/MerceInFormPage';
 import MerceOutListPage from './pages/MerceOutListPage';
-import MerceOutPage from './pages/MerceOutPage';
+import MerceOutFormPage from './pages/MerceOutFormPage';
 import ReportsPage from './pages/ReportsPage';
 import ArchivePage from './pages/ArchivePage';
 import LoginPage from './pages/LoginPage';
@@ -72,28 +72,28 @@ function App() {
             
             {/* Operators routes */}
             <Route path="operators/list" element={<OperatorsListPage />} />
-            <Route path="operators/new" element={<OperatorsPage />} />
-            <Route path="operators/edit/:id" element={<OperatorsPage />} />
-            
+            <Route path="operators/new" element={<OperatorsFormPage />} />
+            <Route path="operators/edit/:id" element={<OperatorsFormPage />} />
+
             {/* Materials routes */}
             <Route path="materials/list" element={<MaterialsListPage />} />
-            <Route path="materials/new" element={<MaterialsPage />} />
-            <Route path="materials/edit/:id" element={<MaterialsPage />} />
-            
+            <Route path="materials/new" element={<MaterialsFormPage />} />
+            <Route path="materials/edit/:id" element={<MaterialsFormPage />} />
+
             {/* Suppliers routes */}
             <Route path="suppliers/list" element={<SuppliersListPage />} />
-            <Route path="suppliers/new" element={<SuppliersPage />} />
-            <Route path="suppliers/edit/:id" element={<SuppliersPage />} />
-            
+            <Route path="suppliers/new" element={<SuppliersFormPage />} />
+            <Route path="suppliers/edit/:id" element={<SuppliersFormPage />} />
+
             {/* Merce IN routes */}
             <Route path="merce-in/list" element={<MerceInListPage />} />
-            <Route path="merce-in/new" element={<MerceInPage />} />
-            <Route path="merce-in/edit/:id" element={<MerceInPage />} />
-            
+            <Route path="merce-in/new" element={<MerceInFormPage />} />
+            <Route path="merce-in/edit/:id" element={<MerceInFormPage />} />
+
             {/* Merce OUT routes */}
             <Route path="merce-out/list" element={<MerceOutListPage />} />
-            <Route path="merce-out/new" element={<MerceOutPage />} />
-            <Route path="merce-out/edit/:id" element={<MerceOutPage />} />
+            <Route path="merce-out/new" element={<MerceOutFormPage />} />
+            <Route path="merce-out/edit/:id" element={<MerceOutFormPage />} />
             
             <Route path="reports" element={<ReportsPage />} />
             <Route path="archive" element={<ArchivePage />} />

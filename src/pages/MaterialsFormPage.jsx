@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCreateMaterial, useUpdateMaterial, useMaterial } from '../hooks';
 import {FormPageLayout, LoadingSkeleton} from '../ui';
 
-function MaterialsPage() {
+function MaterialsFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id && id !== 'new');
@@ -131,7 +131,7 @@ function MaterialsPage() {
   );
 }
 
-export default MaterialsPage;
+export default MaterialsFormPage;
 
 
 

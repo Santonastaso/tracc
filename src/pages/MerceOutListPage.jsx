@@ -23,16 +23,7 @@ function MerceOutListPage() {
   // Fetch data using centralized query hooks
   const { data: outboundData, isLoading } = useOutboundWithSilos();
 
-  // Helper to extract batch_id from record (column or items)
-  const getBatchId = (record) => {
-    // First check the column
-    if (record.batch_id) return record.batch_id;
-    // Fallback: check if batch_id is stored in items
-    if (record.items && record.items.length > 0 && record.items[0].batch_id) {
-      return record.items[0].batch_id;
-    }
-    return null;
-  };
+  const getBatchId = (record) => record.items?.[0]?.batch_id ?? null;
 
   // Group records by batch_id
   const groupedData = useMemo(() => {

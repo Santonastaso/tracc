@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
+import { supabase } from '../lib/supabase';
 import { showSuccess, showError } from '../lib/toast';
 
 /**
