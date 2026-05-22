@@ -16,12 +16,4 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
-export function handleSupabaseError(error) {
-  if (error?.code === '23505') return 'This record already exists';
-  if (error?.code === '23503') return 'Cannot perform this operation due to related records';
-  if (error?.code === 'PGRST116') return 'No records found';
-  if (error?.message?.includes('JWT')) return 'Authentication error. Please refresh the page';
-  return error?.message || 'An unexpected error occurred';
-}
-
 export default supabase;

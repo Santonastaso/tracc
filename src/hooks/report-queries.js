@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
+import { supabase } from '../lib/supabase';
 import { computeSiloAvailableItems, computeStockLevels } from '../lib/silo-levels';
 
 export const useMovementsReport = (filters) =>

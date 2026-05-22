@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase/client';
-import { silosService } from '../services';
+import { supabase } from '../lib/supabase';
+import { silosService } from '../lib/silos-service';
 import { showSuccess, showError } from '../lib/toast';
 import { makeEntityHooks } from './entity-hooks';
 

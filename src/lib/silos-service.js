@@ -1,6 +1,7 @@
-import { BaseService } from './base-service.js';
-import { supabase } from './supabase/client.js';
-import { computeSiloLevels } from '../lib/silo-levels.js';
+import { supabase } from './supabase';
+import { computeSiloLevels } from './silo-levels';
+
+const TABLE = 'silos';
 
 function requireFields(data, fields) {
   for (const field of fields) {
@@ -18,63 +19,64 @@ function requireRange(data, field, min, max) {
   }
 }
 
-/**
- * Silos Service
- * Handles all silos-related operations with business logic
- */
-export class SilosService extends BaseService {
-  constructor() {
-    super(supabase, 'silos');
-  }
+async function getById(id) {
+  const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+  if (error) throw error;
+  return data;
+}
 
-  /**
-   * Get all silos with current levels and available lots
-   * @param {boolean} includeMaterials - Whether to include materials object in available items
-   * @returns {Promise<Array>} Array of silos with calculated levels and items
-   */
+async function getByIdOptional(id) {
+  const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw error;
+  }
+  return data;
+}
+
+async function insertRow(payload) {
+  const { data, error } = await supabase.from(TABLE).insert(payload).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function updateRow(id, payload) {
+  const { data, error } = await supabase.from(TABLE).update(payload).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function deleteRow(id) {
+  const { error } = await supabase.from(TABLE).delete().eq('id', id);
+  if (error) throw error;
+}
+
+export const silosService = {
+  getById,
+
   async getSilosWithLevels(includeMaterials = false) {
-    // Get silos
-      const { data: silos, error: silosError } = await supabase
-        .from('silos')
-        .select('*')
-        .order('id');
-      
-      if (silosError) throw silosError;
+    const { data: silos, error: silosError } = await supabase
+      .from('silos')
+      .select('*')
+      .order('id');
+    if (silosError) throw silosError;
 
-      // Get inbound data for each silo
-      const { data: inboundData, error: inboundError } = await supabase
-        .from('inbound')
-        .select(`
-          id,
-          silo_id,
-          quantity_kg,
-          created_at,
-          product,
-          lot_supplier,
-          lot_tf,
-          proteins,
-          humidity,
-          cleaned
-        `)
-        .order('created_at', { ascending: true }); // FIFO order
-      
-      if (inboundError) throw inboundError;
+    const { data: inboundData, error: inboundError } = await supabase
+      .from('inbound')
+      .select(
+        'id, silo_id, quantity_kg, created_at, product, lot_supplier, lot_tf, proteins, humidity, cleaned'
+      )
+      .order('created_at', { ascending: true });
+    if (inboundError) throw inboundError;
 
-      // Get outbound data for each silo
-      const { data: outboundData, error: outboundError } = await supabase
-        .from('outbound')
-        .select('silo_id, quantity_kg, items');
-      
-      if (outboundError) throw outboundError;
+    const { data: outboundData, error: outboundError } = await supabase
+      .from('outbound')
+      .select('silo_id, quantity_kg, items');
+    if (outboundError) throw outboundError;
 
-      return computeSiloLevels(silos, inboundData, outboundData, { includeMaterials });
-  }
+    return computeSiloLevels(silos, inboundData, outboundData, { includeMaterials });
+  },
 
-  /**
-   * Create a new silo with validation
-   * @param {Object} siloData - Silo data
-   * @returns {Promise<Object>} Created silo
-   */
   async createSilo(siloData) {
     requireFields(siloData, ['name', 'capacity_kg']);
     requireRange(siloData, 'capacity_kg', 1, 500000);
@@ -83,26 +85,17 @@ export class SilosService extends BaseService {
       .from('silos')
       .select('id, name')
       .eq('name', siloData.name);
-
     if (nameError) throw nameError;
     if (existingSilo?.length > 0) {
       throw new Error(`Silo with name '${siloData.name}' already exists`);
     }
 
-    return this.create(siloData);
-  }
+    return insertRow(siloData);
+  },
 
-  /**
-   * Update a silo with validation
-   * @param {string|number} id - Silo ID
-   * @param {Object} updates - Update data
-   * @returns {Promise<Object>} Updated silo
-   */
   async updateSilo(id, updates) {
-    const existingSilo = await this.getById(id).catch(() => null);
-    if (!existingSilo) {
-      throw new Error(`Silo ${id} not found`);
-    }
+    const existing = await getByIdOptional(id);
+    if (!existing) throw new Error(`Silo ${id} not found`);
 
     if (updates.capacity_kg !== undefined) {
       requireRange(updates, 'capacity_kg', 1, 500000);
@@ -113,7 +106,6 @@ export class SilosService extends BaseService {
         .from('silos')
         .select('id, name')
         .eq('name', updates.name);
-
       if (nameError) throw nameError;
       const duplicate = existingSilos?.find((s) => String(s.id) !== String(id));
       if (duplicate) {
@@ -121,16 +113,11 @@ export class SilosService extends BaseService {
       }
     }
 
-    return this.update(id, updates);
-  }
+    return updateRow(id, updates);
+  },
 
-  /**
-   * Delete a silo with business logic validation
-   * @param {string|number} id - Silo ID
-   * @returns {Promise<boolean>} Success status
-   */
   async deleteSilo(id) {
-    const silo = await this.getByIdOptional(id);
+    const silo = await getByIdOptional(id);
     if (!silo) return null;
 
     const silosWithLevels = await this.getSilosWithLevels();
@@ -148,7 +135,6 @@ export class SilosService extends BaseService {
       .eq('silo_id', id)
       .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
       .limit(1);
-
     if (error) throw error;
     if (recentMovements?.length > 0) {
       throw new Error(
@@ -156,8 +142,7 @@ export class SilosService extends BaseService {
       );
     }
 
-    await this.delete(id);
+    await deleteRow(id);
     return silo;
-  }
-}
-
+  },
+};
