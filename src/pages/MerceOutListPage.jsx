@@ -23,7 +23,7 @@ function MerceOutListPage() {
   // Fetch data using centralized query hooks
   const { data: outboundData, isLoading } = useOutboundWithSilos();
 
-  const getBatchId = (record) => record.items?.[0]?.batch_id ?? null;
+  const getBatchId = (record) => record.batch_id ?? record.items?.[0]?.batch_id ?? null;
 
   // Group records by batch_id
   const groupedData = useMemo(() => {

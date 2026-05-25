@@ -1,6 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { computeSiloAvailableItems, computeStockLevels } from '../lib/silo-levels';
+import { computeSiloAvailableItems } from '../lib/silo-levels';
+
+const startOfDayUtc = (date) => date ? `${date}T00:00:00.000Z` : null;
+const endOfDayUtc = (date) => date ? `${date}T23:59:59.999Z` : null;
+const snapshotUtc = (date, time) => `${date}T${time}:59.999Z`;
+const selectedSiloId = (filters) =>
+  filters.siloId && filters.siloId !== 'all' ? parseInt(filters.siloId) : null;
+const normalizeStockRow = (row) => ({
+  ...row,
+  totalInbound: Number(row.totalInbound || 0),
+  totalOutbound: Number(row.totalOutbound || 0),
+  currentStock: Number(row.currentStock || 0),
+  utilizationPercentage: Number(row.utilizationPercentage || 0),
+});
 
 export const useMovementsReport = (filters) =>
   useQuery({
@@ -101,59 +114,23 @@ export const useCombinedMovementsReport = (filters) =>
     enabled: filters.reportType === 'combined',
   });
 
-export const useStockReport = (filters, silosData) =>
+export const useStockReport = (filters) =>
   useQuery({
     queryKey: ['stock-report', filters],
     queryFn: async () => {
-      let silos = silosData;
-      if (!silos) {
-        const { data, error: silosError } = await supabase.from('silos').select('*').order('id');
-        if (silosError) throw silosError;
-        silos = data;
-      }
-
-      let inboundQuery = supabase
-        .from('inbound')
-        .select('silo_id, quantity_kg, created_at')
-        .order('created_at', { ascending: true });
-
-      let outboundQuery = supabase
-        .from('outbound')
-        .select('silo_id, quantity_kg, created_at')
-        .order('created_at', { ascending: true });
-
-      if (filters.startDate) {
-        const startDateTime = filters.startDate + 'T00:00:00.000Z';
-        inboundQuery = inboundQuery.gte('created_at', startDateTime);
-        outboundQuery = outboundQuery.gte('created_at', startDateTime);
-      }
-      if (filters.endDate) {
-        const endDateTime = filters.endDate + 'T23:59:59.999Z';
-        inboundQuery = inboundQuery.lte('created_at', endDateTime);
-        outboundQuery = outboundQuery.lte('created_at', endDateTime);
-      }
-      if (filters.siloId && filters.siloId !== 'all') {
-        inboundQuery = inboundQuery.eq('silo_id', filters.siloId);
-        outboundQuery = outboundQuery.eq('silo_id', filters.siloId);
-      }
-
-      const { data: inboundData, error: inboundError } = await inboundQuery;
-      if (inboundError) throw inboundError;
-
-      const { data: outboundData, error: outboundError } = await outboundQuery;
-      if (outboundError) throw outboundError;
-
-      let stockLevels = computeStockLevels(silos, inboundData, outboundData);
-
-      if (filters.siloId && filters.siloId !== 'all') {
-        stockLevels = stockLevels.filter((silo) => silo.id === parseInt(filters.siloId));
-      }
-      return stockLevels;
+      const { data, error } = await supabase.rpc('get_silo_stock_report', {
+        p_start_at: startOfDayUtc(filters.startDate),
+        p_end_at: endOfDayUtc(filters.endDate),
+        p_silo_id: selectedSiloId(filters),
+        p_snapshot_at: null,
+      });
+      if (error) throw error;
+      return (data || []).map(normalizeStockRow);
     },
     enabled: filters.reportType === 'stock',
   });
 
-export const useSnapshotReport = (filters, silosData) =>
+export const useSnapshotReport = (filters) =>
   useQuery({
     queryKey: ['snapshot-report', filters],
     queryFn: async () => {
@@ -161,48 +138,14 @@ export const useSnapshotReport = (filters, silosData) =>
         throw new Error('Data e ora snapshot sono richiesti');
       }
 
-      const snapshotDateTime = `${filters.snapshotDate}T${filters.snapshotTime}:59.999Z`;
-
-      let silos = silosData;
-      if (!silos) {
-        const { data, error: silosError } = await supabase.from('silos').select('*').order('id');
-        if (silosError) throw silosError;
-        silos = data;
-      }
-
-      let inboundQuery = supabase
-        .from('inbound')
-        .select('silo_id, quantity_kg, created_at')
-        .order('created_at', { ascending: true });
-
-      let outboundQuery = supabase
-        .from('outbound')
-        .select('silo_id, quantity_kg, created_at')
-        .order('created_at', { ascending: true });
-
-      inboundQuery = inboundQuery.lte('created_at', snapshotDateTime);
-      outboundQuery = outboundQuery.lte('created_at', snapshotDateTime);
-
-      if (filters.siloId && filters.siloId !== 'all') {
-        inboundQuery = inboundQuery.eq('silo_id', filters.siloId);
-        outboundQuery = outboundQuery.eq('silo_id', filters.siloId);
-      }
-
-      const { data: inboundData, error: inboundError } = await inboundQuery;
-      if (inboundError) throw inboundError;
-
-      const { data: outboundData, error: outboundError } = await outboundQuery;
-      if (outboundError) throw outboundError;
-
-      let stockLevels = computeStockLevels(silos, inboundData, outboundData).map((silo) => ({
-        ...silo,
-        snapshotDateTime,
-      }));
-
-      if (filters.siloId && filters.siloId !== 'all') {
-        stockLevels = stockLevels.filter((silo) => silo.id === parseInt(filters.siloId));
-      }
-      return stockLevels;
+      const { data, error } = await supabase.rpc('get_silo_stock_report', {
+        p_start_at: null,
+        p_end_at: null,
+        p_silo_id: selectedSiloId(filters),
+        p_snapshot_at: snapshotUtc(filters.snapshotDate, filters.snapshotTime),
+      });
+      if (error) throw error;
+      return (data || []).map(normalizeStockRow);
     },
     enabled: filters.reportType === 'snapshot' && !!filters.snapshotDate && !!filters.snapshotTime,
   });
@@ -215,7 +158,7 @@ export const useSnapshotSiloDetail = (selectedSnapshotSilo, filters) =>
         return null;
       }
 
-      const snapshotDateTime = `${filters.snapshotDate}T${filters.snapshotTime}:59.999Z`;
+      const snapshotDateTime = snapshotUtc(filters.snapshotDate, filters.snapshotTime);
 
       const { data: inboundData, error: inboundError } = await supabase
         .from('inbound')

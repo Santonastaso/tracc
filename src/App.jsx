@@ -21,6 +21,7 @@ import ReportsPage from './pages/ReportsPage';
 import ArchivePage from './pages/ArchivePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import { ErrorBoundary } from './ui';
 import ProtectedRoute from './auth/ProtectedRoute';
 import { ThemeProvider } from './ui';
@@ -56,6 +57,7 @@ function App() {
           {/* Public authentication routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           
           {/* Protected application routes */}
           <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

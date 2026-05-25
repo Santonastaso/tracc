@@ -35,8 +35,8 @@ function ReportsPage() {
   const { data: outboundData, isLoading: outboundLoading } = useOutboundReport(filters);
   const { data: combinedMovementsData, isLoading: combinedMovementsLoading } =
     useCombinedMovementsReport(filters);
-  const { data: stockData, isLoading: stockLoading } = useStockReport(filters, silosData);
-  const { data: snapshotData, isLoading: snapshotLoading } = useSnapshotReport(filters, silosData);
+  const { data: stockData, isLoading: stockLoading } = useStockReport(filters);
+  const { data: snapshotData, isLoading: snapshotLoading } = useSnapshotReport(filters);
   const { data: snapshotSiloDetail } = useSnapshotSiloDetail(
     selectedSnapshotSilo,
     filters
@@ -144,40 +144,36 @@ function ReportsPage() {
     }
   };
 
-  const exportToXLSX = async (data, filename, reportType) => {
+  const escapeCsvValue = (value) => {
+    const stringValue = formatValue(value);
+    if (/[",\n\r]/.test(String(stringValue))) {
+      return `"${String(stringValue).replaceAll('"', '""')}"`;
+    }
+    return stringValue;
+  };
+
+  const exportToCSV = (data, filename, reportType) => {
     if (!data || data.length === 0) {
       showError('Nessun dato da esportare');
       return;
     }
 
-    const XLSX = await import('xlsx');
     const transformedData = transformDataForExport(data, reportType);
-    const worksheet = XLSX.utils.json_to_sheet(transformedData);
-
-    // Set column widths for better readability
-    const maxWidth = 50;
-    const minWidth = 10;
-    const colWidths = Object.keys(transformedData[0] || {}).map(key => {
-      const maxLength = Math.max(
-        key.length,
-        ...transformedData.map(row => String(row[key] || '').length)
-      );
-      return {
-        wch: Math.min(Math.max(maxLength + 2, minWidth), maxWidth)
-      };
-    });
-    worksheet['!cols'] = colWidths;
-
-    // Create workbook
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
-
-    // Generate filename with date
+    const headers = Object.keys(transformedData[0] || {});
+    const rows = transformedData.map(row =>
+      headers.map(header => escapeCsvValue(row[header])).join(',')
+    );
+    const csv = [headers.map(escapeCsvValue).join(','), ...rows].join('\n');
     const dateStr = new Date().toISOString().split('T')[0];
-    const xlsxFilename = `${filename}_${dateStr}.xlsx`;
+    const csvFilename = `${filename}_${dateStr}.csv`;
+    const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
 
-    // Write file
-    XLSX.writeFile(workbook, xlsxFilename);
+    link.href = url;
+    link.download = csvFilename;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const printReport = () => {
@@ -490,10 +486,10 @@ function ReportsPage() {
         <h1 className="text-2xl font-bold text-foreground">Report e Analisi</h1>
         <div className="flex gap-2">
           <Button 
-            onClick={() => exportToXLSX(getCurrentData(), `report_${filters.reportType}`, filters.reportType)}
+            onClick={() => exportToCSV(getCurrentData(), `report_${filters.reportType}`, filters.reportType)}
             variant="outline"
           >
-            Esporta XLSX
+            Esporta CSV
           </Button>
           <Button 
             onClick={printReport}
