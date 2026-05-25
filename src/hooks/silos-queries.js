@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { silosService } from '../lib/silos-service';
 import { showSuccess, showError } from '../lib/toast';
 
-export const silosKeys = {
+const silosKeys = {
   all: ['silos'],
   detail: (id) => ['silos', id],
   list: ['silos', 'list'],

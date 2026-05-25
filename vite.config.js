@@ -24,5 +24,9 @@ export default defineConfig(({ command }) => {
         },
       },
     },
+    test: {
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.js',
+    },
   };
 });

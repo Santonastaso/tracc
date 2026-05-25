@@ -2,7 +2,7 @@ export { Button, buttonVariants } from './button';
 export { Input } from './input';
 export { Label } from './label';
 export { Badge } from './badge';
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card';
+export { Card, CardHeader, CardTitle, CardContent } from './card';
 export {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -19,7 +19,7 @@ export { default as GenericForm } from './generic-form';
 export { ErrorBoundary } from './error-boundary';
 export { ThemeProvider, useTheme } from './theme-provider';
 export { ThemeSwitch } from './theme-switch';
-export { showSuccess, showError, showValidationError } from '../lib/toast';
+export { showSuccess, showError } from '../lib/toast';
 export { confirmAction, confirmDelete } from '../lib/confirm';
 export { ConfirmProvider } from './confirm-provider';
 export { LoadingSkeleton } from './loading-skeleton';

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { showSuccess, showError } from '../lib/toast';
 
-export const inboundKeys = {
+const inboundKeys = {
   all: ['inbound'],
   detail: (id) => ['inbound', id, 'detail'],
   withSilos: ['inbound', 'with-silos'],

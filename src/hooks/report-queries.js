@@ -15,25 +15,31 @@ const normalizeStockRow = (row) => ({
   utilizationPercentage: Number(row.utilizationPercentage || 0),
 });
 
+const movementQuery = (table) =>
+  supabase
+    .from(table)
+    .select('*, silos(name)')
+    .order('created_at', { ascending: false });
+
+const applyMovementFilters = (query, filters) => {
+  let filtered = query;
+  if (filters.startDate) {
+    filtered = filtered.gte('created_at', startOfDayUtc(filters.startDate));
+  }
+  if (filters.endDate) {
+    filtered = filtered.lte('created_at', endOfDayUtc(filters.endDate));
+  }
+  if (filters.siloId && filters.siloId !== 'all') {
+    filtered = filtered.eq('silo_id', filters.siloId);
+  }
+  return filtered;
+};
+
 export const useMovementsReport = (filters) =>
   useQuery({
     queryKey: ['movements-report', filters],
     queryFn: async () => {
-      let query = supabase
-        .from('inbound')
-        .select('*, silos(name)')
-        .order('created_at', { ascending: false });
-
-      if (filters.startDate) {
-        query = query.gte('created_at', filters.startDate + 'T00:00:00.000Z');
-      }
-      if (filters.endDate) {
-        query = query.lte('created_at', filters.endDate + 'T23:59:59.999Z');
-      }
-      if (filters.siloId && filters.siloId !== 'all') {
-        query = query.eq('silo_id', filters.siloId);
-      }
-
+      const query = applyMovementFilters(movementQuery('inbound'), filters);
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -45,21 +51,7 @@ export const useOutboundReport = (filters) =>
   useQuery({
     queryKey: ['outbound-report', filters],
     queryFn: async () => {
-      let query = supabase
-        .from('outbound')
-        .select('*, silos(name)')
-        .order('created_at', { ascending: false });
-
-      if (filters.startDate) {
-        query = query.gte('created_at', filters.startDate + 'T00:00:00.000Z');
-      }
-      if (filters.endDate) {
-        query = query.lte('created_at', filters.endDate + 'T23:59:59.999Z');
-      }
-      if (filters.siloId && filters.siloId !== 'all') {
-        query = query.eq('silo_id', filters.siloId);
-      }
-
+      const query = applyMovementFilters(movementQuery('outbound'), filters);
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -71,35 +63,8 @@ export const useCombinedMovementsReport = (filters) =>
   useQuery({
     queryKey: ['combined-movements-report', filters],
     queryFn: async () => {
-      let inboundQuery = supabase
-        .from('inbound')
-        .select('*, silos(name)')
-        .order('created_at', { ascending: false });
-
-      if (filters.startDate) {
-        inboundQuery = inboundQuery.gte('created_at', filters.startDate + 'T00:00:00.000Z');
-      }
-      if (filters.endDate) {
-        inboundQuery = inboundQuery.lte('created_at', filters.endDate + 'T23:59:59.999Z');
-      }
-      if (filters.siloId && filters.siloId !== 'all') {
-        inboundQuery = inboundQuery.eq('silo_id', filters.siloId);
-      }
-
-      let outboundQuery = supabase
-        .from('outbound')
-        .select('*, silos(name)')
-        .order('created_at', { ascending: false });
-
-      if (filters.startDate) {
-        outboundQuery = outboundQuery.gte('created_at', filters.startDate + 'T00:00:00.000Z');
-      }
-      if (filters.endDate) {
-        outboundQuery = outboundQuery.lte('created_at', filters.endDate + 'T23:59:59.999Z');
-      }
-      if (filters.siloId && filters.siloId !== 'all') {
-        outboundQuery = outboundQuery.eq('silo_id', filters.siloId);
-      }
+      const inboundQuery = applyMovementFilters(movementQuery('inbound'), filters);
+      const outboundQuery = applyMovementFilters(movementQuery('outbound'), filters);
 
       const [inboundResult, outboundResult] = await Promise.all([inboundQuery, outboundQuery]);
 

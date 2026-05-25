@@ -1,0 +1,32 @@
+name: gitleaks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Prepare tracked source snapshot
+        run: |
+          mkdir -p /tmp/gitleaks-src
+          git archive HEAD | tar -x -C /tmp/gitleaks-src
+
+      - name: Scan tracked files with redacted output
+        run: |
+          docker run --rm \
+            -v /tmp/gitleaks-src:/repo:ro \
+            ghcr.io/gitleaks/gitleaks:v8.30.0 \
+            dir --redact --no-banner --exit-code 1 /repo

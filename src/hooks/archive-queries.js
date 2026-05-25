@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { showSuccess, showError } from '../lib/toast';
 
-export const analysisArchiveKey = ['analysis-archive'];
+const analysisArchiveKey = ['analysis-archive'];
 
 // Archive rows ARE inbound rows. Any write here changes stock levels, so we
 // invalidate every consumer of inbound + silos-with-levels.
