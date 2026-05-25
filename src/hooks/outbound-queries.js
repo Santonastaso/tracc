@@ -16,11 +16,6 @@ const invalidateOutbound = (queryClient) => {
   queryClient.invalidateQueries({ queryKey: ['silos', 'withLevels'] });
 };
 
-// Outbound rows store the batch id inside the first element of the `items` JSON array,
-// because the `outbound.batch_id` column does not exist in the current schema.
-const matchesBatch = (record, batchId) =>
-  Array.isArray(record?.items) && record.items[0]?.batch_id === batchId;
-
 export const useOutbound = () =>
   useQuery({
     queryKey: outboundKeys.all,
@@ -71,9 +66,10 @@ export const useOutboundByBatch = (batchId) =>
       const { data, error } = await supabase
         .from('outbound')
         .select('*, silos!inner(name)')
+        .eq('batch_id', batchId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data || []).filter((record) => matchesBatch(record, batchId));
+      return data || [];
     },
     enabled: !!batchId,
     staleTime: 1 * 60 * 1000,
@@ -185,30 +181,13 @@ export const useCreateOutboundBatch = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ siloWithdrawals, operatorName, batchId }) => {
-      const batchTimestamp = new Date().toISOString();
-      const results = [];
-
-      for (const withdrawal of siloWithdrawals) {
-        const itemsWithBatch = withdrawal.items.map((item) => ({ ...item, batch_id: batchId }));
-        const { data, error } = await supabase
-          .from('outbound')
-          .insert([
-            {
-              silo_id: withdrawal.silo_id,
-              quantity_kg: withdrawal.quantity_kg,
-              operator_name: operatorName,
-              items: itemsWithBatch,
-              created_at: batchTimestamp,
-              updated_at: batchTimestamp,
-            },
-          ])
-          .select()
-          .single();
-        if (error) throw error;
-        results.push({ ...data, batch_id: batchId });
-      }
-
-      return results;
+      const { data, error } = await supabase.rpc('create_outbound_batch', {
+        p_batch_id: batchId,
+        p_operator_name: operatorName,
+        p_withdrawals: siloWithdrawals,
+      });
+      if (error) throw error;
+      return data || [];
     },
     onSuccess: (newOutbounds) => {
       invalidateOutbound(queryClient);
@@ -226,18 +205,17 @@ export const useDeleteOutboundBatch = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (batchId) => {
-      const { data: allRecords, error: fetchError } = await supabase
+      const { data: batchRecords, error: fetchError } = await supabase
         .from('outbound')
-        .select('*');
+        .select('*')
+        .eq('batch_id', batchId);
       if (fetchError) throw fetchError;
 
-      const batchRecords = (allRecords || []).filter((record) => matchesBatch(record, batchId));
-      if (batchRecords.length === 0) {
+      if (!batchRecords || batchRecords.length === 0) {
         throw new Error('Batch non trovato');
       }
 
-      const recordIds = batchRecords.map((r) => r.id);
-      const { error } = await supabase.from('outbound').delete().in('id', recordIds);
+      const { error } = await supabase.from('outbound').delete().eq('batch_id', batchId);
       if (error) throw error;
       return batchRecords;
     },
